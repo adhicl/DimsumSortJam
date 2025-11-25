@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: 9adf49ef2c2eda94fa5aa7fb3d30ad95
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Scripts/OnTriggerEnterDoEvent.cs
+  uploadId: 710376

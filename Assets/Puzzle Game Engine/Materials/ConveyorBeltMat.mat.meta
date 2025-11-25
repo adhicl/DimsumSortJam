@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: a031357080d75c54d812ccb5844aaefe
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Materials/ConveyorBeltMat.mat
+  uploadId: 710376

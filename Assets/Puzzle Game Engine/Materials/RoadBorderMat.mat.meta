@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 6dcc27d7446549241a12efd48d4481aa
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Materials/RoadBorderMat.mat
+  uploadId: 710376

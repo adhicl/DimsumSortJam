@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: dc2ff2c5a816c314c854ef3039369103
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/GridTypes/Grid_Cube.prefab
+  uploadId: 710376

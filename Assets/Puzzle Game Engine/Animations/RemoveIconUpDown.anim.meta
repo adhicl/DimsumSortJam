@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5f04abd01107842498d3c732a7ee7487
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Animations/RemoveIconUpDown.anim
+  uploadId: 710376

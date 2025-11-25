@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ec59e1225a72a494ea247ebb7f71d60b
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/GridTypes/Mechanic_#2_Grid_Hexagon.prefab
+  uploadId: 710376

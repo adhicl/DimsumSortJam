@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1d37bb70b2e679d41af5c8764763c1a5
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/BoxPrefab.prefab
+  uploadId: 710376

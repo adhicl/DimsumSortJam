@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 8b4353048c48fa84f9fbb2c90fe1b6ca
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/GridTypes/Grid_Nut.prefab
+  uploadId: 710376

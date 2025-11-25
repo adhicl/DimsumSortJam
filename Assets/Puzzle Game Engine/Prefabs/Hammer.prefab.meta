@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 4ad61a6483eb8594b8234940baff7bf4
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/Hammer.prefab
+  uploadId: 710376

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: b57e25553f6a6c74c9da6c12e646623e
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/MoneySpawnerUI.prefab
+  uploadId: 710376

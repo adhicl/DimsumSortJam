@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 2117c471b749c23489ea9f5e7357af9f
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/GridTypes/Grid_Rectangle.prefab
+  uploadId: 710376

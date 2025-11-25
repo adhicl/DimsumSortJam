@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 6ecf044ec8e03734681fa8460d5e31b2
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/GridTypes/Locked_Hexagon.prefab
+  uploadId: 710376

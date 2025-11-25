@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 5885704280ab1264ea36f5dad149564e
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Animations/GrowShrinkMoneyAnim.anim
+  uploadId: 710376

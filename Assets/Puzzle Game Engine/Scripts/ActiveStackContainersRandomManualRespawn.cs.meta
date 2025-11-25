@@ -1,0 +1,18 @@
+fileFormatVersion: 2
+guid: cfab82bcb12e75f4282a39ae06012f05
+MonoImporter:
+  externalObjects: {}
+  serializedVersion: 2
+  defaultReferences: []
+  executionOrder: 0
+  icon: {instanceID: 0}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Scripts/ActiveStackContainersRandomManualRespawn.cs
+  uploadId: 710376

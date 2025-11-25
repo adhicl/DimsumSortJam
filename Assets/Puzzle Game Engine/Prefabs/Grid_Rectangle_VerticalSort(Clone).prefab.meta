@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: d7e5799f826697741b1014e1a4bc2864
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/Grid_Rectangle_VerticalSort(Clone).prefab
+  uploadId: 710376

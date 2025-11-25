@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 53acc0a3d6bd64c4296be165bd9fc254
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 112000000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Scenes/Main Template/LightingData.asset
+  uploadId: 710376

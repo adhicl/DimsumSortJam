@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 3a145481fbca28e46a1b2efd5af29764
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/StackContainers/StackContainerRandom_Pie.prefab
+  uploadId: 710376

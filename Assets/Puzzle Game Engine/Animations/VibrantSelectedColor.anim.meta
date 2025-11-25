@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 3e8f2ee235ccda94ea8820e149d7c6ba
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Animations/VibrantSelectedColor.anim
+  uploadId: 710376

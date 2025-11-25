@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 7a4cb0e33df24f0429158913b0dbc98c
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/MovableCube.prefab
+  uploadId: 710376

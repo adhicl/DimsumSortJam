@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: a8ea97cfebb723e49b2a4254fc3ad7c9
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/CanBottle.prefab
+  uploadId: 710376

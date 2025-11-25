@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 51b9da42606b33f4bbb8d4126a4f2a08
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 7400000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Animations/ClickToFocusAt.anim
+  uploadId: 710376

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: defed1a7b8019374c8a09a5c3127e768
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/GridHighlight.prefab
+  uploadId: 710376

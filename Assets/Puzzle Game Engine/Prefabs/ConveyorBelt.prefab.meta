@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 67b6a996952a14b48a1f5d22345e7f6d
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/ConveyorBelt.prefab
+  uploadId: 710376

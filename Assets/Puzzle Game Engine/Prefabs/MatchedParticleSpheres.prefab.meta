@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: ad77a655343e13847a32359221982a7a
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/MatchedParticleSpheres.prefab
+  uploadId: 710376

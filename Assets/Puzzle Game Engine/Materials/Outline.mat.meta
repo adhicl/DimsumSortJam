@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: e7084802a0b4f334ebe4e881f02a470c
+NativeFormatImporter:
+  externalObjects: {}
+  mainObjectFileID: 2100000
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Materials/Outline.mat
+  uploadId: 710376

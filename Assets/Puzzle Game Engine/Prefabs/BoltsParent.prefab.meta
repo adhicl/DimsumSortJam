@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 1ad16c4556c2c764cb224a2f302e4fe0
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/BoltsParent.prefab
+  uploadId: 710376

@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: cdd264f3c9d1a7b4198ccc3db91da068
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/StackContainers/#8CoinStackContainerRandom.prefab
+  uploadId: 710376

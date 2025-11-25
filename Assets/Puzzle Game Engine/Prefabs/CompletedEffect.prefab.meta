@@ -1,0 +1,14 @@
+fileFormatVersion: 2
+guid: 242d65ff1565de44e988f5ea99d39ffd
+PrefabImporter:
+  externalObjects: {}
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 167553
+  packageName: HyperCasual - Puzzle Game Engine Lite
+  packageVersion: 1.0
+  assetPath: Assets/Puzzle Game Engine/Prefabs/CompletedEffect.prefab
+  uploadId: 710376
