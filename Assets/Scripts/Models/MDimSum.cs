@@ -1,27 +1,26 @@
 using DG.Tweening;
 using UnityEngine;
 using IClasses;
-using UnityEngine.Rendering.Universal;
 using Zenject;
 
 namespace Models
 {
-    public class MDimSum : MonoBehaviour, IDragable
+    public class MDimSum : MonoBehaviour, IDragable, IPoolable<int>
     {
         #region drag
-        
-        [Inject] Camera mainCamera;
 
         private bool _moved = false;
         private Vector2 _initialPosition;
 
         private void OnMouseDown()
         {
+            if (mainCamera == null) return;
             OnStartDrag();
         }
 
         private void OnMouseDrag()
         {
+            if (mainCamera == null) return;
             if (!_moved) return;
             Vector2 mousePosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
             this.transform.position = new Vector3(mousePosition.x, mousePosition.y, -1f);
@@ -30,6 +29,7 @@ namespace Models
 
         private void OnMouseUp()
         {
+            if (mainCamera == null) return;
             OnEndDrag();
         }
 
@@ -58,7 +58,7 @@ namespace Models
             if (_dropAt != null)
             {
                 int indexPos = _dropAt.CheckDropPosition(this.transform);
-                Debug.Log("On end drag "+indexPos);
+                // Debug.Log("On end drag "+indexPos);
                 if (indexPos >= 0)
                 {
                     Vector3 dimsumPosition = _dropAt.GetDimsumPosition(indexPos);
@@ -97,8 +97,8 @@ namespace Models
         
         #region drop
 
-        [SerializeField] private IDropable _dropAt;
-        [SerializeField] private int _dropAtIndex;
+        private IDropable _dropAt;
+        private int _dropAtIndex;
         
         private IDropable _prevDropAt;
         private int _prevDropAtIndex;
@@ -130,5 +130,46 @@ namespace Models
         
         #endregion
 
+        private int dimsumType { get; set; }
+        [SerializeField] Sprite[] images;
+        [SerializeField] SpriteRenderer _renderer;
+
+        [Inject] private Camera mainCamera;
+        //
+        // [Inject]
+        // public void Construct(int dimsum)
+        // {
+        //     Reset(dimsum);
+        // }
+
+        void Reset(int dimsumType)
+        {
+            Debug.Log($"Reset {dimsumType}");
+            this.dimsumType = dimsumType;
+            _renderer.sprite = images[dimsumType];
+        }
+
+        public class Pool : MonoMemoryPool<int, MDimSum>
+        {
+            protected override void Reinitialize(int dimsumType, MDimSum dimsum)
+            {
+                dimsum.Reset(dimsumType);
+            }
+        }
+
+        public void OnDespawned()
+        {
+            throw new System.NotImplementedException();
+        }
+
+        public void OnSpawned(int dimsum)
+        {
+            Reset(dimsum);
+        }
+
+        public void OnSpawned()
+        {
+            throw new System.NotImplementedException();
+        }
     }
 }
