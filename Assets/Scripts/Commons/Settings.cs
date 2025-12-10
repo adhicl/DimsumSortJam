@@ -1,7 +1,7 @@
 namespace Commons
 {
-    public class Settings
+    public static class Settings
     {
-        public const float THRESHOLD_WIDTH = .25f;
+        public const float THRESHOLD_HEIGHT = .7f;
     }
 }

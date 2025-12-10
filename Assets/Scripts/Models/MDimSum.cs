@@ -1,3 +1,5 @@
+using Commons;
+using Controllers;
 using DG.Tweening;
 using UnityEngine;
 using IClasses;
@@ -7,6 +9,14 @@ namespace Models
 {
     public class MDimSum : MonoBehaviour, IDragable, IPoolable<int>
     {
+        [Inject] private Camera mainCamera;
+        [Inject] SoundController soundController;
+        [Inject] GameSetting gameSetting;
+        
+        [SerializeField] SpriteRenderer _renderer;
+        
+        public int dimsumType { get; set; }
+        
         #region drag
 
         private bool _moved = false;
@@ -35,15 +45,18 @@ namespace Models
 
         public void OnStartDrag()
         {
-            //Debug.Log("On start drag");
-            if (_dropAt != null)
-            {
-                _dropAt.RemoveDimsum(_dropAtIndex);
+            soundController.PlayStartDragClip();
+            // if (_dropAt != null)
+            // {
+            //     if (_dropAtIndex != -1 && _dropAt != null) 
+                    _dropAt.RemoveDimsum(_dropAtIndex);
                 
                 _prevDropAt = _dropAt;
                 _prevDropAtIndex = _dropAtIndex;
-            }
-            
+            //}
+
+            _renderer.sortingLayerID = SortingLayer.NameToID("Drag");
+
             _dropAt = null;
             _prevDropAtIndex = -1;
             
@@ -54,6 +67,10 @@ namespace Models
 
         public void OnEndDrag()
         {
+            soundController.PlayStopDragClip();
+            
+            _renderer.sortingLayerID = SortingLayer.NameToID("Game");
+            
             _moved = false;
             if (_dropAt != null)
             {
@@ -61,24 +78,34 @@ namespace Models
                 // Debug.Log("On end drag "+indexPos);
                 if (indexPos >= 0)
                 {
-                    Vector3 dimsumPosition = _dropAt.GetDimsumPosition(indexPos);
-                    _dropAt.AddDimsum(this, indexPos);
-                    _dropAtIndex = indexPos;
-                    this.transform.DOMove(dimsumPosition, 0.2f);
+                    DoDropPlaceAt(_dropAt, indexPos, true);
                 }
                 else
                 {
-                    _dropAtIndex = -1;
-                    _dropAt = null;
-                    ReturnToPreviousDrop();
+                    ResetPreviousDropPlace();
                 }
             }
             else
             {
-                _dropAtIndex = -1;
-                _dropAt = null;
-                ReturnToPreviousDrop();
+                ResetPreviousDropPlace();
             }
+        }
+
+        public void DoDropPlaceAt(IDropable dropable, int index, bool isMove)
+        {
+            Vector3 dimsumPosition = dropable.GetDimsumPosition(index);
+            dropable.AddDimsum(this, index);
+            _dropAt = dropable;
+            _dropAtIndex = index;
+            if (isMove) this.transform.DOMove(dimsumPosition, 0.2f);
+            else this.transform.position = dimsumPosition;
+        }
+        
+        public void ResetPreviousDropPlace()
+        {
+            _dropAtIndex = -1;
+            _dropAt = null;
+            ReturnToPreviousDrop();
         }
 
         private void ReturnToPreviousDrop()
@@ -107,7 +134,6 @@ namespace Models
         {
             if (_moved && other.GetComponent<IDropable>() != null)
             {
-                
                 _dropAt = other.GetComponent<IDropable>();
             }
         }
@@ -119,10 +145,10 @@ namespace Models
                 _dropAt = other.GetComponent<IDropable>();
             }
         }
-
+        
         private void OnTriggerExit2D(Collider2D other)
         {
-            if (other.GetComponent<IDropable>() != null)
+            if (_moved && other.GetComponent<IDropable>() != null)
             {
                 _dropAt = null;
             }
@@ -130,23 +156,11 @@ namespace Models
         
         #endregion
 
-        private int dimsumType { get; set; }
-        [SerializeField] Sprite[] images;
-        [SerializeField] SpriteRenderer _renderer;
-
-        [Inject] private Camera mainCamera;
-        //
-        // [Inject]
-        // public void Construct(int dimsum)
-        // {
-        //     Reset(dimsum);
-        // }
-
         void Reset(int dimsumType)
         {
-            Debug.Log($"Reset {dimsumType}");
+            //Debug.Log($"Reset {dimsumType}");
             this.dimsumType = dimsumType;
-            _renderer.sprite = images[dimsumType];
+            _renderer.sprite = gameSetting.dimsumSprite[dimsumType];
         }
 
         public class Pool : MonoMemoryPool<int, MDimSum>

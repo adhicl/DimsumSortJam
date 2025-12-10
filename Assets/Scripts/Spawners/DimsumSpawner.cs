@@ -6,24 +6,26 @@ using Zenject;
 
 namespace Spawners
 {
-    public class DimsumSpawner : MonoBehaviour
+    public class DimsumSpawner
     {
         [Inject] private MDimSum.Pool _pool;
         
-        readonly List<MDimSum> _dimsums = new List<MDimSum>();
+        readonly List<MDimSum> _dimsums = new();
 
-        private void Update()
-        {
-            if (Input.GetKeyDown(KeyCode.Space))
-            {
-                int random = UnityEngine.Random.Range(0, 10);
-                Create(random);
-            }
-        }
+        // private void Update()
+        // {
+        //     if (Input.GetKeyDown(KeyCode.Space))
+        //     {
+        //         int random = UnityEngine.Random.Range(0, 10);
+        //         Create(random);
+        //     }
+        // }
 
-        public void Create(int dimsumType)
+        public MDimSum Create(int dimsumType)
         {
-            _dimsums.Add(_pool.Spawn(dimsumType));
+            MDimSum newDimsum = _pool.Spawn(dimsumType);
+            _dimsums.Add(newDimsum);
+            return newDimsum;
         }
 
         public void Remove(MDimSum dimsum)

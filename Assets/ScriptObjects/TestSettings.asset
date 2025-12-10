@@ -14,3 +14,26 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SettingInstaller
   gameSetting:
     dimsumPrefab: {fileID: 1096264119486296586, guid: d3c8f59cf016c9842836a45263e3b75c, type: 3}
+    dimsumSprite:
+    - {fileID: 21300000, guid: df125dd9b6bfe314fa96f3b35504f745, type: 3}
+    - {fileID: 21300000, guid: 9923e8463a059b3449086acce486cb83, type: 3}
+    - {fileID: 21300000, guid: 9509e71f968c794439086fc2e54d0d4f, type: 3}
+    - {fileID: 21300000, guid: 125df52cc7ac8a848a49d2d25506b752, type: 3}
+    - {fileID: 21300000, guid: dfd3dabcbda01b247bf85f4fd9702ee9, type: 3}
+    - {fileID: 21300000, guid: b03f133986d46984094b4e4425e0ef1a, type: 3}
+    - {fileID: 21300000, guid: 317b8489f6fad404da5815db769c227d, type: 3}
+    - {fileID: 21300000, guid: ecbe6c15bcce3fd489f2c4ff72610aab, type: 3}
+    - {fileID: 21300000, guid: 0b9257fbc0198e14f9f9e4a4115bcbed, type: 3}
+    - {fileID: 21300000, guid: 9cbb9fd82c25d3e45958c36818f4f242, type: 3}
+    - {fileID: 21300000, guid: 5d7dfdee25350914caa880f12b90e263, type: 3}
+    - {fileID: 21300000, guid: 42da64228bdca9e47b9ee0d551e2aa78, type: 3}
+    - {fileID: 21300000, guid: 339ad862bd7eb7b4f8279c9a2cc980a3, type: 3}
+    - {fileID: 21300000, guid: 16af330c63046ba4e830c4cecf16ec8f, type: 3}
+    - {fileID: 21300000, guid: 32b6a03882a57f54790ee4bcf87b2451, type: 3}
+    - {fileID: 21300000, guid: e41ca9763213e5143906bba8874bd2cd, type: 3}
+    - {fileID: 21300000, guid: e0e7e4765cd525a45b598cc383565de5, type: 3}
+    - {fileID: 21300000, guid: 22b0d73a32854cb429439251fd70984b, type: 3}
+    - {fileID: 21300000, guid: da5697970e6319a469e2999222fc4c1f, type: 3}
+    - {fileID: 21300000, guid: b56fb515818ac49468215c6c581e375a, type: 3}
+    - {fileID: 21300000, guid: 75dcb29a3122b3147ae0838b7a84df32, type: 3}
+    - {fileID: 21300000, guid: 3b8d012d390fe55479daa67c55d1418f, type: 3}

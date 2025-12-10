@@ -1,4 +1,7 @@
 using Commons;
+using Controllers;
+using GameObjects;
+using IClasses;
 using Models;
 using Spawners;
 using UnityEngine;
@@ -6,14 +9,19 @@ using Zenject;
 
 public class GameInstaller : MonoInstaller
 {
-    [Inject] public GameSetting settings;
+    [Inject] private GameSetting settings;
     
     public Camera mainCamera;
-    public GameObject dimsumPrefab;
+    public SpriteCompleteBasket completeSprite;
+    public SoundController soundController;
     
     public override void InstallBindings()
     {
         Container.BindInstance(mainCamera).AsSingle();
+        Container.BindInstance(completeSprite).AsSingle();
+        Container.BindInstance(soundController).AsSingle();
+        
+        Container.Bind<DimsumSpawner>().AsSingle();
         Container.BindMemoryPool<MDimSum, MDimSum.Pool>().FromComponentInNewPrefab(settings.dimsumPrefab);
     }
 }

@@ -6,5 +6,8 @@ namespace IClasses
     {
         public void OnStartDrag();
         public void OnEndDrag();
+
+        public void DoDropPlaceAt(IDropable dropable, int index, bool isMove);
+        public void ResetPreviousDropPlace();
     }
 }

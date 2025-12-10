@@ -37,6 +37,7 @@ Transform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!212 &148585084726509553
 SpriteRenderer:
+  serializedVersion: 2
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
@@ -79,9 +80,10 @@ SpriteRenderer:
   m_AutoUVMaxAngle: 89
   m_LightmapParameters: {fileID: 0}
   m_GlobalIlluminationMeshLod: 0
-  m_SortingLayerID: 0
-  m_SortingLayer: 0
+  m_SortingLayerID: 1106700783
+  m_SortingLayer: 2
   m_SortingOrder: 10
+  m_MaskInteraction: 0
   m_Sprite: {fileID: 21300000, guid: df125dd9b6bfe314fa96f3b35504f745, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
@@ -91,7 +93,6 @@ SpriteRenderer:
   m_AdaptiveModeThreshold: 0.5
   m_SpriteTileMode: 0
   m_WasSpriteAssigned: 1
-  m_MaskInteraction: 0
   m_SpriteSortPoint: 0
 --- !u!114 &4909331480301494569
 MonoBehaviour:
@@ -105,29 +106,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a047caeb612948bab655a275a4930b7a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Models.MDimSum
-  images:
-  - {fileID: 21300000, guid: df125dd9b6bfe314fa96f3b35504f745, type: 3}
-  - {fileID: 4681648697566701420, guid: 9923e8463a059b3449086acce486cb83, type: 3}
-  - {fileID: 777587932800189759, guid: 9509e71f968c794439086fc2e54d0d4f, type: 3}
-  - {fileID: 3877395308028249648, guid: 125df52cc7ac8a848a49d2d25506b752, type: 3}
-  - {fileID: -8490868347856903002, guid: dfd3dabcbda01b247bf85f4fd9702ee9, type: 3}
-  - {fileID: 1360949752916190808, guid: b03f133986d46984094b4e4425e0ef1a, type: 3}
-  - {fileID: -1028680942892811936, guid: 317b8489f6fad404da5815db769c227d, type: 3}
-  - {fileID: 6174337880676335148, guid: ecbe6c15bcce3fd489f2c4ff72610aab, type: 3}
-  - {fileID: 4166179792280328429, guid: 0b9257fbc0198e14f9f9e4a4115bcbed, type: 3}
-  - {fileID: 8681801297218723579, guid: 9cbb9fd82c25d3e45958c36818f4f242, type: 3}
-  - {fileID: -802269045141286280, guid: 5d7dfdee25350914caa880f12b90e263, type: 3}
-  - {fileID: -7107292716521214082, guid: 42da64228bdca9e47b9ee0d551e2aa78, type: 3}
-  - {fileID: -2188126532802031453, guid: 339ad862bd7eb7b4f8279c9a2cc980a3, type: 3}
-  - {fileID: 7737703783038346070, guid: 16af330c63046ba4e830c4cecf16ec8f, type: 3}
-  - {fileID: -3388300869302770992, guid: 32b6a03882a57f54790ee4bcf87b2451, type: 3}
-  - {fileID: -2352610203589906693, guid: e41ca9763213e5143906bba8874bd2cd, type: 3}
-  - {fileID: 835739691982311864, guid: e0e7e4765cd525a45b598cc383565de5, type: 3}
-  - {fileID: 5668375118136178646, guid: 22b0d73a32854cb429439251fd70984b, type: 3}
-  - {fileID: -5741702888131868469, guid: da5697970e6319a469e2999222fc4c1f, type: 3}
-  - {fileID: 5194214003385952932, guid: b56fb515818ac49468215c6c581e375a, type: 3}
-  - {fileID: -264007477350900552, guid: 75dcb29a3122b3147ae0838b7a84df32, type: 3}
-  - {fileID: 2794627096702569377, guid: 3b8d012d390fe55479daa67c55d1418f, type: 3}
   _renderer: {fileID: 148585084726509553}
 --- !u!61 &431019897686743529
 BoxCollider2D:
