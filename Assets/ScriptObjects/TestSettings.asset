@@ -14,18 +14,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SettingInstaller
   gameSetting:
     dimsumPrefab: {fileID: 1096264119486296586, guid: d3c8f59cf016c9842836a45263e3b75c, type: 3}
+    trayPrefab: {fileID: 1090847577745105087, guid: 6e1f750630738a54e832f63e824f0ea7, type: 3}
     dimsumSprite:
-    - {fileID: 21300000, guid: df125dd9b6bfe314fa96f3b35504f745, type: 3}
-    - {fileID: 21300000, guid: 9923e8463a059b3449086acce486cb83, type: 3}
-    - {fileID: 21300000, guid: 9509e71f968c794439086fc2e54d0d4f, type: 3}
-    - {fileID: 21300000, guid: 125df52cc7ac8a848a49d2d25506b752, type: 3}
-    - {fileID: 21300000, guid: dfd3dabcbda01b247bf85f4fd9702ee9, type: 3}
-    - {fileID: 21300000, guid: b03f133986d46984094b4e4425e0ef1a, type: 3}
-    - {fileID: 21300000, guid: 317b8489f6fad404da5815db769c227d, type: 3}
-    - {fileID: 21300000, guid: ecbe6c15bcce3fd489f2c4ff72610aab, type: 3}
-    - {fileID: 21300000, guid: 0b9257fbc0198e14f9f9e4a4115bcbed, type: 3}
-    - {fileID: 21300000, guid: 9cbb9fd82c25d3e45958c36818f4f242, type: 3}
-    - {fileID: 21300000, guid: 5d7dfdee25350914caa880f12b90e263, type: 3}
+    - {fileID: 21300000, guid: cc8a7db777006fb458bd029b3e6c243b, type: 3}
+    - {fileID: 21300000, guid: a196a70b7e88c5347b3bb481f4308791, type: 3}
+    - {fileID: 21300000, guid: 1533efbdcf8dcc14eb6539982819216f, type: 3}
+    - {fileID: 21300000, guid: 3b60d335170cef941adf56e3315d71ea, type: 3}
+    - {fileID: 21300000, guid: 394fdd48e1dfa964685acc12850d106f, type: 3}
+    - {fileID: 21300000, guid: 0836aaaff67c552448285533569674a3, type: 3}
+    - {fileID: 21300000, guid: a6bdb768fafccb64e9baddc07823e0c1, type: 3}
+    - {fileID: 21300000, guid: 6cfe6db010cdd534d8d758b661f0be8d, type: 3}
+    - {fileID: 21300000, guid: 3677b3d53954ef54e9238927b754f864, type: 3}
+    - {fileID: 21300000, guid: 69ba3ed1aecc5a44eaf3735e8d3ec11d, type: 3}
+    - {fileID: 21300000, guid: d8012ab2d34e6c0429c43ffaf315ac0c, type: 3}
     - {fileID: 21300000, guid: 42da64228bdca9e47b9ee0d551e2aa78, type: 3}
     - {fileID: 21300000, guid: 339ad862bd7eb7b4f8279c9a2cc980a3, type: 3}
     - {fileID: 21300000, guid: 16af330c63046ba4e830c4cecf16ec8f, type: 3}
@@ -37,3 +38,6 @@ MonoBehaviour:
     - {fileID: 21300000, guid: b56fb515818ac49468215c6c581e375a, type: 3}
     - {fileID: 21300000, guid: 75dcb29a3122b3147ae0838b7a84df32, type: 3}
     - {fileID: 21300000, guid: 3b8d012d390fe55479daa67c55d1418f, type: 3}
+    currentLevel: 0
+    currentLevelData: {fileID: 11400000, guid: d7ba19c182b25bc44a25aaccb4519d86, type: 2}
+    allLevelData: []

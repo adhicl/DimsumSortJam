@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Commons;
 using IClasses;
@@ -16,43 +17,80 @@ namespace Controllers
         [Inject] DimsumSpawner _dimsumSpawner;
         [Inject] GameSetting _gameSetting;
 
-        [SerializeField] private Transform[] baskets;
+        [SerializeField] private MDropArea[] baskets;
+        
+        private Settings.GAME_STATUS _gameStatus;
+        private float _timer = 0f;
+        public float Timer
+        {
+            get => _timer;
+            set => _timer = value;
+        }
 
         private void Start()
         {
+            ResetGame();
+        }
+
+        private void ResetGame()
+        {
+            _gameStatus = Settings.GAME_STATUS.pause;
+            _timer = 5 * 60f;
+            
             CreateLevel();
         }
 
         private void CreateLevel()
         {
-            int[][] currentLevel = _gameSetting.currentLevel;
+            DimsumCombination[] currentLevel = _gameSetting.currentLevelData.currentLevel;
 
-            Random rand = new Random();
-
-            // Shuffle and take 6
-            var randomPick = currentLevel
-                .OrderBy(x => rand.Next())
-                .Take(6)
-                .ToArray();
-
-            // Print result
-            for (int j = 0; j < randomPick.Length; j++) 
+            DisplayedBasket[] displayedBaskets = _gameSetting.currentLevelData.firstDisplayed;
+            int index = 0;
+            for (int b = 0; b < baskets.Length; b++)
             {
-                int[] row = randomPick[j];
-                IDropable dropBasket = baskets[j].GetComponent<IDropable>();
-                for (int i = 0; i < row.Length; i++)
+                baskets[b].SetOpen(displayedBaskets[b], 0);
+                if (displayedBaskets[b] == DisplayedBasket.Displayed)
                 {
-                    if (row[i] != -1)
-                    {
-                        MDimSum newDimsum = _dimsumSpawner.Create(row[i]);
-                        newDimsum.DoDropPlaceAt(dropBasket, i, false);
-                    }
-                    else
-                    {
-                        
-                    }
+                    int totalTray = _gameSetting.currentLevelData.currentDropArea[b];
+                    var randomPick = currentLevel.Skip(index).Take(totalTray).ToArray();
+                    index += totalTray;
+                    baskets[b].SetDimsums(randomPick);
                 }
             }
         }
+
+        public void DoStartTimer()
+        {
+            _gameStatus = Settings.GAME_STATUS.play;
+        }
+
+        public void DoPauseTimer()
+        {
+            _gameStatus = Settings.GAME_STATUS.pause;
+        }
+
+        private void Update()
+        {
+            if (_gameStatus == Settings.GAME_STATUS.play)
+            {
+                _timer -= Time.deltaTime;
+                if (_timer <= 0f)
+                {
+                    _gameStatus = Settings.GAME_STATUS.lose;
+                    ShowLose();
+                }
+            }
+        }
+
+        private void ShowLose()
+        {
+            
+        }
+
+        private void ShowWin()
+        {
+            
+        }
+
     }
 }

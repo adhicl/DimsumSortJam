@@ -7,11 +7,12 @@ using Zenject;
 
 namespace Models
 {
-    public class MDimSum : MonoBehaviour, IDragable, IPoolable<int>
+    public class MDimSum : MonoBehaviour, IDragable
     {
         [Inject] private Camera mainCamera;
         [Inject] SoundController soundController;
         [Inject] GameSetting gameSetting;
+        [Inject] GameController gameController;
         
         [SerializeField] SpriteRenderer _renderer;
         
@@ -46,19 +47,15 @@ namespace Models
         public void OnStartDrag()
         {
             soundController.PlayStartDragClip();
-            // if (_dropAt != null)
-            // {
-            //     if (_dropAtIndex != -1 && _dropAt != null) 
-                    _dropAt.RemoveDimsum(_dropAtIndex);
-                
-                _prevDropAt = _dropAt;
-                _prevDropAtIndex = _dropAtIndex;
-            //}
+            
+            gameController.DoStartTimer();
 
             _renderer.sortingLayerID = SortingLayer.NameToID("Drag");
 
+            _prevDropAt = _dropAt;
+            _prevDropAtIndex = _dropAtIndex;
             _dropAt = null;
-            _prevDropAtIndex = -1;
+            _dropAtIndex = -1;
             
             _moved = true;
             _initialPosition = this.transform.position;
@@ -78,6 +75,7 @@ namespace Models
                 // Debug.Log("On end drag "+indexPos);
                 if (indexPos >= 0)
                 {
+                    _prevDropAt.RemoveDimsum(_prevDropAtIndex);
                     DoDropPlaceAt(_dropAt, indexPos, true);
                 }
                 else
@@ -169,21 +167,6 @@ namespace Models
             {
                 dimsum.Reset(dimsumType);
             }
-        }
-
-        public void OnDespawned()
-        {
-            throw new System.NotImplementedException();
-        }
-
-        public void OnSpawned(int dimsum)
-        {
-            Reset(dimsum);
-        }
-
-        public void OnSpawned()
-        {
-            throw new System.NotImplementedException();
         }
     }
 }

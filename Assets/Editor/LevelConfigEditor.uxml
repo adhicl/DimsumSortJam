@@ -1,0 +1,11 @@
+<ui:UXML xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements" noNamespaceSchemaLocation="../../UIElementsSchema/UIElements.xsd" editor-extension-mode="False">
+    <Style src="project://database/Assets/Editor/LevelConfigEditor.uss?fileID=7433441132597879392&amp;guid=fb267a67b55f2d34eb9e91bd47c1efc0&amp;type=3#LevelConfigEditor"/>
+    <ui:Label text="Level Data Config - Jajanan Array List" name="Label"/>
+    <ui:SliderInt label="Available Variation" value="10" high-value="50" show-input-field="true" name="iAvailableVariation"/>
+    <ui:SliderInt label="Max Variation" value="10" high-value="50" low-value="5" show-input-field="true" name="iMaxVariation"/>
+    <ui:SliderInt label="Goal " value="24" high-value="1000" low-value="15" show-input-field="true" name="iTotalGoal"/>
+    <ui:SliderInt label="Add Null" value="0" high-value="1000" low-value="0" show-input-field="true" name="iTotalEmpty"/>
+    <ui:Button text="Generate Data" name="bGenerate"/>
+    <ui:TextField label="Result Log" placeholder-text="filler text" enabled="true" focusable="true" name="txtResultField" vertical-scroller-visibility="Auto" readonly="true" multiline="true" style="height: 162px;"/>
+    <ui:Button text="Save Data" name="bSaveToObject"/>
+</ui:UXML>

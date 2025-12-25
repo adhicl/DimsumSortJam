@@ -1,5 +1,8 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
 using Commons;
+using DG.Tweening;
 using GameObjects;
 using IClasses;
 using Spawners;
@@ -11,7 +14,17 @@ namespace Models
     public class MDropArea : MonoBehaviour, IDropable
     {
         [SerializeField] Transform[] tFormationTriple;
-
+        [SerializeField] private Transform trayPlacement;
+        [SerializeField] private GameObject gBasketClose;
+        [SerializeField] private GameObject gLockedBasket;
+        [SerializeField] private GameObject gUnlockPaper;
+        [SerializeField] private GameObject gFrontBasket;
+        [SerializeField] private GameObject gShadowBasket;
+        [SerializeField] private SpriteRenderer sUnlockItem;
+        [SerializeField] private Animator animator;
+        
+        private static readonly int OpenBasket = Animator.StringToHash("OpenBasket");
+        
         private int totalItems { get; set; } = 0;
 
         private MDimSum[] mDimSums = new MDimSum[3]
@@ -42,6 +55,11 @@ namespace Models
             {
                 mDimSums[indexPosition] = null;
                 totalItems--;
+
+                if (totalItems <= 0)
+                {
+                    CreateDimsumFromTray();
+                }
             }
         }
 
@@ -97,8 +115,10 @@ namespace Models
             return tFormationTriple[indexPosition].transform.position;
         }
 
+        [Inject] private GameSetting _gameSetting;
         [Inject] SpriteCompleteBasket completeSprite;
         [Inject] DimsumSpawner dimsumSpawner;
+        [Inject] private TraySpawner _traySpawner;
         [SerializeField] SpriteRenderer spriteRenderer;
         
         private void CheckComplete()
@@ -122,6 +142,8 @@ namespace Models
 
         private IEnumerator HideAndShowFinishAnimation(int checkDimsum)
         {
+            gFrontBasket.SetActive(false);
+            gShadowBasket.SetActive(false);
             spriteRenderer.enabled = false;
             totalItems = 0;
             for (int i = 0; i < mDimSums.Length; i++)
@@ -135,22 +157,95 @@ namespace Models
             }
             completeSprite.SetDimsumSprites(checkDimsum, this.transform.position);
             yield return new WaitForSeconds(1f);
+            
+            gFrontBasket.SetActive(true);
+            gShadowBasket.SetActive(true);
             spriteRenderer.enabled = true;
+            CreateDimsumFromTray();
         }
 
-        // private void ClearDimsums()
-        // {
-        //     totalItems = 0;
-        //     for (int i = 0; i < mDimSums.Length; i++)
-        //     {
-        //         if (mDimSums[i] != null)
-        //         {
-        //             dimsumSpawner.Remove(mDimSums[i]);
-        //         }
-        //
-        //         mDimSums[i] = null;
-        //     }
-        // }
+        private List<DimsumCombination> arrayDimsums = new();
+        private List<MTray> trayList = new();
+
+        public void SetDimsums(DimsumCombination[] dimsumArray)
+        {
+            //Debug.Log($" set dimsum length: {dimsumArray.Length}");
+            arrayDimsums = new List<DimsumCombination>();
+            foreach (var combination in dimsumArray)
+            {
+                arrayDimsums.Add(combination);
+            }
+
+            CreateDimsum();
+            CreateTray();
+        }
+        
+        private void CreateTray()
+        {
+            for (int i = 0; i < arrayDimsums.Count; i++)
+            {
+                MTray newTray = _traySpawner.Create(trayPlacement);
+                Vector3 position = trayPlacement.position + new Vector3(0f, i * Settings.TRAY_HEIGHT, 0f);
+                newTray.transform.position = position;
+                newTray.transform.localScale = Vector3.one;
+                newTray.SetRendererOrder(10 + i);
+                trayList.Add(newTray);
+                
+                if (i >= arrayDimsums.Count - 1) newTray.SetDimsums(arrayDimsums[0].ToArray());
+            }
+        }
+
+        private void CreateDimsum()
+        {
+            DimsumCombination firstCombination = arrayDimsums[0];
+            arrayDimsums.RemoveAt(0);
+            int[] row = firstCombination.ToArray();
+            for (int i = 0; i < row.Length; i++)
+            {
+                if (row[i] != -1)
+                {
+                    MDimSum newDimsum = dimsumSpawner.Create(row[i]);
+                    newDimsum.DoDropPlaceAt(this, i, false);
+                }
+            }
+        }
+
+        private void CreateDimsumFromTray()
+        {
+            if (arrayDimsums.Count <= 0) return;
+
+            Transform[] trayTransforms = trayList[0].GetDimsumPositions();
+            
+            DimsumCombination firstCombination = arrayDimsums[0];
+            arrayDimsums.RemoveAt(0);
+            int[] row = firstCombination.ToArray();
+            for (int i = 0; i < row.Length; i++)
+            {
+                if (row[i] != -1)
+                {
+                    MDimSum newDimsum = dimsumSpawner.Create(row[i]);
+                    newDimsum.transform.position = trayTransforms[i].position;
+                    newDimsum.transform.localScale = Vector3.one * 0.2f;
+                    newDimsum.transform.DOScale(Vector3.one * 0.5f, 0.2f);
+                    newDimsum.DoDropPlaceAt(this, i, true);
+                }
+            }
+
+            MTray mTray = trayList[^1];
+            mTray.CleanDimsums();
+            Sequence sequence = DOTween.Sequence();
+            sequence.Append(mTray.GetComponent<SpriteRenderer>().DOFade(0f, .6f));
+            sequence.onComplete += () =>
+            {
+                trayList.Remove(mTray);
+                _traySpawner.Remove(mTray);
+
+                if (trayList.Count > 0)
+                {
+                    trayList[0].SetDimsums(arrayDimsums[0].ToArray());
+                }
+            };
+        }
 
         private void PrintDimsums()
         {
@@ -163,6 +258,48 @@ namespace Models
                 i++;
             }
             Debug.Log(text);
+        }
+        
+        [SerializeField] private DisplayedBasket _isOpen;
+        [SerializeField] private int dimsumUnlock = 0;
+
+        public void SetOpen(DisplayedBasket isOpen, int iDimsumUnlock)
+        {
+            if (isOpen == DisplayedBasket.Displayed)
+            {
+                gBasketClose.SetActive(false);
+                gLockedBasket.SetActive(true);
+                gUnlockPaper.SetActive(false);
+                animator.SetTrigger(OpenBasket);
+            }
+            else if (isOpen == DisplayedBasket.Locked)
+            {
+                gLockedBasket.SetActive(true);
+                gUnlockPaper.SetActive(true);
+                sUnlockItem.sprite = _gameSetting.dimsumSprite[iDimsumUnlock];
+                dimsumUnlock = iDimsumUnlock;
+            }
+            else if (isOpen == DisplayedBasket.Closed)
+            {
+                gBasketClose.SetActive(true);
+            }
+            _isOpen = isOpen;
+        }
+
+        public void DoOpenBasketStart()
+        {
+            gBasketClose.SetActive(false);
+            gLockedBasket.SetActive(true);
+            gUnlockPaper.SetActive(false);
+            animator.SetTrigger(OpenBasket);
+        }
+
+        private void OnMouseDown()
+        {
+            if (_isOpen != DisplayedBasket.Displayed)
+            {
+                SetOpen(DisplayedBasket.Displayed, 0);
+            }
         }
     }
 }

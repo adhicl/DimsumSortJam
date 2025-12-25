@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Commons;
+using DG.Tweening;
 using IClasses;
 using Models;
 using UnityEngine;
@@ -14,13 +15,14 @@ namespace GameObjects
         
         [Inject] GameSetting gameSetting;
 
+        [SerializeField] private Transform dropFinish;
         [SerializeField] private GameObject finishObject;
         [SerializeField] SpriteRenderer[] spriteRenderers;
         [SerializeField] Animator animator;
 
         private void Start()
         {
-            finishObject.SetActive(false);
+            //finishObject.SetActive(false);
         }
 
         public void SetDimsumSprites(int dimsumType, Vector3 position)
@@ -31,15 +33,18 @@ namespace GameObjects
                 spriteRenderers[i].sprite = gameSetting.dimsumSprite[dimsumType];
             }
 
-            StartCoroutine(SequencePlayAnimation());
+            animator.SetTrigger(Finish);
+            //StartCoroutine(SequencePlayAnimation());
         }
 
         private IEnumerator SequencePlayAnimation()
         {
-            finishObject.SetActive(true);
+            //finishObject.SetActive(true);
             animator.SetTrigger(Finish);
-            
-            yield return new WaitForSeconds(1f);
+
+            yield return new WaitForSeconds(0.5f);
+
+            //this.transform.DOMove(dropFinish.transform.position, 0.5f);
             
             finishObject.SetActive(false);
         }

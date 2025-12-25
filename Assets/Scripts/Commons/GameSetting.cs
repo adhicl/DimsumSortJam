@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 
 namespace Commons
@@ -7,13 +8,37 @@ namespace Commons
     public class GameSetting
     {
         public GameObject dimsumPrefab;
-
-        public int[][] currentLevel = new int[][]
-        {
-            new int[] { 0, -1, 0 }, new int[] { 1, -1, -1 }, new int[] { 2, -1, -1 }, new int[] { 3, -1, 0 },
-            new int[] { 1, 1, 0 }, new int[] { 2, -1, 4 }, new int[] { 5, 10, -1 }, new int[] { 7, 0, 7 }
-        };
+        public GameObject trayPrefab;
 
         public Sprite[] dimsumSprite;
+
+        public int currentLevel = 0;
+        public LevelData currentLevelData;
+        public LevelData[] allLevelData;
     }
+
+    [Serializable]
+    public struct DimsumCombination
+    {
+        public int dimsum1, dimsum2, dimsum3;
+
+        public int[] ToArray()
+        {
+            return new int[] { dimsum1, dimsum2, dimsum3 };
+        }
+
+        public DimsumCombination(int dimsum1, int dimsum2, int dimsum3)
+        {
+            this.dimsum1 = dimsum1;
+            this.dimsum2 = dimsum2;
+            this.dimsum3 = dimsum3;
+        }
+    }
+
+    public enum DisplayedBasket
+    {
+        Displayed,
+        Closed,
+        Locked
+    };
 }

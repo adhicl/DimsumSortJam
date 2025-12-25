@@ -14,14 +14,18 @@ public class GameInstaller : MonoInstaller
     public Camera mainCamera;
     public SpriteCompleteBasket completeSprite;
     public SoundController soundController;
+    public GameController gameController;
     
     public override void InstallBindings()
     {
         Container.BindInstance(mainCamera).AsSingle();
         Container.BindInstance(completeSprite).AsSingle();
         Container.BindInstance(soundController).AsSingle();
+        Container.BindInstance(gameController).AsSingle();
         
         Container.Bind<DimsumSpawner>().AsSingle();
+        Container.Bind<TraySpawner>().AsSingle();
         Container.BindMemoryPool<MDimSum, MDimSum.Pool>().FromComponentInNewPrefab(settings.dimsumPrefab);
+        Container.BindMemoryPool<MTray, MTray.Pool>().FromComponentInNewPrefab(settings.trayPrefab);
     }
 }
