@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using Commons;
+using Controllers;
 using DG.Tweening;
 using GameObjects;
 using IClasses;
@@ -119,6 +120,8 @@ namespace Models
         [Inject] SpriteCompleteBasket completeSprite;
         [Inject] DimsumSpawner dimsumSpawner;
         [Inject] private TraySpawner _traySpawner;
+        [Inject] private GameController _gameController;
+        
         [SerializeField] SpriteRenderer spriteRenderer;
         
         private void CheckComplete()
@@ -136,6 +139,7 @@ namespace Models
 
             if (isComplete)
             {
+                _gameController.DoAddProgress(3);
                 StartCoroutine(HideAndShowFinishAnimation(checkDimsum));
             }
         }
@@ -284,14 +288,6 @@ namespace Models
                 gBasketClose.SetActive(true);
             }
             _isOpen = isOpen;
-        }
-
-        public void DoOpenBasketStart()
-        {
-            gBasketClose.SetActive(false);
-            gLockedBasket.SetActive(true);
-            gUnlockPaper.SetActive(false);
-            animator.SetTrigger(OpenBasket);
         }
 
         private void OnMouseDown()

@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 88e53656b69b4aa4ead4db0f6255e45e
+timeCreated: 1459506374
+licenseType: Store
+DefaultImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 54552
+  packageName: PagedRect - Paging, Galleries, and Menus for Unity UI
+  packageVersion: 1.54
+  assetPath: Assets/UI/Pagination/Examples/Example Scene/Nested ScrollRect Example.unity
+  uploadId: 338072

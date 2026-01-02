@@ -1,0 +1,16 @@
+fileFormatVersion: 2
+guid: e3840e3f98d74b5489f46f1d5dc7a82c
+timeCreated: 1454517358
+licenseType: Store
+TextScriptImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 54552
+  packageName: PagedRect - Paging, Galleries, and Menus for Unity UI
+  packageVersion: 1.54
+  assetPath: Assets/UI/Pagination/Examples/Sprites/Fantasy UI/Portraits/Flare Portrait
+    Pack (Number Four).txt
+  uploadId: 338072

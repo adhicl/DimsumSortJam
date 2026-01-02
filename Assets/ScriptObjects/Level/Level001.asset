@@ -12,6 +12,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 033bb20ac4b645eaa17fe13f4a28bd39, type: 3}
   m_Name: Level001
   m_EditorClassIdentifier: Assembly-CSharp::Commons.LevelData
+  TotalGoal: 15
   currentLevel:
   - dimsum1: -1
     dimsum2: 2

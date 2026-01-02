@@ -5139,6 +5139,17 @@ RectTransform:
   m_AnchoredPosition: {x: 0, y: 0}
   m_SizeDelta: {x: 423.38, y: 110.06}
   m_Pivot: {x: 0, y: 1}
+--- !u!114 &1233969461 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 6131779206422511767, guid: 7fab0294e40ca45c5aad4128bd96176d, type: 3}
+  m_PrefabInstance: {fileID: 1360751742}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f4688fdb7df04437aeb418b961361dc5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1001 &1235375479
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -5962,6 +5973,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdd8857e7fa94698a89880a75ca059e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Controllers.GameUIController
+  textLevel: {fileID: 733418592626392741}
+  textProgressLevel: {fileID: 1233969461}
+  sliderProgress: {fileID: 2067247875}
   textTimerDown: {fileID: 1868464422}
 --- !u!1 &1391431867
 GameObject:
@@ -7879,7 +7893,32 @@ MonoBehaviour:
   m_TargetGraphic: {fileID: 5411395935647679175}
   m_OnClick:
     m_PersistentCalls:
-      m_Calls: []
+      m_Calls:
+      - m_Target: {fileID: 1804737113}
+        m_TargetAssemblyTypeName: Ricimi.PopupOpener, Assembly-CSharp
+        m_MethodName: OpenPopup
+        m_Mode: 1
+        m_Arguments:
+          m_ObjectArgument: {fileID: 0}
+          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_IntArgument: 0
+          m_FloatArgument: 0
+          m_StringArgument: 
+          m_BoolArgument: 0
+        m_CallState: 2
+--- !u!114 &1804737113
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1804737107}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdc9dc369ee2a427d82cbd5d7894c8c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Ricimi.PopupOpener
+  popupPrefab: {fileID: 9025506432857569364, guid: dd0dcd8434ba0a645892369b92c57e75, type: 3}
 --- !u!1 &1820052116
 GameObject:
   m_ObjectHideFlags: 0
@@ -9493,6 +9532,17 @@ RectTransform:
   m_CorrespondingSourceObject: {fileID: 4794836635867276971, guid: 068b22f551eb940e783745a383e36efa, type: 3}
   m_PrefabInstance: {fileID: 2049715766}
   m_PrefabAsset: {fileID: 0}
+--- !u!114 &2067247875 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 3683824735014319073, guid: 7fab0294e40ca45c5aad4128bd96176d, type: 3}
+  m_PrefabInstance: {fileID: 1360751742}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 67db9e8f0e2ae9c40bc1e2b64352a6b4, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &2104906967 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 2745507538511672987, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
@@ -10927,6 +10977,9 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 6767467903329716828, guid: 43d2a0e27efc74eabba1680d6df59cb2, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1804737110}
+    - targetCorrespondingSourceObject: {fileID: 6767467903329716828, guid: 43d2a0e27efc74eabba1680d6df59cb2, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1804737113}
   m_SourcePrefab: {fileID: 100100000, guid: 43d2a0e27efc74eabba1680d6df59cb2, type: 3}
 --- !u!224 &4692374285163843284
 RectTransform:

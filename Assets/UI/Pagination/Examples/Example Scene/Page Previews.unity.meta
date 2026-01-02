@@ -1,0 +1,15 @@
+fileFormatVersion: 2
+guid: 35664bae123a3bd47b4f047d32beb25b
+timeCreated: 1466781859
+licenseType: Store
+DefaultImporter:
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 
+AssetOrigin:
+  serializedVersion: 1
+  productId: 54552
+  packageName: PagedRect - Paging, Galleries, and Menus for Unity UI
+  packageVersion: 1.54
+  assetPath: Assets/UI/Pagination/Examples/Example Scene/Page Previews.unity
+  uploadId: 338072

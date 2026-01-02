@@ -7,6 +7,7 @@ namespace Commons
     [Serializable]
     public class LevelData : ScriptableObject
     {
+        public int TotalGoal;
         public DimsumCombination[] currentLevel;
         public DisplayedBasket[] firstDisplayed;
         public int[] currentDropArea;

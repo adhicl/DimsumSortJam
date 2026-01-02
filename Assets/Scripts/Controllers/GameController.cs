@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Commons;
+using DG.Tweening;
 using IClasses;
 using Models;
 using Spawners;
@@ -21,11 +22,17 @@ namespace Controllers
         
         private Settings.GAME_STATUS _gameStatus;
         private float _timer = 0f;
+        private int _totalGoal = 0;
+        private int _currentTotal = 0;
+        
         public float Timer
         {
             get => _timer;
             set => _timer = value;
         }
+
+        public string Progress => $"{_currentTotal:D2}/{_totalGoal:D2}";
+        public float ProgressPercentage => (float)_currentTotal / _totalGoal;
 
         private void Start()
         {
@@ -35,6 +42,8 @@ namespace Controllers
         private void ResetGame()
         {
             _gameStatus = Settings.GAME_STATUS.pause;
+            _currentTotal = 0;
+            _totalGoal = _gameSetting.currentLevelData.TotalGoal;
             _timer = 5 * 60f;
             
             CreateLevel();
@@ -67,6 +76,20 @@ namespace Controllers
         public void DoPauseTimer()
         {
             _gameStatus = Settings.GAME_STATUS.pause;
+        }
+
+        public void DoAddProgress(int progress)
+        {
+            DOTween.To(() => _currentTotal, x => _currentTotal = x, _currentTotal + progress, .5f).OnComplete(OnFinishUpdateProgress);
+        }
+
+        private void OnFinishUpdateProgress()
+        {
+            if (_currentTotal >= _totalGoal)
+            {
+                _gameStatus = Settings.GAME_STATUS.win;
+                ShowWin();
+            }
         }
 
         private void Update()

@@ -43,7 +43,7 @@ public class LevelConfigEditor : EditorWindow
 
         int TotalVariation = iMaxVariation.value;
         int AvailableVariation = iAvailableVariation.value;
-        int TotalGoal = iTotalGoal.value;
+        TotalGoal = iTotalGoal.value;
         int TotalEmpty = iTotalEmpty.value;
         
         List<int> variations = new List<int>();
@@ -98,6 +98,7 @@ public class LevelConfigEditor : EditorWindow
     }
 
     private List<int[]> CurrentResult;
+    private int TotalGoal;
     
     private List<int> Shuffle(List<int> list)
     {
@@ -241,6 +242,7 @@ public class LevelConfigEditor : EditorWindow
             combinations[i] = new DimsumCombination(CurrentResult[i][0],CurrentResult[i][1],CurrentResult[i][2]);
         }
 
+        asset.TotalGoal = TotalGoal;
         asset.currentLevel = combinations;
         
         AssetDatabase.CreateAsset(asset, "Assets/ScriptObjects/NewLevelData.asset");
