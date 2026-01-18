@@ -7,6 +7,7 @@ namespace Controllers
         [SerializeField] AudioSource audioSource;
         public AudioClip[] startDragClip;
         public AudioClip endDragClip;
+        public AudioClip[] successClip;
 
         public void PlayStartDragClip()
         {
@@ -17,6 +18,11 @@ namespace Controllers
         public void PlayStopDragClip()
         {
             audioSource.PlayOneShot(endDragClip);
+        }
+
+        public void PlaySuccessClip()
+        {
+            audioSource.PlayOneShot(successClip[Random.Range(0, successClip.Length)]);
         }
     }
 }

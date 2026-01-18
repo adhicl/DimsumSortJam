@@ -5,7 +5,7 @@ namespace Commons
 {
     [CreateAssetMenu(fileName = "Level", menuName = "LevelData", order = 0)]
     [Serializable]
-    public class LevelData : ScriptableObject
+    public class LevelData : ScriptableObject 
     {
         public int TotalGoal;
         public DimsumCombination[] currentLevel;

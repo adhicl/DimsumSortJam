@@ -140,6 +140,7 @@ namespace Models
             if (isComplete)
             {
                 _gameController.DoAddProgress(3);
+                _gameController.AddSuccessVFX(this.transform.position + new Vector3(0f, 1f, 0f));
                 StartCoroutine(HideAndShowFinishAnimation(checkDimsum));
             }
         }

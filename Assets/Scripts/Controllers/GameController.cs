@@ -17,8 +17,11 @@ namespace Controllers
     {
         [Inject] DimsumSpawner _dimsumSpawner;
         [Inject] GameSetting _gameSetting;
+        [Inject] SoundController _soundController;
 
         [SerializeField] private MDropArea[] baskets;
+
+        public GameObject successVFXPrefab;
         
         private Settings.GAME_STATUS _gameStatus;
         private float _timer = 0f;
@@ -113,6 +116,12 @@ namespace Controllers
         private void ShowWin()
         {
             
+        }
+
+        public void AddSuccessVFX(Vector2 position)
+        {
+            _soundController.PlaySuccessClip();   
+            GameObject vfx = Instantiate(successVFXPrefab, position, Quaternion.identity);
         }
 
     }
