@@ -5,6 +5,7 @@ using Commons;
 using DG.Tweening;
 using IClasses;
 using Models;
+using Ricimi;
 using Spawners;
 using UnityEngine;
 using Zenject;
@@ -17,6 +18,7 @@ namespace Controllers
     {
         [Inject] DimsumSpawner _dimsumSpawner;
         [Inject] GameSetting _gameSetting;
+        [Inject] BGMController _bgmController;
         [Inject] SoundController _soundController;
 
         [SerializeField] private MDropArea[] baskets;
@@ -47,7 +49,7 @@ namespace Controllers
             _gameStatus = Settings.GAME_STATUS.pause;
             _currentTotal = 0;
             _totalGoal = _gameSetting.currentLevelData.TotalGoal;
-            _timer = 5 * 60f;
+            _timer = .2f * 60f;
             
             CreateLevel();
         }
@@ -108,14 +110,30 @@ namespace Controllers
             }
         }
 
+        public GameObject popupWin;
+        public GameObject popupLose; 
+        
+        [SerializeField] Canvas m_canvas;
+        private GameObject m_popup;
+
         private void ShowLose()
         {
+            _bgmController.StopMusic();
+            _soundController.PlayFinishOverClip();
             
+            m_popup = Instantiate(popupLose, m_canvas.transform, false);
+            m_popup.SetActive(true);
+            m_popup.GetComponent<Popup>().Open();
         }
 
         private void ShowWin()
         {
+            _bgmController.StopMusic();
+            _soundController.PlayFinishSuccessClip();
             
+            m_popup = Instantiate(popupWin, m_canvas.transform, false);
+            m_popup.SetActive(true);
+            m_popup.GetComponent<Popup>().Open();
         }
 
         public void AddSuccessVFX(Vector2 position)

@@ -306,9 +306,9 @@ GameObject:
   - component: {fileID: 4459957999394350702}
   - component: {fileID: 2031216263089427077}
   - component: {fileID: 1739750106932076121}
-  - component: {fileID: 9040145671765731088}
+  - component: {fileID: 7904358196678932161}
   m_Layer: 5
-  m_Name: Alert Lose Heart QUIT
+  m_Name: Alert Lose Heart Retry
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -384,7 +384,7 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &9040145671765731088
+--- !u!114 &7904358196678932161
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -396,9 +396,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6eb93e43e07d4e7da1666b79c51f9dba, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DefaultNamespace.UI.AlertQuitPopup
-  scene: Home
+  scene: Game
   duration: 0.5
-  color: {r: 0.1254902, g: 0.14901961, b: 0.2509804, a: 1}
+  color: {r: 0.5372549, g: 0.4509804, b: 0.7647059, a: 1}
 --- !u!1001 &337233277412216361
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -518,10 +518,6 @@ PrefabInstance:
     - target: {fileID: 4523211252725561406, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0
-      objectReference: {fileID: 0}
-    - target: {fileID: 5225478629699023444, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: -16.599998
       objectReference: {fileID: 0}
     - target: {fileID: 6453795902073910752, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
       propertyPath: m_AnchorMax.y
@@ -711,20 +707,24 @@ PrefabInstance:
       propertyPath: m_Name
       value: Button-Restart
       objectReference: {fileID: 0}
-    - target: {fileID: 8622320959860612953, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
-      propertyPath: m_AnchoredPosition.y
-      value: 4.9084015
-      objectReference: {fileID: 0}
     - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 1
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 7904358196678932161}
+    - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
       objectReference: {fileID: 4459957999394350702}
     - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
@@ -732,15 +732,31 @@ PrefabInstance:
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: PlayButtonSound
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
       value: Close
       objectReference: {fileID: 0}
     - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: DefaultNamespace.UI.AlertQuitPopup, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
       value: Ricimi.Popup, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
+    - target: {fileID: 8940360539914254008, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
     - target: {fileID: 9010960899528826616, guid: 1e28d54f7112043769302ca076d886b3, type: 3}
@@ -926,7 +942,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 2
+      value: 3
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
@@ -937,19 +953,31 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[2].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
       objectReference: {fileID: 4459957999394350702}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
-      objectReference: {fileID: 9040145671765731088}
+      objectReference: {fileID: 7904358196678932161}
+    - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[2].m_Target
+      value: 
+      objectReference: {fileID: 7904358196678932161}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[2].m_CallState
       value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
@@ -961,11 +989,19 @@ PrefabInstance:
       value: QuitPopup
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[2].m_MethodName
+      value: PlayButtonSound
+      objectReference: {fileID: 0}
+    - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
       value: Ricimi.Popup, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
+      value: DefaultNamespace.UI.AlertQuitPopup, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[2].m_TargetAssemblyTypeName
       value: DefaultNamespace.UI.AlertQuitPopup, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
@@ -976,9 +1012,13 @@ PrefabInstance:
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
       value: UnityEngine.Object, UnityEngine
       objectReference: {fileID: 0}
+    - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[2].m_Arguments.m_ObjectArgumentAssemblyTypeName
+      value: UnityEngine.Object, UnityEngine
+      objectReference: {fileID: 0}
     - target: {fileID: 5879313729776455956, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_text
-      value: QUIT
+      value: RETRY
       objectReference: {fileID: 0}
     - target: {fileID: 5879313729776455956, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: 'm_ActiveFontFeatures.Array.data[0]'

@@ -36,6 +36,5 @@ namespace Controllers
             int seconds = Mathf.RoundToInt(secondTime % 60);
             return $"{minutes:D2}:{seconds:D2}";
         }
-        
     }
 }

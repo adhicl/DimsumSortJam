@@ -10224,10 +10224,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameObjects.SuccessEffect
   successEffects:
-  - {fileID: 4938820944167623776}
   - {fileID: 4145245350988696851}
-  - {fileID: 4522306845882258156}
   - {fileID: 4871297454707842963}
+  - {fileID: 4522306845882258156}
+  - {fileID: 4938820944167623776}
 --- !u!1 &4145245350988696851
 GameObject:
   m_ObjectHideFlags: 0
@@ -10311,7 +10311,7 @@ SpriteRenderer:
   m_SortingLayer: 4
   m_SortingOrder: 100
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 18e8184f67be64324bb34d1ed8ea234d, type: 3}
+  m_Sprite: {fileID: 21300000, guid: bbf5d38277cb143e996017480aa4177a, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -10426,7 +10426,7 @@ SpriteRenderer:
   m_SortingLayer: 4
   m_SortingOrder: 100
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 42b9e0c0849204d1ca3b379ead1db766, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 5d522b925184b445182dd9adb9ad792c, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -10541,7 +10541,7 @@ SpriteRenderer:
   m_SortingLayer: 4
   m_SortingOrder: 100
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: 85faaf95adb3642d0b219a6058c23a1e, type: 3}
+  m_Sprite: {fileID: 21300000, guid: a28df356ee5844410a7bac4d4ce1350f, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0
@@ -10656,7 +10656,7 @@ SpriteRenderer:
   m_SortingLayer: 4
   m_SortingOrder: 100
   m_MaskInteraction: 0
-  m_Sprite: {fileID: 21300000, guid: fe5ad91b59d2a4f51b010cf5cb938079, type: 3}
+  m_Sprite: {fileID: 21300000, guid: 6c5a9c387cddc4776a1479d4382713e4, type: 3}
   m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_FlipX: 0
   m_FlipY: 0

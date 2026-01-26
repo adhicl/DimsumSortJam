@@ -1,3 +1,4 @@
+using Controllers;
 using Ricimi;
 using UnityEngine;
 
@@ -12,9 +13,15 @@ namespace DefaultNamespace.UI
         public void QuitPopup()
         {
             //added function later
+            
             //reduce one health
             
             Transition.LoadLevel(scene, duration, color);
+        }
+
+        public void PlayButtonSound()
+        {
+            SoundController.Instance.PlayButtonClickClip();
         }
     }
 }

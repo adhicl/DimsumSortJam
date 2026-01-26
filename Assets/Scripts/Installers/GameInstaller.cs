@@ -14,6 +14,7 @@ public class GameInstaller : MonoInstaller
     public Camera mainCamera;
     public SpriteCompleteBasket completeSprite;
     public SoundController soundController;
+    public BGMController bgmController;
     public GameController gameController;
     
     public override void InstallBindings()
@@ -22,6 +23,7 @@ public class GameInstaller : MonoInstaller
         Container.BindInstance(completeSprite).AsSingle();
         Container.BindInstance(soundController).AsSingle();
         Container.BindInstance(gameController).AsSingle();
+        Container.BindInstance(bgmController).AsSingle();
         
         Container.Bind<DimsumSpawner>().AsSingle();
         Container.Bind<TraySpawner>().AsSingle();
