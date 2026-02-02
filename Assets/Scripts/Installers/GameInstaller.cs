@@ -4,12 +4,14 @@ using GameObjects;
 using IClasses;
 using Models;
 using Spawners;
+using Unity.Burst.Intrinsics;
 using UnityEngine;
 using Zenject;
 
 public class GameInstaller : MonoInstaller
 {
     [Inject] private GameSetting settings;
+    [Inject] private CommonSetting commonSetting;
     
     public Camera mainCamera;
     public SpriteCompleteBasket completeSprite;

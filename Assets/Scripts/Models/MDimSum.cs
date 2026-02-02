@@ -13,6 +13,7 @@ namespace Models
         [Inject] SoundController soundController;
         [Inject] GameSetting gameSetting;
         [Inject] GameController gameController;
+        [Inject] CommonSetting commonSetting;
         
         [SerializeField] SpriteRenderer _renderer;
         
@@ -51,6 +52,7 @@ namespace Models
             gameController.DoStartTimer();
 
             _renderer.sortingLayerID = SortingLayer.NameToID("Drag");
+            _renderer.material = commonSetting.itemDragGameMaterial;
 
             _prevDropAt = _dropAt;
             _prevDropAtIndex = _dropAtIndex;
@@ -67,6 +69,7 @@ namespace Models
             soundController.PlayStopDragClip();
             
             _renderer.sortingLayerID = SortingLayer.NameToID("Game");
+            _renderer.material = commonSetting.itemOnGameMaterial;
             
             _moved = false;
             if (_dropAt != null)
@@ -159,6 +162,7 @@ namespace Models
             //Debug.Log($"Reset {dimsumType}");
             this.dimsumType = dimsumType;
             _renderer.sprite = gameSetting.dimsumSprite[dimsumType];
+            _renderer.material = commonSetting.itemOnGameMaterial;
         }
 
         public class Pool : MonoMemoryPool<int, MDimSum>

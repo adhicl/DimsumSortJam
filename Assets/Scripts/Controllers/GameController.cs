@@ -49,7 +49,7 @@ namespace Controllers
             _gameStatus = Settings.GAME_STATUS.pause;
             _currentTotal = 0;
             _totalGoal = _gameSetting.currentLevelData.TotalGoal;
-            _timer = .2f * 60f;
+            _timer = 5f * 60f;
             
             CreateLevel();
         }
