@@ -9,8 +9,7 @@ using Ricimi;
 using Spawners;
 using UnityEngine;
 using Zenject;
-using Zenject.SpaceFighter;
-using Random = System.Random;
+using Random = UnityEngine.Random;
 
 namespace Controllers
 {
@@ -57,8 +56,9 @@ namespace Controllers
         private void CreateLevel()
         {
             DimsumCombination[] currentLevel = _gameSetting.currentLevelData.currentLevel;
-
             DisplayedBasket[] displayedBaskets = _gameSetting.currentLevelData.firstDisplayed;
+            _gameSetting.currentDimsumSprites = GetRandomUniqueSprites();
+            
             int index = 0;
             for (int b = 0; b < baskets.Length; b++)
             {
@@ -71,6 +71,20 @@ namespace Controllers
                     baskets[b].SetDimsums(randomPick);
                 }
             }
+        }
+
+        private Sprite[] GetRandomUniqueSprites()
+        {
+            // Pastikan jumlah yang diminta tidak lebih besar dari sumber
+            if (_gameSetting.currentLevelData.TotalVariation > _gameSetting.dimsumSprite.Length)
+            {
+                Debug.LogError("Jumlah elemen yang diminta lebih besar dari array sumber!");
+                return null;
+            }
+
+            // Shuffle array dengan LINQ dan Random
+            Sprite[] shuffled = _gameSetting.dimsumSprite.OrderBy(x => Random.value).ToArray(); // Ambil sejumlah elemen dari hasil shuffle
+            return shuffled.Take(_gameSetting.currentLevelData.TotalVariation).ToArray();
         }
 
         public void DoStartTimer()

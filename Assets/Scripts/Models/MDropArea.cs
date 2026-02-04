@@ -73,6 +73,8 @@ namespace Models
             float diffPositionX = pos.x - selfPosition.x;
             float diffPositionY = pos.y - selfPosition.y;
             
+            //Debug.Log($"CheckDropPosition {diffPositionX}, {diffPositionY}");
+            
             if (diffPositionY < Settings.THRESHOLD_HEIGHT)
             {
                 if (diffPositionX < 0f)
@@ -230,8 +232,8 @@ namespace Models
                 {
                     MDimSum newDimsum = dimsumSpawner.Create(row[i]);
                     newDimsum.transform.position = trayTransforms[i].position;
-                    newDimsum.transform.localScale = Vector3.one * 0.2f;
-                    newDimsum.transform.DOScale(Vector3.one * 0.5f, 0.2f);
+                    newDimsum.transform.localScale = Vector3.one * 0.5f;
+                    newDimsum.transform.DOScale(Vector3.one, 0.2f);
                     newDimsum.DoDropPlaceAt(this, i, true);
                 }
             }
@@ -281,7 +283,7 @@ namespace Models
             {
                 gLockedBasket.SetActive(true);
                 gUnlockPaper.SetActive(true);
-                sUnlockItem.sprite = _gameSetting.dimsumSprite[iDimsumUnlock];
+                sUnlockItem.sprite = _gameSetting.currentDimsumSprites[iDimsumUnlock];
                 dimsumUnlock = iDimsumUnlock;
             }
             else if (isOpen == DisplayedBasket.Closed)

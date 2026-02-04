@@ -14,6 +14,7 @@ namespace Commons
 
         public int currentLevel = 0;
         public LevelData currentLevelData;
+        public Sprite[] currentDimsumSprites;
         public LevelData[] allLevelData;
     }
 

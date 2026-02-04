@@ -13,22 +13,23 @@ MonoBehaviour:
   m_Name: Level001
   m_EditorClassIdentifier: Assembly-CSharp::Commons.LevelData
   TotalGoal: 15
+  TotalVariation: 5
   currentLevel:
   - dimsum1: -1
     dimsum2: 2
-    dimsum3: 9
-  - dimsum1: 9
-    dimsum2: 9
+    dimsum3: 3
+  - dimsum1: 3
+    dimsum2: 3
     dimsum3: -1
   - dimsum1: 2
     dimsum2: -1
     dimsum3: -1
   - dimsum1: 2
-    dimsum2: 9
+    dimsum2: 3
     dimsum3: 1
   - dimsum1: -1
     dimsum2: -1
-    dimsum3: 9
+    dimsum3: 3
   - dimsum1: 2
     dimsum2: -1
     dimsum3: 2
@@ -37,6 +38,6 @@ MonoBehaviour:
     dimsum3: 2
   - dimsum1: 1
     dimsum2: -1
-    dimsum3: 9
+    dimsum3: 3
   firstDisplayed: 000000000000000000000000000000000000000000000000
   currentDropArea: 010000000100000001000000020000000200000001000000

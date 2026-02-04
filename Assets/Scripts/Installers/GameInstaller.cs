@@ -11,7 +11,6 @@ using Zenject;
 public class GameInstaller : MonoInstaller
 {
     [Inject] private GameSetting settings;
-    [Inject] private CommonSetting commonSetting;
     
     public Camera mainCamera;
     public SpriteCompleteBasket completeSprite;

@@ -33,7 +33,7 @@ namespace Models
             {
                 if (dimsums[i] >= 0)
                 {
-                    _spriteRenderers[i].sprite = gameSetting.dimsumSprite[_dimsums[i]];
+                    _spriteRenderers[i].sprite = gameSetting.currentDimsumSprites[_dimsums[i]];
                 }
                 else
                 {
