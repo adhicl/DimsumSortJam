@@ -27,11 +27,28 @@ namespace Models
         private static readonly int OpenBasket = Animator.StringToHash("OpenBasket");
         
         private int totalItems { get; set; } = 0;
-
-        private MDimSum[] mDimSums = new MDimSum[3]
+        
+        public MDimSum[] mDimSums = new MDimSum[3]
         {
             null, null, null
         };
+
+        public int[] GetDimsumTypes()
+        {
+            int[] dimsums = new int[3];
+            for (int i = 0; i < 3; i++)
+            {
+                if (mDimSums[i] != null)
+                {
+                    dimsums[i] = mDimSums[i].dimsumType;
+                }
+                else
+                {
+                    dimsums[i] = -1;
+                }
+            }
+            return dimsums;
+        }
 
         public void AddDimsum(MDimSum dimsum, int indexPosition)
         {

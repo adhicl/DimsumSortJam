@@ -21,6 +21,7 @@ namespace Controllers
         [Inject] SoundController _soundController;
 
         [SerializeField] private MDropArea[] baskets;
+        [SerializeField] private PowerUpAnimationEffect powerUpAnimationEffect;
 
         public GameObject successVFXPrefab;
         
@@ -156,5 +157,89 @@ namespace Controllers
             GameObject vfx = Instantiate(successVFXPrefab, position, Quaternion.identity);
         }
 
+        private MDimSum[] GetDimsumReadyOnTop()
+        {
+            Dictionary<int, List<MDimSum>> dimsumMap = new Dictionary<int, List<MDimSum>>();
+            foreach (var basket in baskets)
+            {
+                int[] dimsumTypes = basket.GetDimsumTypes();
+                for (int i = 0; i < dimsumTypes.Length; i++)
+                {
+                    if (dimsumTypes[i] != -1)
+                    {
+                        if (!dimsumMap.ContainsKey(dimsumTypes[i]))
+                        {
+                            dimsumMap[dimsumTypes[i]] = new List<MDimSum>();
+                        }
+                        dimsumMap[dimsumTypes[i]].Add(basket.mDimSums[i]);
+                    }
+                }
+            }
+
+            MDimSum[] targetDimsums = new MDimSum[3];
+            foreach (var dimsum in dimsumMap.Keys)
+            {
+                if (dimsumMap[dimsum].Count >= 3)
+                {
+                    for (int i = 0; i < 3; i++)
+                    {
+                        targetDimsums[i] = dimsumMap[dimsum][i];
+                    }
+
+                    return targetDimsums;
+                }
+            }
+
+            return targetDimsums;
+        }
+
+        private MDimSum[] GetDimsumsOnTop()
+        {
+            Dictionary<int, List<MDimSum>> dimsumMap = new Dictionary<int, List<MDimSum>>();
+            foreach (var basket in baskets)
+            {
+                int[] dimsumTypes = basket.GetDimsumTypes();
+                for (int i = 0; i < dimsumTypes.Length; i++)
+                {
+                    if (dimsumTypes[i] != -1)
+                    {
+                        if (!dimsumMap.ContainsKey(dimsumTypes[i]))
+                        {
+                            dimsumMap[dimsumTypes[i]] = new List<MDimSum>();
+                        }
+                        dimsumMap[dimsumTypes[i]].Add(basket.mDimSums[i]);
+                    }
+                }
+            }
+
+            MDimSum[] targetDimsums = new MDimSum[3];
+
+            return targetDimsums;
+        }
+
+        //do power up magnifier
+        public void PowerUpMagnifier()
+        {
+            _soundController.PlayPowerUpClip();
+            MDimSum[] targetDimsums = GetDimsumReadyOnTop();
+            powerUpAnimationEffect.DoAnimateMagnifier(targetDimsums);
+        }
+
+        //do power up reload
+        public void PowerUpRefeshItems()
+        {
+            _soundController.PlayPowerUpClip();
+            MDimSum[] targetDimsums = GetDimsumsOnTop();
+            powerUpAnimationEffect.DoAnimateRefresh(targetDimsums);
+        }
+
+        //do power up suck package
+        public void PowerUpSuckPackage()
+        {
+            _soundController.PlayPowerUpClip();
+            MDimSum[] targetDimsums = GetDimsumReadyOnTop();
+            powerUpAnimationEffect.DoAnimateSuckPower(targetDimsums);
+        }
+        
     }
 }

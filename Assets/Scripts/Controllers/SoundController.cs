@@ -9,6 +9,7 @@ namespace Controllers
         public AudioClip endDragClip;
         public AudioClip[] successClip;
 
+        public AudioClip usePowerUpClip;
         public AudioClip buttonClickClip;
         public AudioClip finishSuccessClip;
         public AudioClip finishOverClip;
@@ -40,6 +41,11 @@ namespace Controllers
         public void PlayStopDragClip()
         {
             audioSource.PlayOneShot(endDragClip);
+        }
+
+        public void PlayPowerUpClip()
+        {
+            audioSource.PlayOneShot(usePowerUpClip);
         }
 
         public void PlaySuccessClip()

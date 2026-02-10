@@ -71,7 +71,6 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 1968840b3da4a1a41857f2c8f4a11026, type: 3}
     - {fileID: 21300000, guid: 71f1d63671680ee4990e29017478f48f, type: 3}
     - {fileID: 21300000, guid: 810a76c2157c16f428daf06568ff0dbc, type: 3}
-    - {fileID: 21300000, guid: 170f946284f2ea047ab4c41d88c38445, type: 3}
     - {fileID: 21300000, guid: dd20b6a3af4dd4246b2e2d7ed27b25bf, type: 3}
     - {fileID: 21300000, guid: 4cec378d1f7c2944eb16f782c30c12a4, type: 3}
     - {fileID: 21300000, guid: a2593827645ce7841831f11697aa23c5, type: 3}
@@ -98,4 +97,10 @@ MonoBehaviour:
     - {fileID: 21300000, guid: b82a9ae93978f1e4a807b817c199b3b9, type: 3}
     currentLevel: 0
     currentLevelData: {fileID: 11400000, guid: d7ba19c182b25bc44a25aaccb4519d86, type: 2}
+    currentDimsumSprites:
+    - {fileID: 21300000, guid: 1fecfa504fa9bef479d21b9b96f3346f, type: 3}
+    - {fileID: 21300000, guid: 71f1d63671680ee4990e29017478f48f, type: 3}
+    - {fileID: 21300000, guid: cf66409240d4a8d43a26748f782690a5, type: 3}
+    - {fileID: 21300000, guid: 1e81c59d44a3d8448933898d708b5c08, type: 3}
+    - {fileID: 21300000, guid: b23706646b8435c4a8cc467264f07d64, type: 3}
     allLevelData: []

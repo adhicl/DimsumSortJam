@@ -7,7 +7,7 @@ using Zenject;
 
 namespace Models
 {
-    public class MDimSum : MonoBehaviour, IDragable
+    public class MDimSum : MonoBehaviour, IDragable, IAnimationEffect
     {
         [Inject] private Camera mainCamera;
         [Inject] SoundController soundController;
@@ -153,6 +153,8 @@ namespace Models
         }
         
         #endregion
+        
+        #region pool_zenject
 
         void Reset(int dimsumType)
         {
@@ -171,5 +173,23 @@ namespace Models
                 dimsum.Reset(dimsumType);
             }
         }
+
+        #endregion
+        
+        #region animation_effect
+        
+        public void DrawToTop()
+        {
+            this._renderer.sortingLayerID = SortingLayer.NameToID("Effect");
+            this._renderer.sortingOrder = 21;
+        }
+
+        public void BackToBottom()
+        {
+            this._renderer.sortingLayerID = SortingLayer.NameToID("Game");
+            this._renderer.sortingOrder = 10;
+        }
+        
+        #endregion
     }
 }
