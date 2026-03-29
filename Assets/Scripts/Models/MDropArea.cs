@@ -77,6 +77,7 @@ namespace Models
                 if (totalItems <= 0)
                 {
                     CreateDimsumFromTray();
+                    _gameController.CheckIsGameNoMove();
                 }
             }
         }
@@ -120,6 +121,19 @@ namespace Models
                     hasEmpty = true;
                     indexPosition = i;
                     break;
+                }
+            }
+
+            if (!hasEmpty)
+            {
+                for (int i = 0; i < indexPosition; i++)
+                {
+                    if (mDimSums[i] == null)
+                    {
+                        hasEmpty = true;
+                        indexPosition = i;
+                        break;
+                    }
                 }
             }
 
@@ -249,7 +263,7 @@ namespace Models
                 {
                     MDimSum newDimsum = dimsumSpawner.Create(row[i]);
                     newDimsum.transform.position = trayTransforms[i].position;
-                    newDimsum.transform.localScale = Vector3.one * 0.5f;
+                    newDimsum.transform.localScale = Vector3.one * 0.7f;
                     newDimsum.transform.DOScale(Vector3.one, 0.2f);
                     newDimsum.DoDropPlaceAt(this, i, true);
                 }
@@ -269,6 +283,22 @@ namespace Models
                     trayList[0].SetDimsums(arrayDimsums[0].ToArray());
                 }
             };
+        }
+
+        public bool HasStillTrayLeft()
+        {
+            return arrayDimsums.Count > 0;
+        }
+
+        public int TotalFilledDimsums()
+        {
+            int total = 0;
+            foreach (var mDimSum in mDimSums)
+            {
+                if (mDimSum.dimsumType != -1) total++;
+            }
+
+            return total;
         }
 
         private void PrintDimsums()

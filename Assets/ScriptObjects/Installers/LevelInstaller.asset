@@ -1,0 +1,64 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: ab010d17875b3884995707c5fdc30e1b, type: 3}
+  m_Name: LevelInstaller
+  m_EditorClassIdentifier: Assembly-CSharp::SettingInstaller
+  gameSetting:
+    dimsumPrefab: {fileID: 1096264119486296586, guid: d3c8f59cf016c9842836a45263e3b75c, type: 3}
+    trayPrefab: {fileID: 1090847577745105087, guid: 6e1f750630738a54e832f63e824f0ea7, type: 3}
+    dimsumSprite:
+    - {fileID: 21300000, guid: 01b89b10e13da6544bd71820bd402fac, type: 3}
+    - {fileID: 21300000, guid: 1e81c59d44a3d8448933898d708b5c08, type: 3}
+    - {fileID: 21300000, guid: 4920a144dd65bf447bdaaf057df4b090, type: 3}
+    - {fileID: 21300000, guid: ddf7e304bc7360e4b873b028b5194508, type: 3}
+    - {fileID: 21300000, guid: df398dcb70e97034f841669c58c6f53e, type: 3}
+    - {fileID: 21300000, guid: 5209d022a42f07548ad51301d7b2dd70, type: 3}
+    - {fileID: 21300000, guid: f15a121a1cf1e2041891a6be88c10266, type: 3}
+    - {fileID: 21300000, guid: 95ad044e9c037e740b5726fadd916b7b, type: 3}
+    - {fileID: 21300000, guid: 3d49f2d049069f2479fe340b9adaeef3, type: 3}
+    - {fileID: 21300000, guid: b73785b457437b44c87c52698aa73fa7, type: 3}
+    - {fileID: 21300000, guid: 822f0cb2c971178478fe48680268bd51, type: 3}
+    - {fileID: 21300000, guid: e493849d6c0345e4b9fd3304f6dd9255, type: 3}
+    - {fileID: 21300000, guid: 1c5a03dc2d178024286a7175b7ee32d0, type: 3}
+    currentLevel: 3
+    maximumLevel: 4
+    currentLevelData: {fileID: 11400000, guid: adcf3a1b7737d7e469ae378664c2c72e, type: 2}
+    currentDimsumSprites:
+    - {fileID: 21300000, guid: 4920a144dd65bf447bdaaf057df4b090, type: 3}
+    - {fileID: 21300000, guid: f15a121a1cf1e2041891a6be88c10266, type: 3}
+    - {fileID: 21300000, guid: 01b89b10e13da6544bd71820bd402fac, type: 3}
+    - {fileID: 21300000, guid: ddf7e304bc7360e4b873b028b5194508, type: 3}
+    - {fileID: 21300000, guid: 95ad044e9c037e740b5726fadd916b7b, type: 3}
+    - {fileID: 21300000, guid: b73785b457437b44c87c52698aa73fa7, type: 3}
+    - {fileID: 21300000, guid: 822f0cb2c971178478fe48680268bd51, type: 3}
+    - {fileID: 21300000, guid: e493849d6c0345e4b9fd3304f6dd9255, type: 3}
+    - {fileID: 21300000, guid: 5209d022a42f07548ad51301d7b2dd70, type: 3}
+    - {fileID: 21300000, guid: 3d49f2d049069f2479fe340b9adaeef3, type: 3}
+    - {fileID: 21300000, guid: 1e81c59d44a3d8448933898d708b5c08, type: 3}
+    - {fileID: 21300000, guid: df398dcb70e97034f841669c58c6f53e, type: 3}
+    allLevelData:
+    - {fileID: 11400000, guid: 652393e91ddf9ed47994f22e7824c512, type: 2}
+    - {fileID: 11400000, guid: 87f5a7992d0ba5d4a97c2641f34cddfb, type: 2}
+    - {fileID: 11400000, guid: c7a814a80a1c48b4aa81880b3801fd8a, type: 2}
+    - {fileID: 11400000, guid: adcf3a1b7737d7e469ae378664c2c72e, type: 2}
+    lifeTimer: 0
+    totalLife: 0
+    totalGold: 0
+    totalPowerup1: 3
+    totalPowerup2: 0
+    totalPowerup3: 0
+    totalPowerup4: 0
+    totalBooster1: 0
+    totalBooster2: 0
+    totalBooster3: 0
+    soundMute: 0
+    musicMute: 0

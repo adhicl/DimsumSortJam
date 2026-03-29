@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using Commons;
 using TMPro;
 using UnityEngine;
 
@@ -21,26 +22,26 @@ namespace DefaultNamespace
 
         [SerializeField] private TextMeshProUGUI DataLevelText;
         [SerializeField] private TextMeshProUGUI DataResultText;
+
+        public LevelData _LevelData;
         
         public void OnTryCreate()
         {
             Debug.Log("OnTryCreate");
             
+            //set up available number for each array
             List<int> variations = new List<int>();
-            while (variations.Count < TotalVariation)
+            for (int i = 0; i < TotalVariation; i++)
             {
-                int newItem = Random.Range(0, AvailableVariation);
-                if (!variations.Contains(newItem))
-                {
-                    variations.Add(newItem);
-                }
+                variations.Add(i);
             }
             
+            //set up available array to contain 3 of each random variants
             List<int> input = new();
             int totalItem = Mathf.RoundToInt(TotalGoal / 3);
             for (int i = 0; i < totalItem; i++)
             {
-                int pickItem = variations[Random.Range(0, variations.Count)];
+                int pickItem = i < TotalVariation?variations[i]:variations[Random.Range(0, variations.Count)];
                 input.Add(pickItem);
                 input.Add(pickItem);
                 input.Add(pickItem);
@@ -51,6 +52,7 @@ namespace DefaultNamespace
                 input.Add(-1);
             }
 
+            //shuffle the array
             input = Shuffle(input);
             //
             // string showArr = "";
@@ -66,12 +68,19 @@ namespace DefaultNamespace
             // Print results
             int idx = 1;
             int score = 0;
+            List<DimsumCombination> combinations = new();
             foreach (var arr in result)
             {
+                DimsumCombination newDimsum = new DimsumCombination(arr[0], arr[1], arr[2]);
+                combinations.Add(newDimsum);
+                
                 score += ScoreArray(arr);
                 Debug.Log($"Array {idx} (Score {score}): [{string.Join(", ", arr)}]");
                 idx++;
             }
+
+            _LevelData.currentLevel = combinations.ToArray();
+            
             Debug.Log($"Total Score {score}");
         }
         
@@ -133,11 +142,14 @@ namespace DefaultNamespace
                 {
                     //Debug.Log($"Score for this array is [{group[0]}.{group[1]},{group[2]}] is {ScoreArray(group)} sisa {items.Count}");
                     groups.Add(group);
-
                     index = 0;
                     count = 0;
-                    group = new int[3];
-                    firstItem = items[0];
+
+                    if (items.Count > 0)
+                    {
+                        group = new int[3];
+                        firstItem = items[0];
+                    }
                 }
                 else
                 {

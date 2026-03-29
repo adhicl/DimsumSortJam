@@ -13,9 +13,27 @@ namespace Commons
         public Sprite[] dimsumSprite;
 
         public int currentLevel = 0;
+        public int maximumLevel = 2;
+        
         public LevelData currentLevelData;
         public Sprite[] currentDimsumSprites;
         public LevelData[] allLevelData;
+        
+        public float lifeTimer;
+        public int totalLife;
+        public int totalGold;
+
+        public int totalPowerup1;
+        public int totalPowerup2;
+        public int totalPowerup3;
+        public int totalPowerup4;
+
+        public int totalBooster1;
+        public int totalBooster2;
+        public int totalBooster3;
+
+        public bool soundMute;
+        public bool musicMute;
     }
 
     [Serializable]

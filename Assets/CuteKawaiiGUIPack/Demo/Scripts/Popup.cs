@@ -2,7 +2,9 @@
 // This code can only be used under the standard Unity Asset Store EULA,
 // a copy of which is available at https://unity.com/legal/as-terms.
 
+using System;
 using System.Collections;
+using Controllers;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -17,14 +19,19 @@ namespace Ricimi
         public float destroyTime = 0.5f;
 
         private GameObject m_background;
+        
+        public event Action onClose;
 
         public void Open()
         {
+            SoundController.Instance.PlayOpenPopupClip();
             AddBackground();
         }
 
         public void Close()
         {
+            SoundController.Instance.PlayButtonClickClip();
+                
             var animator = GetComponent<Animator>();
             if (animator.GetCurrentAnimatorStateInfo(0).IsName("Open"))
             {
@@ -42,6 +49,8 @@ namespace Ricimi
         private IEnumerator RunPopupDestroy()
         {
             yield return new WaitForSeconds(destroyTime);
+            
+            onClose?.Invoke();
             Destroy(m_background);
             Destroy(gameObject);
         }

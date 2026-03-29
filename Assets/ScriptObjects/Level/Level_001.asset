@@ -10,34 +10,22 @@ MonoBehaviour:
   m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: 033bb20ac4b645eaa17fe13f4a28bd39, type: 3}
-  m_Name: Level001
+  m_Name: Level_001
   m_EditorClassIdentifier: Assembly-CSharp::Commons.LevelData
-  TotalGoal: 15
-  TotalVariation: 5
+  TotalGoal: 6
+  TotalVariation: 3
   currentLevel:
   - dimsum1: -1
     dimsum2: 2
-    dimsum3: 3
-  - dimsum1: 3
-    dimsum2: 3
     dimsum3: -1
-  - dimsum1: 2
+  - dimsum1: 0
+    dimsum2: 0
+    dimsum3: -1
+  - dimsum1: -1
+    dimsum2: 2
+    dimsum3: 2
+  - dimsum1: 0
     dimsum2: -1
     dimsum3: -1
-  - dimsum1: 2
-    dimsum2: 3
-    dimsum3: 1
-  - dimsum1: -1
-    dimsum2: -1
-    dimsum3: 3
-  - dimsum1: 2
-    dimsum2: -1
-    dimsum3: 2
-  - dimsum1: -1
-    dimsum2: 1
-    dimsum3: 2
-  - dimsum1: 1
-    dimsum2: -1
-    dimsum3: 3
-  firstDisplayed: 000000000000000000000000000000000000000000000000
-  currentDropArea: 010000000100000001000000020000000200000001000000
+  firstDisplayed: 000000000000000000000000
+  currentDropArea: 020000000100000001000000

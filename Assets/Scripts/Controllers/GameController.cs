@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Commons;
@@ -39,6 +40,26 @@ namespace Controllers
         public string Progress => $"{_currentTotal:D2}/{_totalGoal:D2}";
         public float ProgressPercentage => (float)_currentTotal / _totalGoal;
 
+        #region singleton
+        public static GameController Instance { get; private set; }
+
+        private void Awake() 
+        { 
+            // If there is an instance, and it's not me, delete myself.
+    
+            if (Instance != null && Instance != this) 
+            { 
+                Destroy(this); 
+            } 
+            else 
+            { 
+                Instance = this; 
+            } 
+        }
+        #endregion
+        
+        public GameSetting GameSetting => _gameSetting;
+        
         private void Start()
         {
             ResetGame();
@@ -48,7 +69,10 @@ namespace Controllers
         {
             _gameStatus = Settings.GAME_STATUS.pause;
             _currentTotal = 0;
+            
+            _gameSetting.currentLevelData = _gameSetting.allLevelData[_gameSetting.currentLevel];
             _totalGoal = _gameSetting.currentLevelData.TotalGoal;
+            
             _timer = 5f * 60f;
             
             CreateLevel();
@@ -56,22 +80,42 @@ namespace Controllers
 
         private void CreateLevel()
         {
-            DimsumCombination[] currentLevel = _gameSetting.currentLevelData.currentLevel;
+            DimsumCombination[] currentLevelData = _gameSetting.currentLevelData.currentLevel;
             DisplayedBasket[] displayedBaskets = _gameSetting.currentLevelData.firstDisplayed;
             _gameSetting.currentDimsumSprites = GetRandomUniqueSprites();
             
             int index = 0;
-            for (int b = 0; b < baskets.Length; b++)
+
+            if (_gameSetting.currentLevel == 0 || _gameSetting.currentLevel == 1)
             {
-                baskets[b].SetOpen(displayedBaskets[b], 0);
-                if (displayedBaskets[b] == DisplayedBasket.Displayed)
+                for (int b = 0; b < baskets.Length; b++)
                 {
-                    int totalTray = _gameSetting.currentLevelData.currentDropArea[b];
-                    var randomPick = currentLevel.Skip(index).Take(totalTray).ToArray();
-                    index += totalTray;
-                    baskets[b].SetDimsums(randomPick);
+                    baskets[b].SetOpen(displayedBaskets[b], 0);
+                    if (displayedBaskets[b] == DisplayedBasket.Displayed)
+                    {
+                        int totalTray = _gameSetting.currentLevelData.currentDropArea[b];
+                        var randomPick = currentLevelData.Skip(index).Take(totalTray).ToArray();
+                        index += totalTray;
+                        baskets[b].SetDimsums(randomPick);
+                    }
                 }
             }
+            else
+            {
+                for (int b = 0; b < baskets.Length; b++)
+                {
+                    baskets[b].SetOpen(displayedBaskets[b], 0);
+                    if (displayedBaskets[b] == DisplayedBasket.Displayed)
+                    {
+                        int totalTray = _gameSetting.currentLevelData.currentDropArea[b];
+                        var randomPick = currentLevelData.Skip(index).Take(totalTray).ToArray();
+                        index += totalTray;
+                        baskets[b].SetDimsums(randomPick);
+                    }
+                }
+            }
+            
+            CheckIsGameNoMove();
         }
 
         private Sprite[] GetRandomUniqueSprites()
@@ -82,10 +126,11 @@ namespace Controllers
                 Debug.LogError("Jumlah elemen yang diminta lebih besar dari array sumber!");
                 return null;
             }
-
-            // Shuffle array dengan LINQ dan Random
-            Sprite[] shuffled = _gameSetting.dimsumSprite.OrderBy(x => Random.value).ToArray(); // Ambil sejumlah elemen dari hasil shuffle
-            return shuffled.Take(_gameSetting.currentLevelData.TotalVariation).ToArray();
+            
+            Sprite[] shuffled = _gameSetting.dimsumSprite.Take(_gameSetting.currentLevelData.TotalVariation).ToArray();
+            shuffled = shuffled.OrderBy(x => Random.value).ToArray();
+            
+            return shuffled;
         }
 
         public void DoStartTimer()
@@ -108,7 +153,7 @@ namespace Controllers
             if (_currentTotal >= _totalGoal)
             {
                 _gameStatus = Settings.GAME_STATUS.win;
-                ShowWin();
+                StartCoroutine(ShowWin());
             }
         }
 
@@ -141,10 +186,12 @@ namespace Controllers
             m_popup.GetComponent<Popup>().Open();
         }
 
-        private void ShowWin()
+        private IEnumerator ShowWin()
         {
             _bgmController.StopMusic();
             _soundController.PlayFinishSuccessClip();
+
+            yield return new WaitForSeconds(0.2f);
             
             m_popup = Instantiate(popupWin, m_canvas.transform, false);
             m_popup.SetActive(true);
@@ -155,6 +202,40 @@ namespace Controllers
         {
             _soundController.PlaySuccessClip();   
             GameObject vfx = Instantiate(successVFXPrefab, position, Quaternion.identity);
+        }
+
+        public void CheckIsGameNoMove()
+        {
+            MDimSum[] sameDimsumOnTop = GetDimsumsOnTop();
+            if (sameDimsumOnTop.Length == 0)        //no matched dimsum
+            {
+                int hasSingleEmptyBasket = 0;
+                int hasDoubleEmptyBasket = 0;
+                int hasTripleEmptyBasket = 0;
+                foreach (var basket in baskets)
+                {
+                    int totalEmpty = 3 - basket.TotalFilledDimsums();
+                    if (totalEmpty == 1) hasSingleEmptyBasket++;
+                    else if (totalEmpty == 2) hasDoubleEmptyBasket++;
+                    else if (totalEmpty == 3) hasTripleEmptyBasket++;
+                }
+
+                bool stillHasMove = false;
+                foreach (var basket in baskets)
+                {
+                    if (basket.HasStillTrayLeft())
+                    {
+                        if (hasSingleEmptyBasket > 0 && basket.TotalFilledDimsums() == 1) stillHasMove = true;
+                        if (hasDoubleEmptyBasket > 0 && basket.TotalFilledDimsums() == 2) stillHasMove = true;
+                        if (hasTripleEmptyBasket > 0 && basket.TotalFilledDimsums() == 3) stillHasMove = true;
+                    }
+                }
+
+                if (!stillHasMove)
+                {
+                    ShowLose();
+                }
+            }
         }
 
         private MDimSum[] GetDimsumReadyOnTop()
@@ -190,7 +271,7 @@ namespace Controllers
                 }
             }
 
-            return targetDimsums;
+            return Array.Empty<MDimSum>();
         }
 
         private MDimSum[] GetDimsumsOnTop()
@@ -238,7 +319,17 @@ namespace Controllers
         {
             _soundController.PlayPowerUpClip();
             MDimSum[] targetDimsums = GetDimsumReadyOnTop();
+            
             powerUpAnimationEffect.DoAnimateSuckPower(targetDimsums);
+        }
+        
+        //do power up timer
+        public void PowerUpTimerDown()
+        {
+            _soundController.PlayPowerUpClip();
+            // MDimSum[] targetDimsums = GetDimsumReadyOnTop();
+            //
+            // powerUpAnimationEffect.DoAnimateSuckPower(targetDimsums);
         }
         
     }

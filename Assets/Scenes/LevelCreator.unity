@@ -466,14 +466,15 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a95915c7ef4740358164b01ec2882009, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DefaultNamespace.LevelCreator
-  TotalGoal: 30
-  AvailableVariation: 22
-  TotalVariation: 10
-  TotalBasket: 12
-  TotalBasketLock: 0
-  TotalBasketAds: 1
+  TotalGoal: 45
+  AvailableVariation: 12
+  TotalVariation: 12
+  TotalBasket: 10
+  TotalBasketLock: 1
+  TotalBasketAds: 0
   DataLevelText: {fileID: 1001456292}
   DataResultText: {fileID: 780476676}
+  _LevelData: {fileID: 11400000, guid: adcf3a1b7737d7e469ae378664c2c72e, type: 2}
 --- !u!4 &789542647
 Transform:
   m_ObjectHideFlags: 0

@@ -98,6 +98,11 @@ namespace Models
             if (isMove) this.transform.DOMove(dimsumPosition, 0.2f);
             else this.transform.position = dimsumPosition;
         }
+
+        public void RemoveFromDropPlace()
+        {
+            if (_dropAt != null) _dropAt.RemoveDimsum(_dropAtIndex);
+        }
         
         public void ResetPreviousDropPlace()
         {

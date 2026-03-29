@@ -20,6 +20,7 @@ public class GameInstaller : MonoInstaller
     
     public override void InstallBindings()
     {
+        //
         Container.BindInstance(mainCamera).AsSingle();
         Container.BindInstance(completeSprite).AsSingle();
         Container.BindInstance(soundController).AsSingle();

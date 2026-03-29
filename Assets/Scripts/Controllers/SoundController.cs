@@ -10,9 +10,13 @@ namespace Controllers
         public AudioClip[] successClip;
 
         public AudioClip usePowerUpClip;
+        public AudioClip popupOpenClip;
         public AudioClip buttonClickClip;
         public AudioClip finishSuccessClip;
         public AudioClip finishOverClip;
+
+        public AudioClip[] bubbleSoundClips;
+        public AudioClip[] whooshSoundClips;
 
         #region singleton
         public static SoundController Instance { get; private set; }
@@ -63,9 +67,24 @@ namespace Controllers
             audioSource.PlayOneShot(finishOverClip);
         }
 
+        public void PlayOpenPopupClip()
+        {
+            audioSource.PlayOneShot(popupOpenClip);
+        }
+
         public void PlayButtonClickClip()
         {
             audioSource.PlayOneShot(buttonClickClip);
+        }
+
+        public void PlayBubbleSoundClips()
+        {
+            audioSource.PlayOneShot(bubbleSoundClips[Random.Range(0, bubbleSoundClips.Length)]);
+        }
+
+        public void PlayWhooshSoundClips()
+        {
+            audioSource.PlayOneShot(whooshSoundClips[Random.Range(0, whooshSoundClips.Length)]);
         }
     }
 }

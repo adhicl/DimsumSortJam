@@ -2,6 +2,7 @@
 // This code can only be used under the standard Unity Asset Store EULA,
 // a copy of which is available at https://unity.com/legal/as-terms.
 
+using System;
 using UnityEngine;
 
 namespace Ricimi
@@ -25,6 +26,12 @@ namespace Ricimi
             m_popup = Instantiate(popupPrefab, m_canvas.transform, false);
             m_popup.SetActive(true);
             m_popup.GetComponent<Popup>().Open();
+        }
+
+        public Popup GetPopup()
+        {
+            if (m_popup == null) return null;
+            return m_popup.GetComponent<Popup>();
         }
     }
 }

@@ -9,5 +9,7 @@ namespace IClasses
 
         public void DoDropPlaceAt(IDropable dropable, int index, bool isMove);
         public void ResetPreviousDropPlace();
+
+        public void RemoveFromDropPlace();
     }
 }

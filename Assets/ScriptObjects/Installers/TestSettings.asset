@@ -95,12 +95,30 @@ MonoBehaviour:
     - {fileID: 21300000, guid: edff2434c65aac746937f668a8769a2f, type: 3}
     - {fileID: 21300000, guid: 32c6b2cb33df5da4d93419b6906d6583, type: 3}
     - {fileID: 21300000, guid: b82a9ae93978f1e4a807b817c199b3b9, type: 3}
-    currentLevel: 0
-    currentLevelData: {fileID: 11400000, guid: d7ba19c182b25bc44a25aaccb4519d86, type: 2}
+    currentLevel: 2
+    maximumLevel: 3
+    currentLevelData: {fileID: 11400000, guid: c7a814a80a1c48b4aa81880b3801fd8a, type: 2}
     currentDimsumSprites:
-    - {fileID: 21300000, guid: 1fecfa504fa9bef479d21b9b96f3346f, type: 3}
-    - {fileID: 21300000, guid: 71f1d63671680ee4990e29017478f48f, type: 3}
-    - {fileID: 21300000, guid: cf66409240d4a8d43a26748f782690a5, type: 3}
+    - {fileID: 21300000, guid: 3d49f2d049069f2479fe340b9adaeef3, type: 3}
+    - {fileID: 21300000, guid: f7196636a17ab704d94986c7fb5484d2, type: 3}
+    - {fileID: 21300000, guid: 7a797b9c5d7e3384a83ffcc3b34c0431, type: 3}
+    - {fileID: 21300000, guid: db578896a42683040a888f82df03ee99, type: 3}
+    - {fileID: 21300000, guid: 745bb4338a935fb48b3fb4fae220c0f2, type: 3}
+    - {fileID: 21300000, guid: c908349af031e134faa562745c4e2350, type: 3}
+    - {fileID: 21300000, guid: c5fe62a25232aad4380e382d951c8e45, type: 3}
+    - {fileID: 21300000, guid: 64d734a9ef261984faaadb4d26a2bb1c, type: 3}
     - {fileID: 21300000, guid: 1e81c59d44a3d8448933898d708b5c08, type: 3}
-    - {fileID: 21300000, guid: b23706646b8435c4a8cc467264f07d64, type: 3}
+    - {fileID: 21300000, guid: ed0789265c5b3a646b0e610366241350, type: 3}
     allLevelData: []
+    lifeTimer: 0
+    totalLife: 0
+    totalGold: 0
+    totalPowerup1: 0
+    totalPowerup2: 0
+    totalPowerup3: 0
+    totalPowerup4: 0
+    totalBooster1: 0
+    totalBooster2: 0
+    totalBooster3: 0
+    soundMute: 0
+    musicMute: 0

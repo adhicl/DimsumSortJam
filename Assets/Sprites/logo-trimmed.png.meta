@@ -1,0 +1,741 @@
+fileFormatVersion: 2
+guid: e29c72db4e905ba49afc3f53456a6629
+TextureImporter:
+  internalIDToNameTable:
+  - first:
+      213: -8923611594424547516
+    second: logo-trimmed_0
+  - first:
+      213: -6680753346994232752
+    second: logo-trimmed_1
+  - first:
+      213: -9017387596971895467
+    second: logo-trimmed_2
+  - first:
+      213: -240390752178566211
+    second: logo-trimmed_3
+  - first:
+      213: -2798920733522713524
+    second: logo-trimmed_4
+  - first:
+      213: -4135209177415152631
+    second: logo-trimmed_5
+  - first:
+      213: -4248851002846197097
+    second: logo-trimmed_6
+  - first:
+      213: 5326354141579320064
+    second: logo-trimmed_7
+  - first:
+      213: -3965440787310901847
+    second: logo-trimmed_8
+  - first:
+      213: -6053355194746062187
+    second: logo-trimmed_9
+  - first:
+      213: -8010930384818956033
+    second: logo-trimmed_10
+  - first:
+      213: 4134626373965564464
+    second: logo-trimmed_11
+  - first:
+      213: 4462785869799591731
+    second: logo-trimmed_12
+  - first:
+      213: 6440519272592349855
+    second: logo-trimmed_13
+  - first:
+      213: 8135968910934176026
+    second: logo-trimmed_14
+  - first:
+      213: -1515766965398687825
+    second: logo-trimmed_15
+  - first:
+      213: 220258600116878185
+    second: logo-trimmed_16
+  - first:
+      213: 2179352187676799027
+    second: logo-trimmed_17
+  - first:
+      213: 5847649156847739679
+    second: logo-trimmed_18
+  - first:
+      213: 4299997781016995457
+    second: logo-trimmed_19
+  - first:
+      213: -4224621695368619531
+    second: logo-trimmed_20
+  - first:
+      213: -6931269453135005363
+    second: logo-trimmed_21
+  - first:
+      213: 1134237978808585302
+    second: logo-trimmed_22
+  externalObjects: {}
+  serializedVersion: 13
+  mipmaps:
+    mipMapMode: 0
+    enableMipMap: 0
+    sRGBTexture: 1
+    linearTexture: 0
+    fadeOut: 0
+    borderMipMap: 0
+    mipMapsPreserveCoverage: 0
+    alphaTestReferenceValue: 0.5
+    mipMapFadeDistanceStart: 1
+    mipMapFadeDistanceEnd: 3
+  bumpmap:
+    convertToNormalMap: 0
+    externalNormalMap: 0
+    heightScale: 0.25
+    normalMapFilter: 0
+    flipGreenChannel: 0
+  isReadable: 0
+  streamingMipmaps: 0
+  streamingMipmapsPriority: 0
+  vTOnly: 0
+  ignoreMipmapLimit: 0
+  grayScaleToAlpha: 0
+  generateCubemap: 6
+  cubemapConvolution: 0
+  seamlessCubemap: 0
+  textureFormat: 1
+  maxTextureSize: 2048
+  textureSettings:
+    serializedVersion: 2
+    filterMode: 1
+    aniso: 1
+    mipBias: 0
+    wrapU: 1
+    wrapV: 1
+    wrapW: 1
+  nPOTScale: 0
+  lightmap: 0
+  compressionQuality: 50
+  spriteMode: 1
+  spriteExtrude: 1
+  spriteMeshType: 0
+  alignment: 0
+  spritePivot: {x: 0.5, y: 0.5}
+  spritePixelsToUnits: 100
+  spriteBorder: {x: 0, y: 0, z: 0, w: 0}
+  spriteGenerateFallbackPhysicsShape: 1
+  alphaUsage: 1
+  alphaIsTransparency: 1
+  spriteTessellationDetail: -1
+  textureType: 8
+  textureShape: 1
+  singleChannelComponent: 0
+  flipbookRows: 1
+  flipbookColumns: 1
+  maxTextureSizeSet: 0
+  compressionQualitySet: 0
+  textureFormatSet: 0
+  ignorePngGamma: 0
+  applyGammaDecoding: 0
+  swizzle: 50462976
+  cookieLightType: 0
+  platformSettings:
+  - serializedVersion: 4
+    buildTarget: DefaultTexturePlatform
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Standalone
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: Android
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  - serializedVersion: 4
+    buildTarget: WebGL
+    maxTextureSize: 2048
+    resizeAlgorithm: 0
+    textureFormat: -1
+    textureCompression: 1
+    compressionQuality: 50
+    crunchedCompression: 0
+    allowsAlphaSplitting: 0
+    overridden: 0
+    ignorePlatformSupport: 0
+    androidETC2FallbackOverride: 0
+    forceMaximumCompressionQuality_BC6H_BC7: 0
+  spriteSheet:
+    serializedVersion: 2
+    sprites:
+    - serializedVersion: 2
+      name: logo-trimmed_0
+      rect:
+        serializedVersion: 2
+        x: 65
+        y: 92
+        width: 386
+        height: 417
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 44784c0c886f82480800000000000000
+      internalID: -8923611594424547516
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_1
+      rect:
+        serializedVersion: 2
+        x: 61
+        y: 41
+        width: 29
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 05228602a323943a0800000000000000
+      internalID: -6680753346994232752
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_2
+      rect:
+        serializedVersion: 2
+        x: 84
+        y: 4
+        width: 33
+        height: 37
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5551a78b1cdcbd280800000000000000
+      internalID: -9017387596971895467
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_3
+      rect:
+        serializedVersion: 2
+        x: 88
+        y: 40
+        width: 38
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: dbb8b1172e5f9acf0800000000000000
+      internalID: -240390752178566211
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_4
+      rect:
+        serializedVersion: 2
+        x: 117
+        y: 5
+        width: 33
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: c4427e31c6c3829d0800000000000000
+      internalID: -2798920733522713524
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_5
+      rect:
+        serializedVersion: 2
+        x: 126
+        y: 41
+        width: 32
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 90c0c349929cc96c0800000000000000
+      internalID: -4135209177415152631
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_6
+      rect:
+        serializedVersion: 2
+        x: 150
+        y: 5
+        width: 39
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 79a4ac7368c0905c0800000000000000
+      internalID: -4248851002846197097
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_7
+      rect:
+        serializedVersion: 2
+        x: 159
+        y: 41
+        width: 28
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 00b14cc1fd20be940800000000000000
+      internalID: 5326354141579320064
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_8
+      rect:
+        serializedVersion: 2
+        x: 190
+        y: 5
+        width: 25
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 9a50d7e1d9ce7f8c0800000000000000
+      internalID: -3965440787310901847
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_9
+      rect:
+        serializedVersion: 2
+        x: 200
+        y: 41
+        width: 24
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 59a35edb5892efba0800000000000000
+      internalID: -6053355194746062187
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_10
+      rect:
+        serializedVersion: 2
+        x: 224
+        y: 41
+        width: 33
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: ff89b7c324573d090800000000000000
+      internalID: -8010930384818956033
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_11
+      rect:
+        serializedVersion: 2
+        x: 227
+        y: 5
+        width: 26
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 03acd2be7c4216930800000000000000
+      internalID: 4134626373965564464
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_12
+      rect:
+        serializedVersion: 2
+        x: 253
+        y: 5
+        width: 29
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33f890e8a100fed30800000000000000
+      internalID: 4462785869799591731
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_13
+      rect:
+        serializedVersion: 2
+        x: 256
+        y: 41
+        width: 33
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f9a9ce3b722516950800000000000000
+      internalID: 6440519272592349855
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_14
+      rect:
+        serializedVersion: 2
+        x: 281
+        y: 5
+        width: 32
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: a117ad74e94c8e070800000000000000
+      internalID: 8135968910934176026
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_15
+      rect:
+        serializedVersion: 2
+        x: 288
+        y: 40
+        width: 38
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: fafa321d9f9e6fae0800000000000000
+      internalID: -1515766965398687825
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_16
+      rect:
+        serializedVersion: 2
+        x: 314
+        y: 5
+        width: 34
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 96bf0b2a7048e0300800000000000000
+      internalID: 220258600116878185
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_17
+      rect:
+        serializedVersion: 2
+        x: 327
+        y: 41
+        width: 28
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 33032fa944d9e3e10800000000000000
+      internalID: 2179352187676799027
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_18
+      rect:
+        serializedVersion: 2
+        x: 348
+        y: 5
+        width: 12
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: f13a50d0de5072150800000000000000
+      internalID: 5847649156847739679
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_19
+      rect:
+        serializedVersion: 2
+        x: 355
+        y: 41
+        width: 12
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 1866c701339acab30800000000000000
+      internalID: 4299997781016995457
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_20
+      rect:
+        serializedVersion: 2
+        x: 360
+        y: 4
+        width: 38
+        height: 38
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 5f9152973f02f55c0800000000000000
+      internalID: -4224621695368619531
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_21
+      rect:
+        serializedVersion: 2
+        x: 367
+        y: 41
+        width: 28
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: d493f53e72f2fcf90800000000000000
+      internalID: -6931269453135005363
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    - serializedVersion: 2
+      name: logo-trimmed_22
+      rect:
+        serializedVersion: 2
+        x: 395
+        y: 41
+        width: 26
+        height: 36
+      alignment: 0
+      pivot: {x: 0, y: 0}
+      border: {x: 0, y: 0, z: 0, w: 0}
+      customData: 
+      outline: []
+      physicsShape: []
+      tessellationDetail: -1
+      bones: []
+      spriteID: 65c84a9ae6f9dbf00800000000000000
+      internalID: 1134237978808585302
+      vertices: []
+      indices: 
+      edges: []
+      weights: []
+    outline: []
+    customData: 
+    physicsShape: []
+    bones: []
+    spriteID: 5e97eb03825dee720800000000000000
+    internalID: 0
+    vertices: []
+    indices: 
+    edges: []
+    weights: []
+    secondaryTextures: []
+    spriteCustomMetadata:
+      entries: []
+    nameFileIdTable:
+      logo-trimmed_0: -8923611594424547516
+      logo-trimmed_1: -6680753346994232752
+      logo-trimmed_10: -8010930384818956033
+      logo-trimmed_11: 4134626373965564464
+      logo-trimmed_12: 4462785869799591731
+      logo-trimmed_13: 6440519272592349855
+      logo-trimmed_14: 8135968910934176026
+      logo-trimmed_15: -1515766965398687825
+      logo-trimmed_16: 220258600116878185
+      logo-trimmed_17: 2179352187676799027
+      logo-trimmed_18: 5847649156847739679
+      logo-trimmed_19: 4299997781016995457
+      logo-trimmed_2: -9017387596971895467
+      logo-trimmed_20: -4224621695368619531
+      logo-trimmed_21: -6931269453135005363
+      logo-trimmed_22: 1134237978808585302
+      logo-trimmed_3: -240390752178566211
+      logo-trimmed_4: -2798920733522713524
+      logo-trimmed_5: -4135209177415152631
+      logo-trimmed_6: -4248851002846197097
+      logo-trimmed_7: 5326354141579320064
+      logo-trimmed_8: -3965440787310901847
+      logo-trimmed_9: -6053355194746062187
+  mipmapLimitGroupName: 
+  pSDRemoveMatte: 0
+  userData: 
+  assetBundleName: 
+  assetBundleVariant: 

@@ -1,14 +1,18 @@
 using System.Collections;
 using Commons;
+using Controllers;
 using DG.Tweening;
 using Models;
+using Spawners;
 using UnityEngine;
 using Zenject;
 
 public class PowerUpAnimationEffect : MonoBehaviour
 {
     private static readonly int OpenUp = Animator.StringToHash("OpenUp");
-    [Inject] GameSetting gameSetting;
+    [Inject] private GameSetting gameSetting;
+    [Inject] private GameController _gameController;
+    [Inject] private DimsumSpawner dimsumSpawner;
 
     [SerializeField] private Animator boxAnimation;
     [SerializeField] private SpriteRenderer boxSprite;
@@ -48,10 +52,12 @@ public class PowerUpAnimationEffect : MonoBehaviour
         foreach (var positionDimsum in positionDimsums)
         {
             positionDimsum.DrawToTop();
-            positionDimsum.transform.DOShakeRotation(5f, 30f);
+            positionDimsum.transform.DOShakeRotation(3f, 30f);
+            SoundController.Instance.PlayBubbleSoundClips();
+            yield return new WaitForSeconds(0.1f);
         }
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(1f);
         
         foreach (var positionDimsum in positionDimsums)
         {
@@ -83,14 +89,19 @@ public class PowerUpAnimationEffect : MonoBehaviour
         foreach (var positionDimsum in positionDimsums)
         {
             positionDimsum.DrawToTop();
-            positionDimsum.transform.DOShakeRotation(5f, 30f);
+            positionDimsum.transform.DOJump(this.transform.position, 1.5f, 1, 1f);
+            SoundController.Instance.PlayWhooshSoundClips();
+            yield return new WaitForSeconds(.1f);
         }
 
-        yield return new WaitForSeconds(2f);
+        yield return new WaitForSeconds(1f);
         
+        _gameController.DoAddProgress(3);
         foreach (var positionDimsum in positionDimsums)
         {
             positionDimsum.BackToBottom();
+            positionDimsum.RemoveFromDropPlace();
+            dimsumSpawner.Remove(positionDimsum);
         }
         this.gameObject.SetActive(false);
     }
