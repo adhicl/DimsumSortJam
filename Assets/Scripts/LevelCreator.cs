@@ -10,8 +10,13 @@ namespace DefaultNamespace
         [Header("Level Data")]
         public int TotalGoal;
         public int AvailableVariation;
-        [Range(10,22)]
+        
+        [Range(1,35)]
         public int TotalVariation;
+
+        [Range(1,12)]
+        public int TotalDoubleBasket;
+        
         
         [Range(6,12)]
         public int TotalBasket;
@@ -28,6 +33,9 @@ namespace DefaultNamespace
         public void OnTryCreate()
         {
             Debug.Log("OnTryCreate");
+
+            TotalVariation = _LevelData.TotalVariation;
+            TotalGoal = _LevelData.TotalGoal;
             
             //set up available number for each array
             List<int> variations = new List<int>();
@@ -38,7 +46,7 @@ namespace DefaultNamespace
             
             //set up available array to contain 3 of each random variants
             List<int> input = new();
-            int totalItem = Mathf.RoundToInt(TotalGoal / 3);
+            int totalItem = Mathf.RoundToInt((float) TotalGoal / 3f);
             for (int i = 0; i < totalItem; i++)
             {
                 int pickItem = i < TotalVariation?variations[i]:variations[Random.Range(0, variations.Count)];
@@ -46,14 +54,6 @@ namespace DefaultNamespace
                 input.Add(pickItem);
                 input.Add(pickItem);
             }
-
-            for (int i = 0; i < TotalGoal / 3; i++)
-            {
-                input.Add(-1);
-            }
-
-            //shuffle the array
-            input = Shuffle(input);
             //
             // string showArr = "";
             // foreach (var arr in input)
@@ -64,6 +64,9 @@ namespace DefaultNamespace
 
             // Generate arrays with difficulty bias
             List<int[]> result = GenerateArrays(input);
+
+            //shuffle the array
+            //input = Shuffle(input);
 
             // Print results
             int idx = 1;

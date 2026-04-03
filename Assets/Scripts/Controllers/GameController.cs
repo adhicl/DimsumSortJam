@@ -22,6 +22,7 @@ namespace Controllers
         [Inject] SoundController _soundController;
 
         [SerializeField] private MDropArea[] baskets;
+        private List<MDropArea> _gameBaskets;
         [SerializeField] private PowerUpAnimationEffect powerUpAnimationEffect;
 
         public GameObject successVFXPrefab;
@@ -78,8 +79,47 @@ namespace Controllers
             CreateLevel();
         }
 
+        private float width_basket = 1.5f;
+        private float height_basket = 1.4f;
+        
+        private float[] position_top = { .7f, 1.4f, 2.8f, 3.5f, 4.2f };
+        private float[] position_left = { -.75f, -1.5f, -2.25f, -3f };
+
+        private void SetUpBaskets()
+        {
+            _gameBaskets = new List<MDropArea>();
+            int totalBasket = _gameSetting.currentLevelData.currentDropArea.Length;
+            
+            int totalRow = Mathf.CeilToInt((float) totalBasket / 3f);
+            float first_position_top = position_top[totalRow];
+            
+            int basketIndex = 0;
+            for (int i = 0; i < totalRow; i++)
+            {
+                int totalColumn = (totalBasket - basketIndex) >= 3 ? 3 : (totalBasket - basketIndex);
+                float first_position_left = position_left[totalColumn];
+
+                for (int j = 0; j < totalColumn; j++)
+                {
+                    baskets[basketIndex].gameObject.SetActive(true);
+                    baskets[basketIndex].transform.localPosition = new Vector3(first_position_left + (j * width_basket), first_position_top - (i * height_basket), 0f);
+                    basketIndex++;
+                    _gameBaskets.Add(baskets[basketIndex]);
+                }
+            }
+
+            for (int i = basketIndex; i < baskets.Length; i++)
+            {
+                baskets[i].gameObject.SetActive(false);
+            }
+        }
+        
         private void CreateLevel()
         {
+            int totalBasket = _gameSetting.currentLevelData.currentDropArea.Length;
+            
+            SetUpBaskets();
+            
             DimsumCombination[] currentLevelData = _gameSetting.currentLevelData.currentLevel;
             DisplayedBasket[] displayedBaskets = _gameSetting.currentLevelData.firstDisplayed;
             _gameSetting.currentDimsumSprites = GetRandomUniqueSprites();
@@ -88,9 +128,10 @@ namespace Controllers
 
             if (_gameSetting.currentLevel == 0 || _gameSetting.currentLevel == 1)
             {
-                for (int b = 0; b < baskets.Length; b++)
+                for (int b = 0; b < totalBasket; b++)
                 {
-                    baskets[b].SetOpen(displayedBaskets[b], 0);
+                    baskets[b].SetOpen(displayedBaskets[b]);
+                    
                     if (displayedBaskets[b] == DisplayedBasket.Displayed)
                     {
                         int totalTray = _gameSetting.currentLevelData.currentDropArea[b];
@@ -102,9 +143,9 @@ namespace Controllers
             }
             else
             {
-                for (int b = 0; b < baskets.Length; b++)
+                for (int b = 0; b < totalBasket; b++)
                 {
-                    baskets[b].SetOpen(displayedBaskets[b], 0);
+                    baskets[b].SetOpen(displayedBaskets[b]);
                     if (displayedBaskets[b] == DisplayedBasket.Displayed)
                     {
                         int totalTray = _gameSetting.currentLevelData.currentDropArea[b];
@@ -141,6 +182,14 @@ namespace Controllers
         public void DoPauseTimer()
         {
             _gameStatus = Settings.GAME_STATUS.pause;
+        }
+
+        public void CheckClearDimsum(int dimsumType)
+        {
+            foreach (var basket in _gameBaskets)
+            {
+                basket.CheckUnlockDimsum(dimsumType);
+            }
         }
 
         public void DoAddProgress(int progress)
@@ -212,7 +261,7 @@ namespace Controllers
                 int hasSingleEmptyBasket = 0;
                 int hasDoubleEmptyBasket = 0;
                 int hasTripleEmptyBasket = 0;
-                foreach (var basket in baskets)
+                foreach (var basket in _gameBaskets)
                 {
                     int totalEmpty = 3 - basket.TotalFilledDimsums();
                     if (totalEmpty == 1) hasSingleEmptyBasket++;
@@ -221,7 +270,7 @@ namespace Controllers
                 }
 
                 bool stillHasMove = false;
-                foreach (var basket in baskets)
+                foreach (var basket in _gameBaskets)
                 {
                     if (basket.HasStillTrayLeft())
                     {
@@ -241,7 +290,7 @@ namespace Controllers
         private MDimSum[] GetDimsumReadyOnTop()
         {
             Dictionary<int, List<MDimSum>> dimsumMap = new Dictionary<int, List<MDimSum>>();
-            foreach (var basket in baskets)
+            foreach (var basket in _gameBaskets)
             {
                 int[] dimsumTypes = basket.GetDimsumTypes();
                 for (int i = 0; i < dimsumTypes.Length; i++)
@@ -277,7 +326,7 @@ namespace Controllers
         private MDimSum[] GetDimsumsOnTop()
         {
             Dictionary<int, List<MDimSum>> dimsumMap = new Dictionary<int, List<MDimSum>>();
-            foreach (var basket in baskets)
+            foreach (var basket in _gameBaskets)
             {
                 int[] dimsumTypes = basket.GetDimsumTypes();
                 for (int i = 0; i < dimsumTypes.Length; i++)

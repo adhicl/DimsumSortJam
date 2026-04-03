@@ -27,6 +27,8 @@ namespace UI
                     break;
                 case 2: newScene = "Game";
                     break;
+                case 3: newScene = "Tutorial3"; 
+                    break;
             }    
             Transition.LoadLevel(newScene, Settings.TransitionTime, Settings.TransitionColor);
         }

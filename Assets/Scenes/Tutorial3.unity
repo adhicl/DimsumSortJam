@@ -1866,6 +1866,8 @@ GameObject:
   - component: {fileID: 1382755112}
   - component: {fileID: 1382755111}
   - component: {fileID: 1382755115}
+  - component: {fileID: 1382755117}
+  - component: {fileID: 1382755116}
   m_Layer: 5
   m_Name: Canvas
   m_TagString: Untagged
@@ -1974,6 +1976,34 @@ MonoBehaviour:
   textTimerDown: {fileID: 119817471}
   tutorialCoverPanel: {fileID: 0}
   playTopBar: {fileID: 119817469}
+--- !u!114 &1382755116
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1382755110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdc9dc369ee2a427d82cbd5d7894c8c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Ricimi.PopupOpener
+  popupPrefab: {fileID: 7450706995438063630, guid: 068653fc32966ff4485e4a981ef0184b, type: 3}
+--- !u!114 &1382755117
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1382755110}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c3821ceedb5f4d3aa152e75869cae862, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Controllers.TutorialController
+  OnPopupClosed:
+    m_PersistentCalls:
+      m_Calls: []
 --- !u!1 &1391431867
 GameObject:
   m_ObjectHideFlags: 0

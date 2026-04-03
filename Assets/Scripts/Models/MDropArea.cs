@@ -9,6 +9,7 @@ using IClasses;
 using Spawners;
 using UnityEngine;
 using Zenject;
+using Random = UnityEngine.Random;
 
 namespace Models
 {
@@ -84,6 +85,11 @@ namespace Models
 
         public int CheckDropPosition(Transform dropTransform)
         {
+            if (_isOpen != DisplayedBasket.Displayed)
+            {
+                return -1;
+            }
+            
             //check where to start check empty
             int indexPosition = 0;
             Vector2 pos = dropTransform.position;
@@ -172,6 +178,7 @@ namespace Models
 
             if (isComplete)
             {
+                _gameController.CheckClearDimsum(checkDimsum);
                 _gameController.DoAddProgress(3);
                 _gameController.AddSuccessVFX(this.transform.position + new Vector3(0f, 1f, 0f));
                 StartCoroutine(HideAndShowFinishAnimation(checkDimsum));
@@ -317,7 +324,7 @@ namespace Models
         [SerializeField] private DisplayedBasket _isOpen;
         [SerializeField] private int dimsumUnlock = 0;
 
-        public void SetOpen(DisplayedBasket isOpen, int iDimsumUnlock)
+        public void SetOpen(DisplayedBasket isOpen)
         {
             if (isOpen == DisplayedBasket.Displayed)
             {
@@ -328,6 +335,8 @@ namespace Models
             }
             else if (isOpen == DisplayedBasket.Locked)
             {
+                int iDimsumUnlock = Random.Range(0, _gameSetting.currentLevelData.TotalVariation - 1);
+                
                 gLockedBasket.SetActive(true);
                 gUnlockPaper.SetActive(true);
                 sUnlockItem.sprite = _gameSetting.currentDimsumSprites[iDimsumUnlock];
@@ -340,12 +349,20 @@ namespace Models
             _isOpen = isOpen;
         }
 
-        private void OnMouseDown()
+        public void CheckUnlockDimsum(int dimsumType)
         {
-            if (_isOpen != DisplayedBasket.Displayed)
+            if (dimsumUnlock == dimsumType)
             {
-                SetOpen(DisplayedBasket.Displayed, 0);
+                SetOpen(DisplayedBasket.Displayed);
             }
         }
+
+        // private void OnMouseDown()
+        // {
+        //     if (_isOpen != DisplayedBasket.Displayed)
+        //     {
+        //         SetOpen(DisplayedBasket.Displayed, 0);
+        //     }
+        // }
     }
 }
