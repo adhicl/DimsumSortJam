@@ -322,7 +322,7 @@ namespace Models
         }
         
         [SerializeField] private DisplayedBasket _isOpen;
-        [SerializeField] private int dimsumUnlock = 0;
+        [SerializeField] private int dimsumUnlock = -1;
 
         public void SetOpen(DisplayedBasket isOpen)
         {
@@ -336,6 +336,10 @@ namespace Models
             else if (isOpen == DisplayedBasket.Locked)
             {
                 int iDimsumUnlock = Random.Range(0, _gameSetting.currentLevelData.TotalVariation - 1);
+                if (_gameSetting.currentLevel == 3)
+                {
+                    iDimsumUnlock = _gameController.GetDimsumTypeOnTop();
+                }
                 
                 gLockedBasket.SetActive(true);
                 gUnlockPaper.SetActive(true);
@@ -351,18 +355,21 @@ namespace Models
 
         public void CheckUnlockDimsum(int dimsumType)
         {
-            if (dimsumUnlock == dimsumType)
+            Debug.Log($"Check unlock {dimsumType} -> {dimsumUnlock} can lock?");
+            if (dimsumUnlock == dimsumType && _isOpen == DisplayedBasket.Locked)
             {
+                SoundController.Instance.PlayBasketOpenClip();
                 SetOpen(DisplayedBasket.Displayed);
             }
         }
 
-        // private void OnMouseDown()
-        // {
-        //     if (_isOpen != DisplayedBasket.Displayed)
-        //     {
-        //         SetOpen(DisplayedBasket.Displayed, 0);
-        //     }
-        // }
+        private void OnMouseDown()
+        {
+            if (_isOpen == DisplayedBasket.Closed)
+            {
+                SoundController.Instance.PlayBasketOpenClip();
+                SetOpen(DisplayedBasket.Displayed);
+            }
+        }
     }
 }

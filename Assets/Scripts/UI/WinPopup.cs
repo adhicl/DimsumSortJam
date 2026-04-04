@@ -16,6 +16,8 @@ namespace UI
 
             _gameSetting = GameController.Instance.GameSetting;
             _gameSetting.currentLevel++;
+            if (_gameSetting.currentLevel >= _gameSetting.maximumLevel) _gameSetting.currentLevel = _gameSetting.maximumLevel - 1;
+            
             _gameSetting.currentLevelData = _gameSetting.allLevelData[_gameSetting.currentLevel];
             
             string newScene = "Home";

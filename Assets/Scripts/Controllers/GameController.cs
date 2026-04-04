@@ -287,6 +287,12 @@ namespace Controllers
             }
         }
 
+        public int GetDimsumTypeOnTop()
+        {
+            MDimSum[] onTopDimsums = GetDimsumReadyOnTop();
+            return onTopDimsums[0].dimsumType;
+        }
+
         private MDimSum[] GetDimsumReadyOnTop()
         {
             Dictionary<int, List<MDimSum>> dimsumMap = new Dictionary<int, List<MDimSum>>();

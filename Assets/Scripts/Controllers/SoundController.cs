@@ -11,6 +11,7 @@ namespace Controllers
 
         public AudioClip usePowerUpClip;
         public AudioClip popupOpenClip;
+        public AudioClip basketOpenClip;
         public AudioClip buttonClickClip;
         public AudioClip finishSuccessClip;
         public AudioClip finishOverClip;
@@ -85,6 +86,11 @@ namespace Controllers
         public void PlayWhooshSoundClips()
         {
             audioSource.PlayOneShot(whooshSoundClips[Random.Range(0, whooshSoundClips.Length)]);
+        }
+
+        public void PlayBasketOpenClip()
+        {
+            audioSource.PlayOneShot(basketOpenClip);
         }
     }
 }

@@ -468,7 +468,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DefaultNamespace.LevelCreator
   TotalGoal: 45
   AvailableVariation: 10
-  TotalVariation: 12
+  TotalVariation: 10
+  TotalDoubleBasket: 8
+  TotalSingleBasket: 8
   TotalBasket: 10
   TotalBasketLock: 1
   TotalBasketAds: 0
