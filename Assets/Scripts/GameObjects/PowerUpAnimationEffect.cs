@@ -80,6 +80,8 @@ public class PowerUpAnimationEffect : MonoBehaviour
     private IEnumerator DoAnimateSuckPowerRoutine(MDimSum[] positionDimsums)
     {
         yield return new WaitForSeconds(1f);
+
+        int dimsumType = positionDimsums[0].dimsumType;
         
         boxParticle.gameObject.SetActive(true);
         boxParticle.localScale = Vector3.zero;
@@ -97,6 +99,7 @@ public class PowerUpAnimationEffect : MonoBehaviour
         yield return new WaitForSeconds(1f);
         
         _gameController.DoAddProgress(3);
+        _gameController.CheckClearDimsum(dimsumType);
         foreach (var positionDimsum in positionDimsums)
         {
             positionDimsum.BackToBottom();

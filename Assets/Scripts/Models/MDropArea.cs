@@ -68,14 +68,14 @@ namespace Models
             }
         }
 
-        public void RemoveDimsum(int indexPosition)
+        public void RemoveDimsum(int indexPosition, IDropable previous)
         {
             if (indexPosition >= 0 && indexPosition < mDimSums.Length)
             {
                 mDimSums[indexPosition] = null;
                 totalItems--;
 
-                if (totalItems <= 0)
+                if (totalItems <= 0 && (MDropArea) previous != this)
                 {
                     CreateDimsumFromTray();
                     _gameController.CheckIsGameNoMove();
@@ -355,7 +355,7 @@ namespace Models
 
         public void CheckUnlockDimsum(int dimsumType)
         {
-            Debug.Log($"Check unlock {dimsumType} -> {dimsumUnlock} can lock?");
+            //Debug.Log($"Check unlock {dimsumType} -> {dimsumUnlock} can lock?");
             if (dimsumUnlock == dimsumType && _isOpen == DisplayedBasket.Locked)
             {
                 SoundController.Instance.PlayBasketOpenClip();

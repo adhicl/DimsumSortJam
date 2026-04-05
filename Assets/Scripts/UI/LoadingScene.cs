@@ -1,15 +1,19 @@
 using System;
 using System.Collections;
+using Commons;
 using Ricimi;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Events;
 using UnityEngine.UI;
+using Zenject;
 
 namespace UI
 {
     public class LoadingScene : MonoBehaviour
     {
+        [Inject] private GameSetting _gameSetting;
+        
         [SerializeField] private Slider loadingSlider;
         [SerializeField] private TextMeshProUGUI loadingProgressText;
         [SerializeField] private TextMeshProUGUI loadingText;
@@ -27,7 +31,20 @@ namespace UI
             loadingProgressText.text = $"{progress * 100f:N0}%";
             if (progress >= 1f)
             {
-                Transition.LoadLevel("Tutorial1", 0f, Color.yellowNice); 
+            
+                string newScene = "Home";
+                switch (_gameSetting.currentLevel)
+                {
+                    case 0: newScene = "Tutorial1";
+                        break;
+                    case 1: newScene = "Tutorial2"; 
+                        break;
+                    case 2: newScene = "Game";
+                        break;
+                    case 3: newScene = "Tutorial3"; 
+                        break;
+                }    
+                Transition.LoadLevel(newScene, 0f, Color.yellowNice); 
             }
         }
 

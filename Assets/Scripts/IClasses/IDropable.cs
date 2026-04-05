@@ -9,7 +9,7 @@ namespace IClasses
         public void SetDimsums(DimsumCombination[] dimsumArray);
         
         public void AddDimsum(MDimSum dimsum, int indexPosition);
-        public void RemoveDimsum(int indexPosition);
+        public void RemoveDimsum(int indexPosition, IDropable previous);
         
         public int CheckDropPosition(Transform dropTransform);
         

@@ -75,7 +75,7 @@ namespace Models
                 // Debug.Log("On end drag "+indexPos);
                 if (indexPos >= 0)
                 {
-                    _prevDropAt.RemoveDimsum(_prevDropAtIndex);
+                    _prevDropAt.RemoveDimsum(_prevDropAtIndex, _dropAt);
                     DoDropPlaceAt(_dropAt, indexPos, true);
                 }
                 else
@@ -101,7 +101,7 @@ namespace Models
 
         public void RemoveFromDropPlace()
         {
-            if (_dropAt != null) _dropAt.RemoveDimsum(_dropAtIndex);
+            if (_dropAt != null) _dropAt.RemoveDimsum(_dropAtIndex, null);
         }
         
         public void ResetPreviousDropPlace()

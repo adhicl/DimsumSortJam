@@ -240,6 +240,22 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 2494577668286452768, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 317537329}
+    - target: {fileID: 2494577668286452768, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 317537326}
+    - target: {fileID: 2494577668286452768, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: PlayButtonClickClip
+      objectReference: {fileID: 0}
+    - target: {fileID: 2494577668286452768, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: PowerUpSuckPackage
+      objectReference: {fileID: 0}
     - target: {fileID: 3009603385726273742, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -276,6 +292,22 @@ PrefabInstance:
       propertyPath: m_Name
       value: Panel-Game
       objectReference: {fileID: 0}
+    - target: {fileID: 5035791798260971611, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 317537329}
+    - target: {fileID: 5035791798260971611, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 317537326}
+    - target: {fileID: 5035791798260971611, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: PlayButtonClickClip
+      objectReference: {fileID: 0}
+    - target: {fileID: 5035791798260971611, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: PowerUpRefeshItems
+      objectReference: {fileID: 0}
     - target: {fileID: 5527278148561206090, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -283,6 +315,22 @@ PrefabInstance:
     - target: {fileID: 5527278148561206090, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_AnchorMin.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6402133782535805372, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 317537329}
+    - target: {fileID: 6402133782535805372, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 317537326}
+    - target: {fileID: 6402133782535805372, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: PlayButtonClickClip
+      objectReference: {fileID: 0}
+    - target: {fileID: 6402133782535805372, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: PowerUpTimerDown
       objectReference: {fileID: 0}
     - target: {fileID: 6627622980680544418, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_AnchorMax.x
@@ -331,6 +379,22 @@ PrefabInstance:
     - target: {fileID: 8100375181912895613, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_SizeDelta.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8619741661385936006, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 317537329}
+    - target: {fileID: 8619741661385936006, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 317537326}
+    - target: {fileID: 8619741661385936006, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: PlayButtonClickClip
+      objectReference: {fileID: 0}
+    - target: {fileID: 8619741661385936006, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: PowerUpMagnifier
       objectReference: {fileID: 0}
     - target: {fileID: 8763730447310158742, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_AnchorMax.y
@@ -795,6 +859,7 @@ MonoBehaviour:
   - {fileID: 8300000, guid: 58e69c6d3a5eb334c83b5041d1b65cb7, type: 3}
   usePowerUpClip: {fileID: 8300000, guid: c05697780564dd44497be0caa9dc7a35, type: 3}
   popupOpenClip: {fileID: 8300000, guid: b4b1c3167a66c3e44b5f3f500002d3ed, type: 3}
+  basketOpenClip: {fileID: 0}
   buttonClickClip: {fileID: 8300000, guid: 4e495d0c44b63464ea1d47c0d5652b52, type: 3}
   finishSuccessClip: {fileID: 8300000, guid: eb6a92346c918db43b042068a36d7b9e, type: 3}
   finishOverClip: {fileID: 8300000, guid: aaea0fe9a15295a459f4e44ec3f0a2e8, type: 3}
@@ -3218,7 +3283,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7719250949935339854, guid: ddb9914408004574c8e6af872371e2b6, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
