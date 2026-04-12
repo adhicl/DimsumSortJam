@@ -31,6 +31,10 @@ namespace UI
                     break;
                 case 3: newScene = "Tutorial3"; 
                     break;
+                case 4: newScene = "Tutorial4"; 
+                    break;
+                default: newScene = "Home";
+                    break;
             }    
             Transition.LoadLevel(newScene, Settings.TransitionTime, Settings.TransitionColor);
         }

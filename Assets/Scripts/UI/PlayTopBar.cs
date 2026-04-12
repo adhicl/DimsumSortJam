@@ -40,19 +40,19 @@ namespace UI
 
         private void Start()
         {
-            powerupActive1.SetActive(gameSetting.currentLevel > 2);
-            powerupInactive1.SetActive(gameSetting.currentLevel <= 2);
+            powerupActive1.SetActive(gameSetting.currentLevel >= 2);
+            powerupInactive1.SetActive(gameSetting.currentLevel < 2);
             
-            powerupActive2.SetActive(gameSetting.currentLevel > 4);
-            powerupInactive2.SetActive(gameSetting.currentLevel <= 4);
+            powerupActive2.SetActive(gameSetting.currentLevel >= 4);
+            powerupInactive2.SetActive(gameSetting.currentLevel < 4);
             
-            powerupActive3.SetActive(gameSetting.currentLevel > 6);
-            powerupInactive3.SetActive(gameSetting.currentLevel <= 6);
+            powerupActive3.SetActive(gameSetting.currentLevel >= 6);
+            powerupInactive3.SetActive(gameSetting.currentLevel < 6);
             
-            powerupActive4.SetActive(gameSetting.currentLevel > 8);
-            powerupInactive4.SetActive(gameSetting.currentLevel <= 8);
+            powerupActive4.SetActive(gameSetting.currentLevel >= 8);
+            powerupInactive4.SetActive(gameSetting.currentLevel < 8);
 
-            if (gameSetting.currentLevel != 2) SetUpPowerUpButtons();
+            if (gameSetting.currentLevel != 1) SetUpPowerUpButtons();
         }
 
         public void ShowTutorialPowerUp()

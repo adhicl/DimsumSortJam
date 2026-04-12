@@ -82,7 +82,7 @@ namespace Controllers
         private float width_basket = 1.5f;
         private float height_basket = 1.4f;
         
-        private float[] position_top = { .7f, 1.4f, 2.8f, 3.5f, 4.2f };
+        private float[] position_top = { 2.07f, 2.8f, 3.8f, 4.2f, 4.2f };
         private float[] position_left = { -.75f, -1.5f, -2.25f, -3f };
 
         private void SetUpBaskets()
@@ -91,7 +91,7 @@ namespace Controllers
             int totalBasket = _gameSetting.currentLevelData.currentDropArea.Length;
             
             int totalRow = Mathf.CeilToInt((float) totalBasket / 3f);
-            float first_position_top = position_top[totalRow];
+            float first_position_top = position_top[totalRow - 1];
             
             int basketIndex = 0;
             for (int i = 0; i < totalRow; i++)
@@ -143,6 +143,7 @@ namespace Controllers
             }
             else
             {
+                currentLevelData = ShuffleLevelData(currentLevelData);
                 for (int b = 0; b < totalBasket; b++)
                 {
                     baskets[b].SetOpen(displayedBaskets[b]);
@@ -172,6 +173,17 @@ namespace Controllers
             shuffled = shuffled.OrderBy(x => Random.value).ToArray();
             
             return shuffled;
+        }
+        
+        private DimsumCombination[] ShuffleLevelData(DimsumCombination[] array)
+        {
+            for (int i = array.Length - 1; i > 0; i--)
+            {
+                int randomIndex = Random.Range(0, i + 1); // Unity's Random.Range is inclusive on min, exclusive on max
+                (array[i], array[randomIndex]) = (array[randomIndex], array[i]);
+            }
+
+            return array;
         }
 
         public void DoStartTimer()

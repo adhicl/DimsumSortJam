@@ -12,7 +12,7 @@ namespace UI
 {
     public class LoadingScene : MonoBehaviour
     {
-        [Inject] private GameSetting _gameSetting;
+        [Inject] GameSetting _gameSetting;
         
         [SerializeField] private Slider loadingSlider;
         [SerializeField] private TextMeshProUGUI loadingProgressText;
@@ -42,6 +42,10 @@ namespace UI
                     case 2: newScene = "Game";
                         break;
                     case 3: newScene = "Tutorial3"; 
+                        break;
+                    case 4: newScene = "Tutorial4"; 
+                        break;
+                    default: newScene = "Home";
                         break;
                 }    
                 Transition.LoadLevel(newScene, 0f, Color.yellowNice); 
