@@ -23,5 +23,16 @@ namespace DefaultNamespace.UI
         {
             SoundController.Instance.PlayButtonClickClip();
         }
+        
+        public void RevivePopup()
+        {
+            //added function later
+            
+            //show ad video
+
+            GameController.Instance.ContinueGame();
+            this.GetComponent<Popup>().Close();
+        }
+
     }
 }

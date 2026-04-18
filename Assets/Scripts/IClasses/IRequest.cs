@@ -1,8 +1,12 @@
+using Models;
+using UnityEngine;
+
 namespace IClasses
 {
     public interface IRequest
     {
-        public void SetRequest(int[] dimsumTypes);
-        public void CheckClearRequest();
+        public void SetRequest(MDimSum[] dimsumTypes, Vector2 showAtPosition);
+        public void CheckClearRequest(int dimsumType);
+        public void SetAsFinish();
     }
 }

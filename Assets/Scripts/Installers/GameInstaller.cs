@@ -17,6 +17,8 @@ public class GameInstaller : MonoInstaller
     public SoundController soundController;
     public BGMController bgmController;
     public GameController gameController;
+
+    public GameObject characterPrefab;
     
     public override void InstallBindings()
     {
@@ -28,8 +30,10 @@ public class GameInstaller : MonoInstaller
         Container.BindInstance(bgmController).AsSingle();
         
         Container.Bind<DimsumSpawner>().AsSingle();
-        Container.Bind<TraySpawner>().AsSingle();
         Container.BindMemoryPool<MDimSum, MDimSum.Pool>().FromComponentInNewPrefab(settings.dimsumPrefab);
+        Container.Bind<TraySpawner>().AsSingle();
         Container.BindMemoryPool<MTray, MTray.Pool>().FromComponentInNewPrefab(settings.trayPrefab);
+        Container.Bind<CharacterSpawner>().AsSingle();
+        Container.BindMemoryPool<MCharacter, MCharacter.Pool>().FromComponentInNewPrefab(characterPrefab);
     }
 }

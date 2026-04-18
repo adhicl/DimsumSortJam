@@ -12,6 +12,11 @@ namespace UI
     public class PlayTopBar : MonoBehaviour
     {
         [Inject] private GameSetting gameSetting;
+
+        [SerializeField] private Button powerUpBtn1;
+        [SerializeField] private Button powerUpBtn2;
+        [SerializeField] private Button powerUpBtn3;
+        [SerializeField] private Button powerUpBtn4;
         
         [SerializeField] private GameObject powerupActive1;
         [SerializeField] private GameObject powerupActive2;
@@ -28,6 +33,11 @@ namespace UI
         [SerializeField] private TextMeshProUGUI totalPowerup3Text;
         [SerializeField] private TextMeshProUGUI totalPowerup4Text;
         
+        [SerializeField] private TextMeshProUGUI levelPowerup1Text;
+        [SerializeField] private TextMeshProUGUI levelPowerup2Text;
+        [SerializeField] private TextMeshProUGUI levelPowerup3Text;
+        [SerializeField] private TextMeshProUGUI levelPowerup4Text;
+        
         [SerializeField] private Button addPowerup1Btn;
         [SerializeField] private Button addPowerup2Btn;
         [SerializeField] private Button addPowerup3Btn;
@@ -42,15 +52,23 @@ namespace UI
         {
             powerupActive1.SetActive(gameSetting.currentLevel >= 2);
             powerupInactive1.SetActive(gameSetting.currentLevel < 2);
+            powerUpBtn1.interactable = gameSetting.currentLevel >= 2;
+            levelPowerup1Text.text = $"Lv. {Settings.minLevelPowerup1}";
             
-            powerupActive2.SetActive(gameSetting.currentLevel >= 4);
-            powerupInactive2.SetActive(gameSetting.currentLevel < 4);
+            powerupActive2.SetActive(gameSetting.currentLevel >= 8);
+            powerupInactive2.SetActive(gameSetting.currentLevel < 8);
+            powerUpBtn2.interactable = gameSetting.currentLevel >= 8;
+            levelPowerup2Text.text = $"Lv. {Settings.minLevelPowerup2}";
             
             powerupActive3.SetActive(gameSetting.currentLevel >= 6);
             powerupInactive3.SetActive(gameSetting.currentLevel < 6);
+            powerUpBtn3.interactable = gameSetting.currentLevel >= 6;
+            levelPowerup3Text.text = $"Lv. {Settings.minLevelPowerup3}";
             
             powerupActive4.SetActive(gameSetting.currentLevel >= 8);
             powerupInactive4.SetActive(gameSetting.currentLevel < 8);
+            powerUpBtn4.interactable = gameSetting.currentLevel >= 8;
+            levelPowerup4Text.text = $"Lv. {Settings.minLevelPowerup4}";
 
             if (gameSetting.currentLevel != 1) SetUpPowerUpButtons();
         }

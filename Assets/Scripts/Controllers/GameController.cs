@@ -17,6 +17,7 @@ namespace Controllers
     public class GameController : MonoBehaviour
     {
         [Inject] DimsumSpawner _dimsumSpawner;
+        [Inject] private CharacterSpawner _characterSpawner;
         [Inject] GameSetting _gameSetting;
         [Inject] BGMController _bgmController;
         [Inject] SoundController _soundController;
@@ -25,9 +26,11 @@ namespace Controllers
         private List<MDropArea> _gameBaskets;
         [SerializeField] private PowerUpAnimationEffect powerUpAnimationEffect;
 
+        private List<MCharacter> characterSpawns = new();
+
         public GameObject successVFXPrefab;
         
-        private Settings.GAME_STATUS _gameStatus;
+        public Settings.GAME_STATUS _gameStatus;
         private float _timer = 0f;
         private int _totalGoal = 0;
         private int _currentTotal = 0;
@@ -77,6 +80,16 @@ namespace Controllers
             _timer = 5f * 60f;
             
             CreateLevel();
+        }
+
+        public void ContinueGame()
+        {
+            _gameStatus = Settings.GAME_STATUS.pause;
+
+            foreach (var characterSpawn in characterSpawns)
+            {
+                characterSpawn.SetAsFinish();
+            }
         }
 
         private float width_basket = 1.5f;
@@ -186,8 +199,15 @@ namespace Controllers
             return array;
         }
 
+        private bool hasStartGame = false;
         public void DoStartTimer()
         {
+            if (!hasStartGame)
+            {
+                hasStartGame = true;
+                StartCoroutine(StartShowCharacter());
+
+            }
             _gameStatus = Settings.GAME_STATUS.play;
         }
 
@@ -196,11 +216,33 @@ namespace Controllers
             _gameStatus = Settings.GAME_STATUS.pause;
         }
 
+        private IEnumerator StartShowCharacter()
+        {
+            yield return new WaitForSeconds(1f);
+            _soundController.PlayBikeBellSoundClips();
+            MDimSum[] dimsumsOnTop = GetDimsumReadyOnTop();
+            int randomSkip = (int) Math.Max(0,Random.Range(0, dimsumsOnTop.Length - 2));
+
+            MCharacter mCharacter = _characterSpawner.Create();
+            mCharacter.SetRequest(dimsumsOnTop.Skip(randomSkip).Take(1).ToArray(), new Vector2(-1f, 2.7f));
+            characterSpawns.Add(mCharacter);
+        }
+
+        public void RemoveCharacter(MCharacter character)
+        {
+            _characterSpawner.Remove(character);
+        }
+
         public void CheckClearDimsum(int dimsumType)
         {
             foreach (var basket in _gameBaskets)
             {
                 basket.CheckUnlockDimsum(dimsumType);
+            }
+
+            foreach (var characterSpawn in characterSpawns)
+            {
+                characterSpawn.CheckClearRequest(dimsumType);
             }
         }
 
@@ -233,15 +275,27 @@ namespace Controllers
 
         public GameObject popupWin;
         public GameObject popupLose; 
+        public GameObject popupRequestLose; 
         
         [SerializeField] Canvas m_canvas;
         private GameObject m_popup;
 
+        public void CallGameLose()
+        {
+            _gameStatus = Settings.GAME_STATUS.lose;
+            
+            _bgmController.StopMusic();
+
+            m_popup = Instantiate(popupRequestLose, m_canvas.transform, false);
+            m_popup.SetActive(true);
+            m_popup.GetComponent<Popup>().Open();
+        }
+        
         private void ShowLose()
         {
             _bgmController.StopMusic();
             _soundController.PlayFinishOverClip();
-            
+
             m_popup = Instantiate(popupLose, m_canvas.transform, false);
             m_popup.SetActive(true);
             m_popup.GetComponent<Popup>().Open();

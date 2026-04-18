@@ -13,6 +13,8 @@ namespace Controllers
         public AudioClip popupOpenClip;
         public AudioClip basketOpenClip;
         public AudioClip buttonClickClip;
+        public AudioClip bikeBellClip;
+        public AudioClip bikeMoveClip;
         public AudioClip finishSuccessClip;
         public AudioClip finishOverClip;
 
@@ -91,6 +93,16 @@ namespace Controllers
         public void PlayBasketOpenClip()
         {
             audioSource.PlayOneShot(basketOpenClip);
+        }
+
+        public void PlayBikeBellSoundClips()
+        {
+            audioSource.PlayOneShot(bikeBellClip);
+        }
+
+        public void PlayBikeMoveSoundClips()
+        {
+            audioSource.PlayOneShot(bikeMoveClip);
         }
     }
 }

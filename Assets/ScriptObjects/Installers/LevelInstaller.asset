@@ -29,20 +29,20 @@ MonoBehaviour:
     - {fileID: 21300000, guid: 822f0cb2c971178478fe48680268bd51, type: 3}
     - {fileID: 21300000, guid: e493849d6c0345e4b9fd3304f6dd9255, type: 3}
     - {fileID: 21300000, guid: 1c5a03dc2d178024286a7175b7ee32d0, type: 3}
-    currentLevel: 0
+    currentLevel: 4
     maximumLevel: 5
     currentLevelData: {fileID: 11400000, guid: 6abcfa96ec688f8469273524f8c8ff13, type: 2}
     currentDimsumSprites:
+    - {fileID: 21300000, guid: 1e81c59d44a3d8448933898d708b5c08, type: 3}
+    - {fileID: 21300000, guid: 95ad044e9c037e740b5726fadd916b7b, type: 3}
+    - {fileID: 21300000, guid: 01b89b10e13da6544bd71820bd402fac, type: 3}
+    - {fileID: 21300000, guid: 3d49f2d049069f2479fe340b9adaeef3, type: 3}
+    - {fileID: 21300000, guid: 5209d022a42f07548ad51301d7b2dd70, type: 3}
+    - {fileID: 21300000, guid: df398dcb70e97034f841669c58c6f53e, type: 3}
+    - {fileID: 21300000, guid: b73785b457437b44c87c52698aa73fa7, type: 3}
+    - {fileID: 21300000, guid: f15a121a1cf1e2041891a6be88c10266, type: 3}
     - {fileID: 21300000, guid: ddf7e304bc7360e4b873b028b5194508, type: 3}
     - {fileID: 21300000, guid: 4920a144dd65bf447bdaaf057df4b090, type: 3}
-    - {fileID: 21300000, guid: 5209d022a42f07548ad51301d7b2dd70, type: 3}
-    - {fileID: 21300000, guid: 1e81c59d44a3d8448933898d708b5c08, type: 3}
-    - {fileID: 21300000, guid: f15a121a1cf1e2041891a6be88c10266, type: 3}
-    - {fileID: 21300000, guid: 95ad044e9c037e740b5726fadd916b7b, type: 3}
-    - {fileID: 21300000, guid: df398dcb70e97034f841669c58c6f53e, type: 3}
-    - {fileID: 21300000, guid: 3d49f2d049069f2479fe340b9adaeef3, type: 3}
-    - {fileID: 21300000, guid: 01b89b10e13da6544bd71820bd402fac, type: 3}
-    - {fileID: 21300000, guid: b73785b457437b44c87c52698aa73fa7, type: 3}
     allLevelData:
     - {fileID: 11400000, guid: 652393e91ddf9ed47994f22e7824c512, type: 2}
     - {fileID: 11400000, guid: 87f5a7992d0ba5d4a97c2641f34cddfb, type: 2}
@@ -56,8 +56,15 @@ MonoBehaviour:
     totalPowerup2: 0
     totalPowerup3: 0
     totalPowerup4: 0
+    minLevelPowerup1: 0
+    minLevelPowerup2: 0
+    minLevelPowerup3: 0
+    minLevelPowerup4: 0
     totalBooster1: 0
     totalBooster2: 0
     totalBooster3: 0
+    minLevelBooster1: 0
+    minLevelBooster2: 0
+    minLevelBooster3: 0
     soundMute: 0
     musicMute: 0
