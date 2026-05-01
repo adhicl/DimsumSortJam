@@ -13,5 +13,7 @@ namespace Commons
         public DisplayedBasket[] firstDisplayed;
         public int[] currentDropArea;
         
+        public RequestCharacter[] requestMissions;
+        
     }
 }

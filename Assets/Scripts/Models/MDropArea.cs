@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using Commons;
 using Controllers;
 using DG.Tweening;
@@ -49,6 +50,46 @@ namespace Models
                 }
             }
             return dimsums;
+        }
+
+        public MDimSum[] GetAllDimsumTypeInsides()
+        {
+            Dictionary<int, MDimSum> dimsumMap = new Dictionary<int, MDimSum>();
+            
+            for (int i = 0; i < 3; i++)
+            {
+                if (mDimSums[i] != null)
+                {
+                    if (!dimsumMap.ContainsKey(mDimSums[i].dimsumType))
+                    {
+                        dimsumMap.Add(mDimSums[i].dimsumType, mDimSums[i]);
+                    }
+                }
+            }
+
+            foreach (var arrayDimsum in arrayDimsums)
+            {
+                if (!dimsumMap.ContainsKey(arrayDimsum.dimsum1) && arrayDimsum.dimsum1 != -1)
+                {
+                    MDimSum dimsum = new MDimSum();
+                    dimsum.dimsumType = arrayDimsum.dimsum1;
+                    dimsumMap.Add(arrayDimsum.dimsum1, dimsum);
+                }
+                if (!dimsumMap.ContainsKey(arrayDimsum.dimsum2) && arrayDimsum.dimsum2 != -1)
+                {
+                    MDimSum dimsum = new MDimSum();
+                    dimsum.dimsumType = arrayDimsum.dimsum2;
+                    dimsumMap.Add(arrayDimsum.dimsum2, dimsum);
+                }
+                if (!dimsumMap.ContainsKey(arrayDimsum.dimsum3) && arrayDimsum.dimsum3 != -1)
+                {
+                    MDimSum dimsum = new MDimSum();
+                    dimsum.dimsumType = arrayDimsum.dimsum3;
+                    dimsumMap.Add(arrayDimsum.dimsum3, dimsum);
+                }
+            }
+
+            return dimsumMap.Values.ToArray();
         }
 
         public void AddDimsum(MDimSum dimsum, int indexPosition)

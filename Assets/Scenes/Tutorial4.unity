@@ -688,7 +688,7 @@ MonoBehaviour:
   - {fileID: 513478992}
   powerUpAnimationEffect: {fileID: 1644130910}
   successVFXPrefab: {fileID: 3824124065015996849, guid: 6729d02dffd7ec442b2fea7dcf65a718, type: 3}
-  _gameStatus: 0
+  gameStatus: 0
   popupWin: {fileID: 5663603077647245247, guid: 296f2890ab1163a44835fe4a0584e8c9, type: 3}
   popupLose: {fileID: 7157274846169513049, guid: 67c454b06e496064e940a7d187c2fdef, type: 3}
   popupRequestLose: {fileID: 3712287877593531365, guid: 1e8dba3e5625ace4699cd1a3d04da450, type: 3}

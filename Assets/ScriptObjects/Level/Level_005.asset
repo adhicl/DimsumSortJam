@@ -15,89 +15,96 @@ MonoBehaviour:
   TotalGoal: 48
   TotalVariation: 10
   currentLevel:
-  - dimsum1: 3
-    dimsum2: -1
-    dimsum3: 3
   - dimsum1: 1
     dimsum2: -1
     dimsum3: 1
-  - dimsum1: 7
-    dimsum2: -1
-    dimsum3: 7
   - dimsum1: -1
     dimsum2: 0
     dimsum3: 8
-  - dimsum1: 1
+  - dimsum1: 2
     dimsum2: -1
-    dimsum3: -1
-  - dimsum1: -1
-    dimsum2: 6
-    dimsum3: -1
-  - dimsum1: -1
-    dimsum2: 0
-    dimsum3: -1
-  - dimsum1: -1
-    dimsum2: 2
-    dimsum3: 8
-  - dimsum1: -1
-    dimsum2: 6
-    dimsum3: 6
+    dimsum3: 2
   - dimsum1: 9
     dimsum2: -1
+    dimsum3: 1
+  - dimsum1: -1
+    dimsum2: 8
+    dimsum3: -1
+  - dimsum1: -1
+    dimsum2: 1
     dimsum3: 8
   - dimsum1: -1
-    dimsum2: 7
+    dimsum2: 2
     dimsum3: 0
   - dimsum1: 1
     dimsum2: -1
     dimsum3: 9
   - dimsum1: -1
-    dimsum2: 2
-    dimsum3: -1
-  - dimsum1: 9
-    dimsum2: -1
-    dimsum3: 1
-  - dimsum1: -1
-    dimsum2: 1
-    dimsum3: 8
-  - dimsum1: 0
-    dimsum2: -1
-    dimsum3: -1
-  - dimsum1: 1
-    dimsum2: -1
-    dimsum3: 1
-  - dimsum1: -1
     dimsum2: 0
     dimsum3: 0
-  - dimsum1: 4
-    dimsum2: -1
-    dimsum3: 1
-  - dimsum1: -1
-    dimsum2: 4
-    dimsum3: 4
-  - dimsum1: -1
-    dimsum2: 2
-    dimsum3: -1
-  - dimsum1: -1
-    dimsum2: 2
-    dimsum3: 0
-  - dimsum1: -1
-    dimsum2: 0
-    dimsum3: 8
-  - dimsum1: 5
-    dimsum2: -1
-    dimsum3: 5
-  - dimsum1: 2
-    dimsum2: -1
-    dimsum3: 2
-  - dimsum1: 0
-    dimsum2: -1
-    dimsum3: 5
   - dimsum1: 3
     dimsum2: -1
     dimsum3: -1
   - dimsum1: -1
-    dimsum2: 8
+    dimsum2: 6
+    dimsum3: 6
+  - dimsum1: -1
+    dimsum2: 2
     dimsum3: -1
+  - dimsum1: -1
+    dimsum2: 4
+    dimsum3: 4
+  - dimsum1: 3
+    dimsum2: -1
+    dimsum3: 3
+  - dimsum1: -1
+    dimsum2: 6
+    dimsum3: -1
+  - dimsum1: 0
+    dimsum2: -1
+    dimsum3: 5
+  - dimsum1: -1
+    dimsum2: 2
+    dimsum3: 8
+  - dimsum1: 4
+    dimsum2: -1
+    dimsum3: 1
+  - dimsum1: -1
+    dimsum2: 7
+    dimsum3: 0
+  - dimsum1: -1
+    dimsum2: 0
+    dimsum3: -1
+  - dimsum1: 7
+    dimsum2: -1
+    dimsum3: 7
+  - dimsum1: 9
+    dimsum2: -1
+    dimsum3: 8
+  - dimsum1: 1
+    dimsum2: -1
+    dimsum3: -1
+  - dimsum1: -1
+    dimsum2: 2
+    dimsum3: -1
+  - dimsum1: 5
+    dimsum2: -1
+    dimsum3: 5
+  - dimsum1: 0
+    dimsum2: -1
+    dimsum3: -1
+  - dimsum1: -1
+    dimsum2: 0
+    dimsum3: 8
+  - dimsum1: 1
+    dimsum2: -1
+    dimsum3: 1
   firstDisplayed: 0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
   currentDropArea: 0300000003000000030000000300000003000000030000000200000002000000020000000200000002000000
+  requestMissions:
+  - totalRequestItems: 1
+    requestTimeShow: 290
+    getOnTopOnly: 1
+  - totalRequestItems: 2
+    requestTimeShow: 280
+    getOnTopOnly: 0

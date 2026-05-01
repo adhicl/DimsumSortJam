@@ -9,6 +9,7 @@ using Models;
 using Ricimi;
 using Spawners;
 using UnityEngine;
+using UnityEngine.Serialization;
 using Zenject;
 using Random = UnityEngine.Random;
 
@@ -26,11 +27,12 @@ namespace Controllers
         private List<MDropArea> _gameBaskets;
         [SerializeField] private PowerUpAnimationEffect powerUpAnimationEffect;
 
-        private List<MCharacter> characterSpawns = new();
+        private List<RequestCharacter> _requestCharacters = new(); 
+        private readonly List<MCharacter> _characterSpawns = new();
 
         public GameObject successVFXPrefab;
         
-        public Settings.GAME_STATUS _gameStatus;
+        public Settings.GAME_STATUS gameStatus;
         private float _timer = 0f;
         private int _totalGoal = 0;
         private int _currentTotal = 0;
@@ -71,11 +73,17 @@ namespace Controllers
 
         private void ResetGame()
         {
-            _gameStatus = Settings.GAME_STATUS.pause;
+            gameStatus = Settings.GAME_STATUS.pause;
             _currentTotal = 0;
             
             _gameSetting.currentLevelData = _gameSetting.allLevelData[_gameSetting.currentLevel];
             _totalGoal = _gameSetting.currentLevelData.TotalGoal;
+
+            _requestCharacters = new List<RequestCharacter>();
+            for (int i = 0; i < _gameSetting.currentLevelData.requestMissions.Length; i++)
+            {
+                _requestCharacters.Add(_gameSetting.currentLevelData.requestMissions[i]);
+            }
             
             _timer = 5f * 60f;
             
@@ -84,19 +92,19 @@ namespace Controllers
 
         public void ContinueGame()
         {
-            _gameStatus = Settings.GAME_STATUS.pause;
+            gameStatus = Settings.GAME_STATUS.pause;
 
-            foreach (var characterSpawn in characterSpawns)
+            foreach (var characterSpawn in _characterSpawns)
             {
                 characterSpawn.SetAsFinish();
             }
         }
 
-        private float width_basket = 1.5f;
-        private float height_basket = 1.4f;
+        private readonly float width_basket = 1.5f;
+        private readonly float height_basket = 1.4f;
         
-        private float[] position_top = { 2.07f, 2.8f, 3.8f, 4.2f, 4.2f };
-        private float[] position_left = { -.75f, -1.5f, -2.25f, -3f };
+        private readonly float[] position_top = { 2.07f, 2.8f, 3.8f, 4.2f, 4.2f };
+        private readonly float[] position_left = { -.75f, -1.5f, -2.25f, -3f };
 
         private void SetUpBaskets()
         {
@@ -198,6 +206,17 @@ namespace Controllers
 
             return array;
         }
+        
+        private MDimSum[] shuffleDimSums(MDimSum[] array)
+        {
+            for (int i = array.Length - 1; i > 0; i--)
+            {
+                int randomIndex = Random.Range(0, i + 1); // Unity's Random.Range is inclusive on min, exclusive on max
+                (array[i], array[randomIndex]) = (array[randomIndex], array[i]);
+            }
+
+            return array;
+        }
 
         private bool hasStartGame = false;
         public void DoStartTimer()
@@ -205,32 +224,63 @@ namespace Controllers
             if (!hasStartGame)
             {
                 hasStartGame = true;
-                StartCoroutine(StartShowCharacter());
-
             }
-            _gameStatus = Settings.GAME_STATUS.play;
+            gameStatus = Settings.GAME_STATUS.play;
         }
 
         public void DoPauseTimer()
         {
-            _gameStatus = Settings.GAME_STATUS.pause;
+            gameStatus = Settings.GAME_STATUS.pause;
         }
 
-        private IEnumerator StartShowCharacter()
+        private void StartShowCharacter()
         {
-            yield return new WaitForSeconds(1f);
+            RequestCharacter request = _requestCharacters[0];
+            
             _soundController.PlayBikeBellSoundClips();
-            MDimSum[] dimsumsOnTop = GetDimsumReadyOnTop();
-            int randomSkip = (int) Math.Max(0,Random.Range(0, dimsumsOnTop.Length - 2));
-
+            MDimSum[] dimsumsOnTop;
+            if (request.getOnTopOnly)
+            {
+                dimsumsOnTop = GetDimsumReadyOnTop();
+            }
+            else
+            {
+                dimsumsOnTop = GetAvailableDimsums();
+            }
+                
+            dimsumsOnTop = shuffleDimSums(dimsumsOnTop);
+            
             MCharacter mCharacter = _characterSpawner.Create();
-            mCharacter.SetRequest(dimsumsOnTop.Skip(randomSkip).Take(1).ToArray(), new Vector2(-1f, 2.7f));
-            characterSpawns.Add(mCharacter);
+            mCharacter.SetRequest(dimsumsOnTop.Take(request.totalRequestItems).ToArray(), new Vector2(-1f, 2.7f));
+            _characterSpawns.Add(mCharacter);
+
+            SetCharacterPosition();
+            
+            _requestCharacters.RemoveAt(0);
         }
+
+        private void SetCharacterPosition()
+        {
+            float positionY = 2.7f;
+            if (_characterSpawns.Count == 1)
+            {
+                _characterSpawns[0].SetMoveTo(new Vector2(-1f, positionY));
+            }
+            else if (_characterSpawns.Count > 1)
+            {
+                _characterSpawns[0].SetMoveTo(new Vector2(.5f, positionY));
+                _characterSpawns[1].SetMoveTo(new Vector2(-2f, positionY));
+            }
+        }
+
+        private float position_x = -1f;
 
         public void RemoveCharacter(MCharacter character)
         {
+            _characterSpawns.Remove(character);
             _characterSpawner.Remove(character);
+
+            SetCharacterPosition();
         }
 
         public void CheckClearDimsum(int dimsumType)
@@ -240,7 +290,7 @@ namespace Controllers
                 basket.CheckUnlockDimsum(dimsumType);
             }
 
-            foreach (var characterSpawn in characterSpawns)
+            foreach (var characterSpawn in _characterSpawns)
             {
                 characterSpawn.CheckClearRequest(dimsumType);
             }
@@ -255,19 +305,28 @@ namespace Controllers
         {
             if (_currentTotal >= _totalGoal)
             {
-                _gameStatus = Settings.GAME_STATUS.win;
+                gameStatus = Settings.GAME_STATUS.win;
                 StartCoroutine(ShowWin());
             }
         }
 
         private void Update()
         {
-            if (_gameStatus == Settings.GAME_STATUS.play)
+            if (gameStatus == Settings.GAME_STATUS.play)
             {
                 _timer -= Time.deltaTime;
+
+                if (_requestCharacters.Count > 0)
+                {
+                    if (_timer <= _requestCharacters[0].requestTimeShow)
+                    {
+                        StartShowCharacter();
+                    }
+                }
+                
                 if (_timer <= 0f)
                 {
-                    _gameStatus = Settings.GAME_STATUS.lose;
+                    gameStatus = Settings.GAME_STATUS.lose;
                     ShowLose();
                 }
             }
@@ -282,7 +341,7 @@ namespace Controllers
 
         public void CallGameLose()
         {
-            _gameStatus = Settings.GAME_STATUS.lose;
+            gameStatus = Settings.GAME_STATUS.lose;
             
             _bgmController.StopMusic();
 
@@ -357,6 +416,27 @@ namespace Controllers
         {
             MDimSum[] onTopDimsums = GetDimsumReadyOnTop();
             return onTopDimsums[0].dimsumType;
+        }
+
+        private MDimSum[] GetAvailableDimsums()
+        {
+            Dictionary<int, MDimSum> availableDimsums = new Dictionary<int, MDimSum>();
+            foreach (var basket in _gameBaskets)
+            {
+                MDimSum[] dimsumTypes = basket.GetAllDimsumTypeInsides();
+                for (int i = 0; i < dimsumTypes.Length; i++)
+                {
+                    if (dimsumTypes[i].dimsumType != -1)
+                    {
+                        if (!availableDimsums.ContainsKey(dimsumTypes[i].dimsumType))
+                        {
+                            availableDimsums.Add(dimsumTypes[i].dimsumType, dimsumTypes[i]);
+                        }
+                    }
+                }
+            }
+
+            return availableDimsums.Values.ToArray();
         }
 
         private MDimSum[] GetDimsumReadyOnTop()

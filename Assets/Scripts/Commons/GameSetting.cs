@@ -54,6 +54,14 @@ namespace Commons
         }
     }
 
+    [Serializable]
+    public struct RequestCharacter
+    {
+        public int totalRequestItems;
+        public float requestTimeShow;
+        public bool getOnTopOnly;
+    }
+
     public enum DisplayedBasket
     {
         Displayed,

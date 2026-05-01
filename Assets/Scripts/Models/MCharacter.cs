@@ -32,12 +32,9 @@ namespace Models
         {
         }
         #endregion
-        
-        private Vector2 startPosition = new Vector2(-4f, 2.7f);
 
         private void Start()
         {
-            this.transform.position = startPosition;
             requestCanvas.SetActive(false);
         }
 
@@ -56,11 +53,16 @@ namespace Models
                 _dimsumTypes[i] = dimsumTypes[i].dimsumType;
             }
             
-            this.transform.position = startPosition;
-            this.transform.DOMoveX(showAtPosition.x, .5f).SetEase(Ease.OutElastic).OnComplete(ShowOrder);
+            //this.transform.DOMoveX(showAtPosition.x, .5f).SetEase(Ease.OutBack).OnComplete(ShowOrder);
 
             timerStay = Settings.TIME_CHARACTER_STAY;
             isShowing = true;
+        }
+
+        public void SetMoveTo(Vector2 position)
+        {
+            Debug.Log($"{this.name} move to  {position}");
+            this.transform.DOMoveX(position.x, .5f).SetEase(Ease.OutBack).OnComplete(ShowOrder);
         }
         
         private void ShowOrder()
@@ -109,7 +111,7 @@ namespace Models
 
         private void Update()
         {
-            if (gameController._gameStatus != Settings.GAME_STATUS.play) return;
+            if (gameController.gameStatus != Settings.GAME_STATUS.play) return;
             if (!isShowing) return;
 
             timerStay -= Time.deltaTime;
