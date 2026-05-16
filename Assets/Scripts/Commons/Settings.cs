@@ -30,5 +30,40 @@ namespace Commons
             win,
             lose,
         }
+
+        public static string GetNextLevelScene(int currentLevel, string defaultScene)
+        {   
+            string newScene = defaultScene;
+            switch (currentLevel)
+            {
+                case 0: newScene = "Tutorial1";
+                    break;
+                case 1: newScene = "Tutorial2"; 
+                    break;
+                case 2: newScene = "Game";
+                    break;
+                case 3: newScene = "Tutorial3"; 
+                    break;
+                case 4: newScene = "Tutorial4"; 
+                    break;
+                case 6: newScene = "Tutorial5"; 
+                    break;
+                case 9: newScene = "Tutorial6";
+                    break;
+                default: newScene = defaultScene;
+                    break;
+            }
+
+            return newScene;
+        }
+
+        public static string GetTimeFormat(float timeLeft)
+        {
+            int minutes = Mathf.FloorToInt(timeLeft / 60f);
+            int seconds = Mathf.FloorToInt(timeLeft % 60f);
+
+            string formattedTime = $"{minutes:00}:{seconds:00}";
+            return formattedTime;
+        }
     }
 }

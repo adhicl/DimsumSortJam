@@ -52,6 +52,11 @@ namespace Commons
             this.dimsum2 = dimsum2;
             this.dimsum3 = dimsum3;
         }
+
+        public bool isEmpty()
+        {
+            return dimsum1 == -1 && dimsum2 == -1 && dimsum3 == -1;
+        }
     }
 
     [Serializable]

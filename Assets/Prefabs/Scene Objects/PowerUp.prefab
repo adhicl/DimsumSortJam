@@ -258,6 +258,7 @@ MonoBehaviour:
   magnifierSprite: {fileID: 21300000, guid: 320ba2678432c4b4499c63633ae7bb53, type: 3}
   packageSprite: {fileID: 21300000, guid: ca018e0e2028d492ea3e6ea140e0c9a7, type: 3}
   reloadSprite: {fileID: 21300000, guid: 901a95d4b56e946ad8f09719aecc4529, type: 3}
+  timerSprite: {fileID: 21300000, guid: 8f73dfc3304724e058f96ae769b51320, type: 3}
 --- !u!1001 &3730935262850651151
 PrefabInstance:
   m_ObjectHideFlags: 0

@@ -86,6 +86,7 @@ namespace Controllers
             }
             
             _timer = 5f * 60f;
+            isTimerPause = false;
             
             CreateLevel();
         }
@@ -113,7 +114,6 @@ namespace Controllers
             
             int totalRow = Mathf.CeilToInt((float) totalBasket / 3f);
             float first_position_top = position_top[totalRow - 1];
-            
             int basketIndex = 0;
             for (int i = 0; i < totalRow; i++)
             {
@@ -124,8 +124,8 @@ namespace Controllers
                 {
                     baskets[basketIndex].gameObject.SetActive(true);
                     baskets[basketIndex].transform.localPosition = new Vector3(first_position_left + (j * width_basket), first_position_top - (i * height_basket), 0f);
-                    basketIndex++;
                     _gameBaskets.Add(baskets[basketIndex]);
+                    basketIndex++;
                 }
             }
 
@@ -179,6 +179,7 @@ namespace Controllers
             }
             
             CheckIsGameNoMove();
+            CheckShowRequest();
         }
 
         private Sprite[] GetRandomUniqueSprites()
@@ -303,6 +304,7 @@ namespace Controllers
 
         private void OnFinishUpdateProgress()
         {
+            CheckShowRequest();
             if (_currentTotal >= _totalGoal)
             {
                 gameStatus = Settings.GAME_STATUS.win;
@@ -314,14 +316,9 @@ namespace Controllers
         {
             if (gameStatus == Settings.GAME_STATUS.play)
             {
-                _timer -= Time.deltaTime;
-
-                if (_requestCharacters.Count > 0)
+                if (!isTimerPause)
                 {
-                    if (_timer <= _requestCharacters[0].requestTimeShow)
-                    {
-                        StartShowCharacter();
-                    }
+                    _timer -= Time.deltaTime;
                 }
                 
                 if (_timer <= 0f)
@@ -332,9 +329,22 @@ namespace Controllers
             }
         }
 
+        private void CheckShowRequest()
+        {
+            if (_requestCharacters.Count > 0)
+            {
+                if (_currentTotal >= _requestCharacters[0].requestTimeShow)
+                {
+                    StartShowCharacter();
+                }
+            }
+        }
+
         public GameObject popupWin;
         public GameObject popupLose; 
-        public GameObject popupRequestLose; 
+        public GameObject popupRequestLose;
+
+        public bool isTimerPause = false;
         
         [SerializeField] Canvas m_canvas;
         private GameObject m_popup;
@@ -499,6 +509,17 @@ namespace Controllers
             return targetDimsums;
         }
 
+        private DimsumCombination[] GetLeftOverDimsumCombinations()
+        {
+            List<DimsumCombination> combinations = new List<DimsumCombination>();
+            foreach (var basket in _gameBaskets)
+            {
+                combinations.AddRange(basket.GetLeftDimsums());
+            }
+
+            return combinations.ToArray();
+        }
+
         //do power up magnifier
         public void PowerUpMagnifier()
         {
@@ -511,8 +532,17 @@ namespace Controllers
         public void PowerUpRefeshItems()
         {
             _soundController.PlayPowerUpClip();
-            MDimSum[] targetDimsums = GetDimsumsOnTop();
-            powerUpAnimationEffect.DoAnimateRefresh(targetDimsums);
+            
+            DimsumCombination[] targetDimsums = GetLeftOverDimsumCombinations();
+            Debug.Log($"Powerup refresh {targetDimsums.Length}");
+            ShuffleLevelData(targetDimsums);
+            
+            foreach (var basket in _gameBaskets)
+            {
+                basket.DrawToTop();
+            }
+            //Debug.Log(targetDimsums.Length);
+            powerUpAnimationEffect.DoAnimateRefresh();
         }
 
         //do power up suck package
@@ -528,9 +558,17 @@ namespace Controllers
         public void PowerUpTimerDown()
         {
             _soundController.PlayPowerUpClip();
-            // MDimSum[] targetDimsums = GetDimsumReadyOnTop();
-            //
-            // powerUpAnimationEffect.DoAnimateSuckPower(targetDimsums);
+
+            isTimerPause = true;
+            powerUpAnimationEffect.DoAnimateFreezeTimer();
+
+            StartCoroutine(RestartTimerAgain());
+        }
+
+        private IEnumerator RestartTimerAgain()
+        {
+            yield return new WaitForSeconds(15f);
+            isTimerPause = false;
         }
         
     }

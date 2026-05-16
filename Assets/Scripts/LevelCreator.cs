@@ -8,26 +8,25 @@ namespace DefaultNamespace
     public class LevelCreator : MonoBehaviour
     {
         [Header("Level Data")]
-        public int TotalGoal;
-        public int AvailableVariation;
+        private int TotalGoal;
         
         [Range(1,35)]
-        public int TotalVariation;
+        private int TotalVariation;
 
         [Range(1,15)]
         public int TotalDoubleBasket;
         [Range(1,30)]
         public int TotalSingleBasket;
         
-        [Range(6,12)]
-        public int TotalBasket;
-        [Range(0,3)]
-        public int TotalBasketLock;
-        [Range(0,3)]
-        public int TotalBasketAds;
+        // [Range(6,12)]
+        // public int TotalBasket;
+        // [Range(0,3)]
+        // public int TotalBasketLock;
+        // [Range(0,3)]
+        // public int TotalBasketAds;
 
-        [SerializeField] private TextMeshProUGUI DataLevelText;
-        [SerializeField] private TextMeshProUGUI DataResultText;
+        // [SerializeField] private TextMeshProUGUI DataLevelText;
+        // [SerializeField] private TextMeshProUGUI DataResultText;
 
         public LevelData _LevelData;
         

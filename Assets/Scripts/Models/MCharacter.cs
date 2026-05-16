@@ -57,11 +57,14 @@ namespace Models
 
             timerStay = Settings.TIME_CHARACTER_STAY;
             isShowing = true;
+            
+            timerSlider.value = timerStay / Settings.TIME_CHARACTER_STAY;
+            timerText.text = $"{TimeString(timerStay)}";
         }
 
         public void SetMoveTo(Vector2 position)
         {
-            Debug.Log($"{this.name} move to  {position}");
+            //Debug.Log($"{this.name} move to  {position}");
             this.transform.DOMoveX(position.x, .5f).SetEase(Ease.OutBack).OnComplete(ShowOrder);
         }
         
@@ -114,7 +117,11 @@ namespace Models
             if (gameController.gameStatus != Settings.GAME_STATUS.play) return;
             if (!isShowing) return;
 
-            timerStay -= Time.deltaTime;
+            if (!gameController.isTimerPause)
+            {
+                timerStay -= Time.deltaTime;
+            }
+            
             if (timerStay <= 0)
             {
                 timerStay = 0f;

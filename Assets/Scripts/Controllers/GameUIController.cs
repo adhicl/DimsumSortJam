@@ -26,6 +26,14 @@ namespace Controllers
 
         private void Update()
         {
+            if (gameController.isTimerPause)
+            {
+                textTimerDown.color = new Color(219f, 219, 219f, 1f);
+            }
+            else
+            {
+                textTimerDown.color = new Color(0f, 219f, 59f, 1f);
+            }
             textTimerDown.text = ReturnTimeString(gameController.Timer);
             textProgressLevel.text = gameController.Progress;
             sliderProgress.value = gameController.ProgressPercentage;

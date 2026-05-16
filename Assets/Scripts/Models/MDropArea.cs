@@ -27,7 +27,8 @@ namespace Models
         [SerializeField] private Animator animator;
         
         private static readonly int OpenBasket = Animator.StringToHash("OpenBasket");
-        
+        private static readonly int Reset = Animator.StringToHash("Reset");
+
         private int totalItems { get; set; } = 0;
         
         public MDimSum[] mDimSums = new MDimSum[3]
@@ -50,6 +51,37 @@ namespace Models
                 }
             }
             return dimsums;
+        }
+
+        public DimsumCombination[] GetLeftDimsums()
+        {
+            DimsumCombination dimsumCombination = new DimsumCombination();
+            dimsumCombination.dimsum1 = mDimSums[0] == null ? -1 : mDimSums[0].dimsumType;
+            dimsumCombination.dimsum2 = mDimSums[1] == null ? -1 : mDimSums[1].dimsumType;
+            dimsumCombination.dimsum3 = mDimSums[2] == null ? -1 : mDimSums[2].dimsumType;
+            
+            
+            // Debug.Log("Get left dimsums");
+            // Debug.Log(arrayDimsums);
+            // Debug.Log($"{dimsumCombination.dimsum1}.{dimsumCombination.dimsum2}.{dimsumCombination.dimsum3} Combinations left: {arrayDimsums.Count}");
+            
+            if (dimsumCombination.isEmpty())
+            {
+                return Array.Empty<DimsumCombination>();
+            }
+            else
+            {
+                DimsumCombination[] dimsumCombinations = new DimsumCombination[arrayDimsums.Count + 1];
+                dimsumCombinations[0] = dimsumCombination;
+                int index = 1;
+                foreach (var arrayDimsum in arrayDimsums)
+                {
+                    dimsumCombinations[index] = arrayDimsum;
+                    index++;
+                }
+
+                return dimsumCombinations;
+            }
         }
 
         public MDimSum[] GetAllDimsumTypeInsides()
@@ -409,8 +441,44 @@ namespace Models
             if (_isOpen == DisplayedBasket.Closed)
             {
                 SoundController.Instance.PlayBasketOpenClip();
-                SetOpen(DisplayedBasket.Displayed);
+                //SetOpen(DisplayedBasket.Displayed);
             }
         }
+        
+        #region animation_effect
+        
+        public void DrawToTop()
+        {
+            if (_isOpen == DisplayedBasket.Displayed)
+            {
+                foreach (var mTray in trayList)
+                {
+                    _traySpawner.Remove(mTray);
+                }
+                trayList.Clear();
+
+                Debug.Log("Draw TO Top");
+                gLockedBasket.GetComponent<SpriteRenderer>().color = Color.white;
+                gLockedBasket.SetActive(true);
+                gUnlockPaper.SetActive(false);
+                animator.SetTrigger(Reset);
+
+                this.transform.DOShakeRotation(3f, 15f);
+                StartCoroutine(BackToBottom());
+            }
+        }
+
+        private IEnumerator BackToBottom()
+        {
+            yield return new WaitForSeconds(2f);
+            gLockedBasket.SetActive(true);
+            gUnlockPaper.SetActive(false);
+            animator.SetTrigger(OpenBasket);
+            // gLockedBasket.SetActive(false);
+            // gUnlockPaper.SetActive(true);
+            this.transform.localEulerAngles = Vector3.zero;
+        }
+        
+        #endregion
     }
 }

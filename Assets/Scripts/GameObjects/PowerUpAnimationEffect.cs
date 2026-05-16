@@ -21,6 +21,7 @@ public class PowerUpAnimationEffect : MonoBehaviour
     public Sprite magnifierSprite;
     public Sprite packageSprite;
     public Sprite reloadSprite;
+    public Sprite timerSprite;
     
     // Start is called once before the first execution of Update after the MonoBehaviour is created
     void Start()
@@ -109,7 +110,7 @@ public class PowerUpAnimationEffect : MonoBehaviour
         this.gameObject.SetActive(false);
     }
     
-    public void DoAnimateRefresh(MDimSum[] positionDimsums)
+    public void DoAnimateRefresh()
     {
         boxParticle.gameObject.SetActive(false);
         this.gameObject.SetActive(true);
@@ -117,10 +118,10 @@ public class PowerUpAnimationEffect : MonoBehaviour
         boxSprite.sprite = reloadSprite;
         boxAnimation.SetTrigger(OpenUp);
 
-        StartCoroutine(DoAnimateRefreshRoutine(positionDimsums));
+        StartCoroutine(DoAnimateRefreshRoutine());
     }
 
-    private IEnumerator DoAnimateRefreshRoutine(MDimSum[] positionDimsums)
+    private IEnumerator DoAnimateRefreshRoutine()
     {
         yield return new WaitForSeconds(1f);
         
@@ -129,18 +130,29 @@ public class PowerUpAnimationEffect : MonoBehaviour
         boxParticle.DOScale(Vector3.one * 0.3f, 0.5f);
         
         yield return new WaitForSeconds(.2f); 
-        // foreach (var positionDimsum in positionDimsums)
-        // {
-        //     positionDimsum.DrawToTop();
-        //     positionDimsum.transform.DOShakeRotation(5f, 0.5f);
-        // }
-
-        yield return new WaitForSeconds(2f);
+        this.gameObject.SetActive(false);
+    }
+    
+    public void DoAnimateFreezeTimer()
+    {
+        boxParticle.gameObject.SetActive(false);
+        this.gameObject.SetActive(true);
         
-        // foreach (var positionDimsum in positionDimsums)
-        // {
-        //     positionDimsum.BackToBottom();
-        // }
+        boxSprite.sprite = timerSprite;
+        boxAnimation.SetTrigger(OpenUp);
+
+        StartCoroutine(DoAnimateFreezeTimerRoutine());
+    }
+
+    private IEnumerator DoAnimateFreezeTimerRoutine()
+    {
+        yield return new WaitForSeconds(1f);
+        
+        boxParticle.gameObject.SetActive(true);
+        boxParticle.localScale = Vector3.zero;
+        boxParticle.DOScale(Vector3.one * 0.3f, 0.5f);
+        
+        yield return new WaitForSeconds(.5f);
         this.gameObject.SetActive(false);
     }
 }
