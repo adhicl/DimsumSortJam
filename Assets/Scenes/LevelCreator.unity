@@ -466,9 +466,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: a95915c7ef4740358164b01ec2882009, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::DefaultNamespace.LevelCreator
-  TotalDoubleBasket: 4
+  TotalDoubleBasket: 6
   TotalSingleBasket: 5
-  _LevelData: {fileID: 11400000, guid: 7243946e0ae8c734cbe7880c025ae2de, type: 2}
+  _LevelData: {fileID: 11400000, guid: 1400096405c316d48a006b12b08d21bc, type: 2}
 --- !u!4 &789542647
 Transform:
   m_ObjectHideFlags: 0

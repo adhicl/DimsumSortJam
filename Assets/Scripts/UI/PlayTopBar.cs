@@ -81,6 +81,9 @@ namespace UI
             powerupActive4.SetActive(gameSetting.currentLevel >= 6);
             powerupInactive4.SetActive(false);
             
+            powerupActive4.SetActive(gameSetting.currentLevel >= 9);
+            powerupInactive4.SetActive(false);
+            
             SetUpPowerUpButtons();
         }
 

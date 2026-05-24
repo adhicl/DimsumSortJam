@@ -509,12 +509,16 @@ namespace Controllers
             return targetDimsums;
         }
 
+        private int[] leftOverBasketLength;
         private DimsumCombination[] GetLeftOverDimsumCombinations()
         {
+            leftOverBasketLength = new int[baskets.Length];
             List<DimsumCombination> combinations = new List<DimsumCombination>();
-            foreach (var basket in _gameBaskets)
+            for (int i = 0; i < baskets.Length; i++)
             {
-                combinations.AddRange(basket.GetLeftDimsums());
+                DimsumCombination[] leftDimsums = baskets[i].GetLeftDimsums();
+                combinations.AddRange(leftDimsums);
+                leftOverBasketLength[i] = leftDimsums.Length;
             }
 
             return combinations.ToArray();
@@ -534,13 +538,32 @@ namespace Controllers
             _soundController.PlayPowerUpClip();
             
             DimsumCombination[] targetDimsums = GetLeftOverDimsumCombinations();
-            Debug.Log($"Powerup refresh {targetDimsums.Length}");
-            ShuffleLevelData(targetDimsums);
-            
+            targetDimsums = ShuffleLevelData(targetDimsums);
+
+            int totalBasketLeft = 0;
             foreach (var basket in _gameBaskets)
             {
+                if (basket.GetOpenBasket() == DisplayedBasket.Displayed)
+                {
+                    totalBasketLeft++;
+                }
                 basket.DrawToTop();
             }
+            
+            int dividedBasketLeft = Mathf.FloorToInt((float) targetDimsums.Length /(float) totalBasketLeft);
+            int skipIndex = 0;
+            for (int i = 0; i < baskets.Length; i++)
+            {
+                MDropArea basket = baskets[i];
+                if (basket.GetOpenBasket() == DisplayedBasket.Displayed)
+                {
+                    //Debug.Log($"Basket {i}/{totalBasketLeft} Skip {skipIndex} Take {leftOverBasketLength[i]}");
+                    basket.BackToBottom(targetDimsums.Skip(skipIndex).Take(leftOverBasketLength[i]).ToArray());
+                    
+                    skipIndex += leftOverBasketLength[i];
+                }
+            }
+            
             //Debug.Log(targetDimsums.Length);
             powerUpAnimationEffect.DoAnimateRefresh();
         }

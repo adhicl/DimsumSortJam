@@ -238,6 +238,8 @@ namespace Models
         
         private void CheckComplete()
         {
+            if (mDimSums.Length < 3) return;
+            
             int checkDimsum = mDimSums[0].dimsumType;
             bool isComplete = true;
             for (int i = 0; i < totalItems; i++)
@@ -300,6 +302,7 @@ namespace Models
         
         private void CreateTray()
         {
+            //Debug.Log($"Create Tray {arrayDimsums.Count}");
             for (int i = 0; i < arrayDimsums.Count; i++)
             {
                 MTray newTray = _traySpawner.Create(trayPlacement);
@@ -324,6 +327,10 @@ namespace Models
                 {
                     MDimSum newDimsum = dimsumSpawner.Create(row[i]);
                     newDimsum.DoDropPlaceAt(this, i, false);
+                }
+                else
+                {
+                    
                 }
             }
         }
@@ -397,6 +404,11 @@ namespace Models
         [SerializeField] private DisplayedBasket _isOpen;
         [SerializeField] private int dimsumUnlock = -1;
 
+        public DisplayedBasket GetOpenBasket()
+        {
+            return _isOpen;
+        }
+
         public void SetOpen(DisplayedBasket isOpen)
         {
             if (isOpen == DisplayedBasket.Displayed)
@@ -457,20 +469,44 @@ namespace Models
                 }
                 trayList.Clear();
 
-                Debug.Log("Draw TO Top");
                 gLockedBasket.GetComponent<SpriteRenderer>().color = Color.white;
                 gLockedBasket.SetActive(true);
                 gUnlockPaper.SetActive(false);
                 animator.SetTrigger(Reset);
 
                 this.transform.DOShakeRotation(3f, 15f);
-                StartCoroutine(BackToBottom());
             }
         }
 
-        private IEnumerator BackToBottom()
+        public void BackToBottom(DimsumCombination[] dimsumArray)
+        {
+            StartCoroutine(RecreateDropArea(dimsumArray));
+        }
+
+        private IEnumerator RecreateDropArea(DimsumCombination[] dimsumArray)
         {
             yield return new WaitForSeconds(2f);
+            
+            for (int i = 0; i < mDimSums.Length; i++)
+            {
+                if (mDimSums[i] != null)
+                {
+                    dimsumSpawner.Remove(mDimSums[i]);
+                }
+
+                mDimSums[i] = null;
+            }
+            totalItems = 0;
+            
+            arrayDimsums = new List<DimsumCombination>();
+            foreach (var combination in dimsumArray)
+            {
+                arrayDimsums.Add(combination);
+            }
+
+            CreateDimsum();
+            CreateTray();
+            
             gLockedBasket.SetActive(true);
             gUnlockPaper.SetActive(false);
             animator.SetTrigger(OpenBasket);
