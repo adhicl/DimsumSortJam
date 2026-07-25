@@ -531,16 +531,20 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 1762166370401093302, guid: 310a588657bc243c3a42a924c988ddd1, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 1762166370401093302, guid: 310a588657bc243c3a42a924c988ddd1, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 1762166370401093302, guid: 310a588657bc243c3a42a924c988ddd1, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
       value: 1
       objectReference: {fileID: 0}
+    - target: {fileID: 1762166370401093302, guid: 310a588657bc243c3a42a924c988ddd1, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 4749029672765575390}
     - target: {fileID: 1762166370401093302, guid: 310a588657bc243c3a42a924c988ddd1, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
       value: 2
@@ -548,6 +552,14 @@ PrefabInstance:
     - target: {fileID: 1762166370401093302, guid: 310a588657bc243c3a42a924c988ddd1, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
       value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 1762166370401093302, guid: 310a588657bc243c3a42a924c988ddd1, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: LeaveGiveUp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1762166370401093302, guid: 310a588657bc243c3a42a924c988ddd1, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UI.OutOfMovePopup, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 2297600602409225634, guid: 310a588657bc243c3a42a924c988ddd1, type: 3}
       propertyPath: m_Name
@@ -673,11 +685,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4790334068843507890, guid: 4914714039339479b964eea1d8cd8db2, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 2
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 4790334068843507890, guid: 4914714039339479b964eea1d8cd8db2, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 4790334068843507890, guid: 4914714039339479b964eea1d8cd8db2, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
@@ -686,7 +698,7 @@ PrefabInstance:
     - target: {fileID: 4790334068843507890, guid: 4914714039339479b964eea1d8cd8db2, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 4695097981299859628}
+      objectReference: {fileID: 4749029672765575390}
     - target: {fileID: 4790334068843507890, guid: 4914714039339479b964eea1d8cd8db2, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
@@ -701,7 +713,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4790334068843507890, guid: 4914714039339479b964eea1d8cd8db2, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: Close
+      value: ReviveByAd
       objectReference: {fileID: 0}
     - target: {fileID: 4790334068843507890, guid: 4914714039339479b964eea1d8cd8db2, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
@@ -709,7 +721,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4790334068843507890, guid: 4914714039339479b964eea1d8cd8db2, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: Ricimi.Popup, Assembly-CSharp
+      value: UI.OutOfMovePopup, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 4790334068843507890, guid: 4914714039339479b964eea1d8cd8db2, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
@@ -717,7 +729,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 4790334068843507890, guid: 4914714039339479b964eea1d8cd8db2, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 4790334068843507890, guid: 4914714039339479b964eea1d8cd8db2, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName

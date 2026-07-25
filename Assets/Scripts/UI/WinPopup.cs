@@ -41,8 +41,26 @@ namespace UI
         public void ButtonDoubleClaim()
         {
             SoundController.Instance.PlayButtonClickClip();
-            SpawnCoins(buttonDoubleClaim, 80);
-            StartCoroutine(GoToNextScene());
+
+            // Double bonus is gated behind a rewarded ad. Only pay out x2 once the
+            // reward is earned; if the player declines or no ad is ready, stay on the
+            // popup so they can still tap the normal x1 Claim button.
+            void GrantDouble()
+            {
+                SpawnCoins(buttonDoubleClaim, 80);
+                StartCoroutine(GoToNextScene());
+            }
+
+            if (RewardedAdController.Instance != null)
+            {
+                RewardedAdController.Instance.ShowAd(GrantDouble);
+            }
+            else
+            {
+                // No ad controller in this scene: fall back to granting the bonus so
+                // the button is never dead.
+                GrantDouble();
+            }
         }
 
         private IEnumerator GoToNextScene()

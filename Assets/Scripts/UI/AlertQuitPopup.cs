@@ -26,12 +26,21 @@ namespace DefaultNamespace.UI
         
         public void RevivePopup()
         {
-            //added function later
-            
-            //show ad video
+            // Watch a rewarded ad to revive; only continue once the reward is earned.
+            void GrantRevive()
+            {
+                GameController.Instance.ContinueGame();
+                this.GetComponent<Popup>().Close();
+            }
 
-            GameController.Instance.ContinueGame();
-            this.GetComponent<Popup>().Close();
+            if (RewardedAdController.Instance != null)
+            {
+                RewardedAdController.Instance.ShowAd(GrantRevive);
+            }
+            else
+            {
+                GrantRevive();
+            }
         }
 
     }

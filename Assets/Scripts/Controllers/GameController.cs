@@ -323,8 +323,7 @@ namespace Controllers
                 
                 if (_timer <= 0f)
                 {
-                    gameStatus = Settings.GAME_STATUS.lose;
-                    ShowLose();
+                    ShowOutOfMove();
                 }
             }
         }
@@ -341,8 +340,12 @@ namespace Controllers
         }
 
         public GameObject popupWin;
-        public GameObject popupLose; 
+        public GameObject popupLose;
         public GameObject popupRequestLose;
+        public GameObject popupOutOfMove;
+
+        [Tooltip("Seconds added to the timer when the player revives by watching an ad.")]
+        [SerializeField] private float reviveTimeBonus = 60f;
 
         public bool isTimerPause = false;
         
@@ -368,6 +371,39 @@ namespace Controllers
             m_popup = Instantiate(popupLose, m_canvas.transform, false);
             m_popup.SetActive(true);
             m_popup.GetComponent<Popup>().Open();
+        }
+
+        // Shown when the player runs out of moves or time. Offers a revive (watch an ad
+        // for extra time) before the game is actually lost. The music keeps playing so a
+        // revive resumes seamlessly; giving up routes to ShowLose via ConfirmLose().
+        public void ShowOutOfMove()
+        {
+            gameStatus = Settings.GAME_STATUS.pause;
+
+            if (popupOutOfMove == null)
+            {
+                // No revive popup assigned: fall back to the normal lose flow.
+                ShowLose();
+                return;
+            }
+
+            m_popup = Instantiate(popupOutOfMove, m_canvas.transform, false);
+            m_popup.SetActive(true);
+            m_popup.GetComponent<Popup>().Open();
+        }
+
+        // Called by the out-of-move popup's REVIVE button after a rewarded ad is watched.
+        public void ReviveWithTime()
+        {
+            _timer += reviveTimeBonus;
+            isTimerPause = false;
+            gameStatus = Settings.GAME_STATUS.play;
+        }
+
+        // Called by the out-of-move popup's Leave button: commit to the loss.
+        public void ConfirmLose()
+        {
+            ShowLose();
         }
 
         private IEnumerator ShowWin()
@@ -417,7 +453,7 @@ namespace Controllers
 
                 if (!stillHasMove)
                 {
-                    ShowLose();
+                    ShowOutOfMove();
                 }
             }
         }
