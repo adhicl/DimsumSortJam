@@ -326,6 +326,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c39afc4c0643422190cd59a45f0ddbf9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Controllers.GameController
+  _gameSetting: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
   baskets:
   - {fileID: 1670245195}
   - {fileID: 2125558092}
@@ -345,6 +346,7 @@ MonoBehaviour:
   popupWin: {fileID: 5663603077647245247, guid: 296f2890ab1163a44835fe4a0584e8c9, type: 3}
   popupLose: {fileID: 7157274846169513049, guid: 67c454b06e496064e940a7d187c2fdef, type: 3}
   popupRequestLose: {fileID: 3712287877593531365, guid: 1e8dba3e5625ace4699cd1a3d04da450, type: 3}
+  isTimerPause: 0
   m_canvas: {fileID: 1382755113}
 --- !u!4 &317537327
 Transform:
@@ -1412,6 +1414,8 @@ MonoBehaviour:
   soundController: {fileID: 2068891643}
   bgmController: {fileID: 2088027270}
   gameController: {fileID: 317537326}
+  dimsumPrefab: {fileID: 1096264119486296586, guid: d3c8f59cf016c9842836a45263e3b75c, type: 3}
+  trayPrefab: {fileID: 1090847577745105087, guid: 6e1f750630738a54e832f63e824f0ea7, type: 3}
   characterPrefab: {fileID: 1854920392237422774, guid: dafefae68dbf8a44f952e968fce0461e, type: 3}
 --- !u!114 &1026606782
 MonoBehaviour:
@@ -1425,8 +1429,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89715ad69b973a14899afa2c6730b30b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Zenject::Zenject.SceneContext
-  _scriptableObjectInstallers:
-  - {fileID: 11400000, guid: 406accb6467c44241842cbedf32d5ce0, type: 2}
+  _scriptableObjectInstallers: []
   _monoInstallers:
   - {fileID: 1026606781}
   _installerPrefabs: []
@@ -1617,7 +1620,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0.5, y: 0}
   m_AnchorMax: {x: 0.5, y: 0}
-  m_AnchoredPosition: {x: -328, y: 440.19995}
+  m_AnchoredPosition: {x: -107, y: 440.19995}
   m_SizeDelta: {x: 100, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!95 &1087691288
@@ -1796,13 +1799,17 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5725694642358190787, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_IsActive
+      value: 0
+      objectReference: {fileID: 0}
     - target: {fileID: 7222442748677676515, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_Name
       value: Game-Item-Amount
       objectReference: {fileID: 0}
     - target: {fileID: 8123891493973931555, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_IsActive
-      value: 1
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8218057413859225120, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_text
@@ -1815,6 +1822,10 @@ PrefabInstance:
     - target: {fileID: 8218057413859225120, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_fontSizeBase
       value: 35
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_Enabled
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
@@ -2072,6 +2083,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdd8857e7fa94698a89880a75ca059e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Controllers.GameUIController
+  gameSetting: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
   textLevel: {fileID: 8145640945231840512}
   textProgressLevel: {fileID: 1233969461}
   sliderProgress: {fileID: 2067247875}
@@ -2117,7 +2129,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bdc9dc369ee2a427d82cbd5d7894c8c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Ricimi.PopupOpener
-  popupPrefab: {fileID: 6341041408751704340, guid: 3775ccb8cf7a0e74eafb780c3584c410, type: 3}
+  popupPrefab: {fileID: 812360333098811882, guid: e8f5792099ff5024da3d00e0e4a4d938, type: 3}
 --- !u!1 &1391431867
 GameObject:
   m_ObjectHideFlags: 0
@@ -3116,9 +3128,21 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3000962911216721729, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 100.31
+      objectReference: {fileID: 0}
+    - target: {fileID: 3000962911216721729, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 55
+      objectReference: {fileID: 0}
     - target: {fileID: 3129267807476377365, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_text
       value: Lv. 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 3511840343499438732, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_IsActive
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 5698680590804340710, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_IsActive
@@ -3126,7 +3150,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5725694642358190787, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 7222442748677676515, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_Name
@@ -3138,11 +3162,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8123891493973931555, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_IsActive
-      value: 0
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 8218057413859225120, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_text
+      value: Free
       objectReference: {fileID: 0}
     - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_Enabled
-      value: 0
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
@@ -3964,6 +3992,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1190821602234646161, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: gameSetting
+      value: 
+      objectReference: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
     - target: {fileID: 2139102045100933235, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -4040,6 +4072,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: Panel-Game
       objectReference: {fileID: 0}
+    - target: {fileID: 4989211997413786267, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 5035791798260971611, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
@@ -4088,6 +4124,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 7672645570966525857, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_IsActive
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 7958757859866548276, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -4111,6 +4151,10 @@ PrefabInstance:
     - target: {fileID: 8100375181912895613, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_SizeDelta.y
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8593146584271140422, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: m_IsActive
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 8619741661385936006, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
@@ -4269,6 +4313,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6083004907040272282, guid: ddb9914408004574c8e6af872371e2b6, type: 3}
+      propertyPath: gameSetting
+      value: 
+      objectReference: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
     - target: {fileID: 7719250949935339854, guid: ddb9914408004574c8e6af872371e2b6, type: 3}
       propertyPath: m_Name
       value: PowerUp

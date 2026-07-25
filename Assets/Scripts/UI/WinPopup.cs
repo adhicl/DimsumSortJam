@@ -53,8 +53,14 @@ namespace UI
             if (_gameSetting.currentLevel >= _gameSetting.maximumLevel) _gameSetting.currentLevel = _gameSetting.maximumLevel - 1;
             
             _gameSetting.currentLevelData = _gameSetting.allLevelData[_gameSetting.currentLevel];
+
+            string newScene = "Home";
+            if (_gameSetting.currentLevel < 5)
+            {
+                newScene = Settings.GetNextLevelScene(_gameSetting.currentLevel, "Home");
+            }
             
-            string newScene = Settings.GetNextLevelScene(_gameSetting.currentLevel, "Home");
+            _gameSetting.SaveData();
             Transition.LoadLevel(newScene, Settings.TransitionTime, Settings.TransitionColor);
             
             GetComponent<Popup>().Close();
@@ -69,17 +75,17 @@ namespace UI
                 randomPos.z = 0; // kalau 2D, pastikan z = 0
 
                 // Buat coin
-                GameObject coin = Instantiate(coinPrefab, randomPos, Quaternion.identity);
+                GameObject coin = Instantiate(coinPrefab, spawnCenter.position, Quaternion.identity);
 
-                // Animasi ke target UI
-                coin.transform.DOMove(targetCoinUI.position, moveDuration)
-                    .SetEase(Ease.InOutQuad)
-                    .OnComplete(() =>
-                    {
-                        Destroy(coin); // hapus coin setelah sampai
-                        _gameSetting.totalGold++;
-                        coinText.text = $"{_gameSetting.totalGold:N0}";
-                    });
+                Sequence createSequence = DOTween.Sequence();
+                createSequence.Append(coin.transform.DOMove(randomPos, 0.2f));
+                createSequence.Append(coin.transform.DOMove(targetCoinUI.position, moveDuration).SetEase(Ease.InOutQuad));
+                createSequence.AppendCallback(() =>
+                {
+                    Destroy(coin); // hapus coin setelah sampai
+                    _gameSetting.totalGold++;
+                    coinText.text = $"{_gameSetting.totalGold:N0}";
+                });
             }
         }
     }

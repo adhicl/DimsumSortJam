@@ -11,7 +11,7 @@ namespace UI
 {
     public class PlayTopBar : MonoBehaviour
     {
-        [Inject] private GameSetting gameSetting;
+        public GameSetting gameSetting;
 
         [SerializeField] private Button powerUpBtn1;
         [SerializeField] private Button powerUpBtn2;
@@ -50,40 +50,52 @@ namespace UI
 
         private void Start()
         {
-            powerupActive1.SetActive(gameSetting.currentLevel >= 2);
-            powerupInactive1.SetActive(gameSetting.currentLevel < 2);
-            powerUpBtn1.interactable = gameSetting.currentLevel >= 2;
+            powerupActive1.SetActive(gameSetting.currentLevel >= Settings.minLevelPowerup1);
+            powerupInactive1.SetActive(gameSetting.currentLevel < Settings.minLevelPowerup1);
+            powerUpBtn1.interactable = gameSetting.currentLevel >= Settings.minLevelPowerup1;
             levelPowerup1Text.text = $"Lv. {Settings.minLevelPowerup1}";
             
-            powerupActive2.SetActive(gameSetting.currentLevel >= 14);
-            powerupInactive2.SetActive(gameSetting.currentLevel < 14);
-            powerUpBtn2.interactable = gameSetting.currentLevel >= 14;
+            powerupActive2.SetActive(gameSetting.currentLevel >= Settings.minLevelPowerup2);
+            powerupInactive2.SetActive(gameSetting.currentLevel < Settings.minLevelPowerup2);
+            powerUpBtn2.interactable = gameSetting.currentLevel >= Settings.minLevelPowerup2;
             levelPowerup2Text.text = $"Lv. {Settings.minLevelPowerup2}";
             
-            powerupActive3.SetActive(gameSetting.currentLevel >= 10);
-            powerupInactive3.SetActive(gameSetting.currentLevel < 10);
-            powerUpBtn3.interactable = gameSetting.currentLevel >= 10;
+            powerupActive3.SetActive(gameSetting.currentLevel >= Settings.minLevelPowerup3);
+            powerupInactive3.SetActive(gameSetting.currentLevel < Settings.minLevelPowerup3);
+            powerUpBtn3.interactable = gameSetting.currentLevel >= Settings.minLevelPowerup3;
             levelPowerup3Text.text = $"Lv. {Settings.minLevelPowerup3}";
             
-            powerupActive4.SetActive(gameSetting.currentLevel >= 7);
-            powerupInactive4.SetActive(gameSetting.currentLevel < 7);
-            powerUpBtn4.interactable = gameSetting.currentLevel >= 7;
+            powerupActive4.SetActive(gameSetting.currentLevel >= Settings.minLevelPowerup4);
+            powerupInactive4.SetActive(gameSetting.currentLevel < Settings.minLevelPowerup4);
+            powerUpBtn4.interactable = gameSetting.currentLevel >= Settings.minLevelPowerup4;
             levelPowerup4Text.text = $"Lv. {Settings.minLevelPowerup4}";
 
-            if (gameSetting.currentLevel != 1) SetUpPowerUpButtons();
+            if (gameSetting.currentLevel != 0) SetUpPowerUpButtons();
         }
 
         public void ShowTutorialPowerUp()
         {
-            powerupActive1.SetActive(gameSetting.currentLevel >= 1);
-            powerupInactive1.SetActive(false);
-            
-            powerupActive4.SetActive(gameSetting.currentLevel >= 6);
-            powerupInactive4.SetActive(false);
-            
-            powerupActive4.SetActive(gameSetting.currentLevel >= 9);
-            powerupInactive4.SetActive(false);
-            
+            if (gameSetting.currentLevel == Settings.minLevelPowerup1 - 1)
+            {
+                powerupActive1.SetActive(true);
+                powerupInactive1.SetActive(false);
+            }
+            else if (gameSetting.currentLevel == Settings.minLevelPowerup2 - 1)
+            {
+                powerupActive2.SetActive(true);
+                powerupInactive2.SetActive(false);
+            }
+            else if (gameSetting.currentLevel == Settings.minLevelPowerup3 - 1)
+            {
+                powerupActive3.SetActive(true);
+                powerupInactive3.SetActive(false);
+            }
+            else if (gameSetting.currentLevel == Settings.minLevelPowerup4 - 1)
+            {
+                powerupActive4.SetActive(true);
+                powerupInactive4.SetActive(false);
+            }
+
             SetUpPowerUpButtons();
         }
 

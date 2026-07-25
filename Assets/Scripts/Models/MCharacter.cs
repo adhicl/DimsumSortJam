@@ -14,7 +14,7 @@ namespace Models
     public class MCharacter : MonoBehaviour, IRequest
     {
         [Inject] SoundController soundController;
-        [Inject] GameSetting gameSetting;
+        public GameSetting gameSetting;
         [Inject] GameController gameController;
         
         [SerializeField] SpriteRenderer spriteRenderer;

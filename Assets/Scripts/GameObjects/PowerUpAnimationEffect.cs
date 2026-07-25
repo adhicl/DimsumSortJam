@@ -10,7 +10,7 @@ using Zenject;
 public class PowerUpAnimationEffect : MonoBehaviour
 {
     private static readonly int OpenUp = Animator.StringToHash("OpenUp");
-    [Inject] private GameSetting gameSetting;
+    public GameSetting gameSetting;
     [Inject] private GameController _gameController;
     [Inject] private DimsumSpawner dimsumSpawner;
 

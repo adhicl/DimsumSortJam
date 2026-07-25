@@ -7,7 +7,6 @@ namespace Installers
 {
     public class HomeInstaller : MonoInstaller
     {
-        [Inject] private GameSetting settings;
         public SoundController soundController;
     
         public override void InstallBindings()

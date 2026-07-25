@@ -436,6 +436,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: e1b05e01cdab49f0bdacbc827956c59b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameObjects.SpriteCompleteBasket
+  gameSetting: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
   dropFinish: {fileID: 0}
   finishObject: {fileID: 217982747119196575}
   spriteRenderers:

@@ -544,6 +544,7 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  _gameSetting: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
   spriteRenderer: {fileID: 3881565470804693044}
   _isOpen: 0
   dimsumUnlock: 0

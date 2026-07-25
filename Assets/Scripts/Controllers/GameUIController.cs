@@ -11,7 +11,7 @@ namespace Controllers
 {
     public class GameUIController : MonoBehaviour
     {
-        [Inject] GameSetting gameSetting;
+        public GameSetting gameSetting;
         [Inject] GameController gameController;
 
         [SerializeField] private TextMeshProUGUI textLevel;

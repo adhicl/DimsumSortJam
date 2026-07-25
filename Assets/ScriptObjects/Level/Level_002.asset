@@ -21,11 +21,11 @@ MonoBehaviour:
   - dimsum1: 4
     dimsum2: 4
     dimsum3: -1
-  - dimsum1: 0
-    dimsum2: 1
-    dimsum3: -1
   - dimsum1: 4
     dimsum2: -1
+    dimsum3: -1
+  - dimsum1: 0
+    dimsum2: 1
     dimsum3: -1
   - dimsum1: 1
     dimsum2: -1
@@ -53,3 +53,4 @@ MonoBehaviour:
     dimsum3: -1
   firstDisplayed: 000000000000000000000000000000000000000000000000
   currentDropArea: 020000000200000002000000020000000200000002000000
+  requestMissions: []

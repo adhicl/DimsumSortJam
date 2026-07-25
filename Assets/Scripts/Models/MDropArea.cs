@@ -228,7 +228,7 @@ namespace Models
             return tFormationTriple[indexPosition].transform.position;
         }
 
-        [Inject] private GameSetting _gameSetting;
+        public GameSetting _gameSetting;
         [Inject] SpriteCompleteBasket completeSprite;
         [Inject] DimsumSpawner dimsumSpawner;
         [Inject] private TraySpawner _traySpawner;

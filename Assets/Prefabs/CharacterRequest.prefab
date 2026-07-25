@@ -319,6 +319,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 609f85ba92f3413f99a7738f9086b1fa, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Models.MCharacter
+  gameSetting: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
   spriteRenderer: {fileID: 769431542736194850}
   requestCanvas: {fileID: 1558629217513930248}
   timerSlider: {fileID: 993113794913922845}

@@ -13,7 +13,7 @@ namespace GameObjects
     {
         private static readonly int Finish = Animator.StringToHash("Finish");
         
-        [Inject] GameSetting gameSetting;
+        public GameSetting gameSetting;
 
         [SerializeField] private Transform dropFinish;
         [SerializeField] private GameObject finishObject;

@@ -198,6 +198,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 741fe620da1541fb8cf67396314f8710, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Models.MTray
+  gameSetting: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
   selfRenderer: {fileID: 3199272209297098356}
   _spriteRenderers:
   - {fileID: 7187062456221087501}

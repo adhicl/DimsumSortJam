@@ -19,7 +19,7 @@ namespace Controllers
     {
         [Inject] DimsumSpawner _dimsumSpawner;
         [Inject] private CharacterSpawner _characterSpawner;
-        [Inject] GameSetting _gameSetting;
+        public GameSetting _gameSetting;
         [Inject] BGMController _bgmController;
         [Inject] SoundController _soundController;
 

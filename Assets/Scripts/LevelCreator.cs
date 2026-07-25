@@ -13,9 +13,9 @@ namespace DefaultNamespace
         [Range(1,35)]
         private int TotalVariation;
 
-        [Range(1,15)]
+        [Range(0,15)]
         public int TotalDoubleBasket;
-        [Range(1,30)]
+        [Range(0,30)]
         public int TotalSingleBasket;
         
         // [Range(6,12)]

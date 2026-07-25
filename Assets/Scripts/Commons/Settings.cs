@@ -10,10 +10,10 @@ namespace Commons
         public const float TransitionTime = 0.5f;
         public static readonly Color TransitionColor = new Color(0.7f, 0.8f, .95f);
 
-        public const int minLevelPowerup1 = 2;
-        public const int minLevelPowerup2 = 8;
-        public const int minLevelPowerup3 = 6;
-        public const int minLevelPowerup4 = 12;
+        public const int minLevelPowerup1 = 7;
+        public const int minLevelPowerup2 = 2;
+        public const int minLevelPowerup3 = 14;
+        public const int minLevelPowerup4 = 10;
         
         public const int minLevelBooster1 = 10;
         public const int minLevelBooster2 = 14;
@@ -46,9 +46,11 @@ namespace Commons
                     break;
                 case 4: newScene = "Tutorial4"; 
                     break;
-                case 6: newScene = "Tutorial5"; 
+                case 6: newScene = "Tutorial7"; 
                     break;
-                case 9: newScene = "Tutorial6";
+                case 9: newScene = "Tutorial5";
+                    break;
+                case 13: newScene = "Tutorial6";
                     break;
                 default: newScene = defaultScene;
                     break;

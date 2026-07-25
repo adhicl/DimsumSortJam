@@ -7,7 +7,7 @@ namespace Models
 {
     public class MTray : MonoBehaviour, ITray
     {
-        [Inject] GameSetting gameSetting;
+        public GameSetting gameSetting;
 
         [SerializeField] private SpriteRenderer selfRenderer;
         [SerializeField] SpriteRenderer[] _spriteRenderers;

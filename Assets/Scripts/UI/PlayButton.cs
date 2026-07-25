@@ -10,14 +10,14 @@ namespace UI
 {
     public class PlayButton : MonoBehaviour
     {
-        [Inject] private GameSetting _gameSetting;
+        public GameSetting _gameSetting;
         [Inject] SoundController _soundController;
 
         [SerializeField] private TextMeshProUGUI levelText;
 
         private void Start()
         {
-            levelText.text = $"Level {_gameSetting.currentLevel}";
+            levelText.text = $"Level {_gameSetting.currentLevel + 1}";
         }
 
         public void GoToNextScene()

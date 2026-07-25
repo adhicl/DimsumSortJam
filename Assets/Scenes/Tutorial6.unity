@@ -326,6 +326,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c39afc4c0643422190cd59a45f0ddbf9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Controllers.GameController
+  _gameSetting: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
   baskets:
   - {fileID: 1670245195}
   - {fileID: 2125558092}
@@ -1433,6 +1434,8 @@ MonoBehaviour:
   soundController: {fileID: 2068891643}
   bgmController: {fileID: 2088027270}
   gameController: {fileID: 317537326}
+  dimsumPrefab: {fileID: 1096264119486296586, guid: d3c8f59cf016c9842836a45263e3b75c, type: 3}
+  trayPrefab: {fileID: 1090847577745105087, guid: 6e1f750630738a54e832f63e824f0ea7, type: 3}
   characterPrefab: {fileID: 1854920392237422774, guid: dafefae68dbf8a44f952e968fce0461e, type: 3}
 --- !u!114 &1026606782
 MonoBehaviour:
@@ -1446,8 +1449,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 89715ad69b973a14899afa2c6730b30b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Zenject::Zenject.SceneContext
-  _scriptableObjectInstallers:
-  - {fileID: 11400000, guid: 406accb6467c44241842cbedf32d5ce0, type: 2}
+  _scriptableObjectInstallers: []
   _monoInstallers:
   - {fileID: 1026606781}
   _installerPrefabs: []
@@ -2105,6 +2107,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fdd8857e7fa94698a89880a75ca059e1, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Controllers.GameUIController
+  gameSetting: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
   textLevel: {fileID: 8145640945231840512}
   textProgressLevel: {fileID: 1233969461}
   sliderProgress: {fileID: 2067247875}
@@ -4029,6 +4032,10 @@ PrefabInstance:
       propertyPath: m_IsActive
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 1190821602234646161, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
+      propertyPath: gameSetting
+      value: 
+      objectReference: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
     - target: {fileID: 1448633014427111042, guid: b14d56b23d8a8074291bc660a2fe1291, type: 3}
       propertyPath: m_Color.a
       value: 1
@@ -4354,6 +4361,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 6083004907040272282, guid: ddb9914408004574c8e6af872371e2b6, type: 3}
+      propertyPath: gameSetting
+      value: 
+      objectReference: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
     - target: {fileID: 7719250949935339854, guid: ddb9914408004574c8e6af872371e2b6, type: 3}
       propertyPath: m_Name
       value: PowerUp

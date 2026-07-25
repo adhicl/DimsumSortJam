@@ -11,7 +11,7 @@ namespace Models
     {
         [Inject] private Camera mainCamera;
         [Inject] SoundController soundController;
-        [Inject] GameSetting gameSetting;
+        public GameSetting gameSetting;
         [Inject] GameController gameController;
         
         [SerializeField] SpriteRenderer _renderer;

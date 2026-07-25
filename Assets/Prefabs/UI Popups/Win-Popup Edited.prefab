@@ -1626,7 +1626,7 @@ MonoBehaviour:
   buttonDoubleClaim: {fileID: 496478546248548223}
   buttonClaim: {fileID: 5736657624658400339}
   targetCoinUI: {fileID: 1542365282129622862}
-  spawnRadius: 2
+  spawnRadius: 1
   moveDuration: 0.8
 --- !u!224 &6650578969116514853 stripped
 RectTransform:
