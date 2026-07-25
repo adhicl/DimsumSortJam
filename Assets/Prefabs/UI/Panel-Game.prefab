@@ -773,6 +773,7 @@ GameObject:
   m_Component:
   - component: {fileID: 9004998299807371768}
   - component: {fileID: 1190821602234646161}
+  - component: {fileID: 7593672055467403418}
   m_Layer: 5
   m_Name: Panel-Game
   m_TagString: Untagged
@@ -814,10 +815,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 93d3643b5506496ea326900b912365f8, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UI.PlayTopBar
-  minLevelPowerUp1: 0
-  minLevelPowerUp2: 0
-  minLevelPowerUp3: 0
-  minLevelPowerUp4: 0
+  gameSetting: {fileID: 0}
   powerUpBtn1: {fileID: 2494577668286452768}
   powerUpBtn2: {fileID: 8619741661385936006}
   powerUpBtn3: {fileID: 5035791798260971611}
@@ -842,6 +840,25 @@ MonoBehaviour:
   addPowerup2Btn: {fileID: 1329703159186287944}
   addPowerup3Btn: {fileID: 2308602031656638869}
   addPowerup4Btn: {fileID: 4410016224484472946}
+--- !u!114 &7593672055467403418
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 3828993381266498000}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 45f0f73d67896e547b642028b06cdc53, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::UI.SafeAreaPanel
+  padTop: 1
+  padBottom: 1
+  padLeft: 0
+  padRight: 0
+  extraTopPadding: 0
+  extraBottomPadding: 0
+  logInsets: 0
 --- !u!1 &4351362825412349620
 GameObject:
   m_ObjectHideFlags: 0
