@@ -36,6 +36,35 @@ namespace Commons
         public bool soundMute;
         public bool musicMute;
 
+        /// <summary>
+        /// Set by the <c>remove_ads</c> (and <c>starter_pack</c>) purchase. Re-applied from the
+        /// store on every launch by IAPController, so wiping PlayerPrefs cannot lose it.
+        /// </summary>
+        public bool removeAds;
+
+        /// <summary>
+        /// Credits an IAP reward and persists it. Called by IAPController before the purchase
+        /// is confirmed with the store.
+        /// </summary>
+        public void ApplyReward(IAPCatalog.Reward reward)
+        {
+            totalGold += reward.gold;
+            totalLife += reward.lives;
+
+            totalPowerup1 += reward.powerupEach;
+            totalPowerup2 += reward.powerupEach;
+            totalPowerup3 += reward.powerupEach;
+            totalPowerup4 += reward.powerupEach;
+
+            totalBooster1 += reward.boosterEach;
+            totalBooster2 += reward.boosterEach;
+            totalBooster3 += reward.boosterEach;
+
+            if (reward.removesAds) removeAds = true;
+
+            SaveData();
+        }
+
         public void SaveData()
         {
             PlayerPrefs.SetInt("currentLevel", currentLevel);
@@ -51,6 +80,8 @@ namespace Commons
             PlayerPrefs.SetInt("totalBooster3", totalBooster3);
             PlayerPrefs.SetInt("soundMute", soundMute?1:0);
             PlayerPrefs.SetInt("musicMute", musicMute?1:0);
+            PlayerPrefs.SetInt("removeAds", removeAds?1:0);
+            PlayerPrefs.Save();
         }
 
         public void LoadData()
@@ -68,6 +99,7 @@ namespace Commons
             totalBooster3 = PlayerPrefs.GetInt("totalBooster3", 3);
             soundMute = PlayerPrefs.GetInt("soundMute", 0) == 1;
             musicMute = PlayerPrefs.GetInt("musicMute", 0) == 1;
+            removeAds = PlayerPrefs.GetInt("removeAds", 0) == 1;
         }
     }
 

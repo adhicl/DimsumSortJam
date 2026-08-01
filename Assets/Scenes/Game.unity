@@ -1964,6 +1964,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::Controllers.BannerAdController
   useTestAd: 0
+  gameSetting: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
 --- !u!4 &1490508338
 Transform:
   m_ObjectHideFlags: 0

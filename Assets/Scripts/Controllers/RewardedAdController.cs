@@ -54,11 +54,14 @@ namespace Controllers
                 return;
             }
 
-            MobileAds.Initialize(_ =>
-            {
-                _sdkInitialized = true;
-                LoadAd();
-            });
+            // The Ads SDK must not start until UMP has an answer, or we risk serving a
+            // personalized ad to a player who has not consented.
+            ConsentController.WhenAdsAllowed(() =>
+                MobileAds.Initialize(_ =>
+                {
+                    _sdkInitialized = true;
+                    LoadAd();
+                }));
         }
 
         /// <summary>Preloads a rewarded ad so it is ready when the player asks for it.</summary>

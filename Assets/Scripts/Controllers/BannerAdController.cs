@@ -1,3 +1,4 @@
+using Commons;
 using GoogleMobileAds.Api;
 using UnityEngine;
 
@@ -19,6 +20,9 @@ namespace Controllers
         [Tooltip("Use Google's sample banner id instead of the live one (recommended while testing).")]
         [SerializeField] private bool useTestAd = true;
 
+        [Tooltip("GameSetting asset — banners are suppressed once the player buys remove_ads.")]
+        [SerializeField] private GameSetting gameSetting;
+
         // Shared across scenes so MobileAds.Initialize only runs once.
         private static bool _sdkInitialized;
 
@@ -39,8 +43,13 @@ namespace Controllers
             }
         }
 
+        /// <summary>The remove_ads purchase suppresses banners everywhere.</summary>
+        private bool AdsRemoved => gameSetting != null && gameSetting.removeAds;
+
         private void Start()
         {
+            if (AdsRemoved) return;
+
             // Marshal ad callbacks onto the Unity main thread so we can touch
             // GameObjects/UI safely from the event handlers.
             MobileAds.RaiseAdEventsOnUnityMainThread = true;
@@ -51,11 +60,21 @@ namespace Controllers
                 return;
             }
 
-            MobileAds.Initialize(_ => { _sdkInitialized = true; });
+            // The Ads SDK must not start until UMP has an answer, or we risk serving a
+            // personalized ad to a player who has not consented.
+            ConsentController.WhenAdsAllowed(() =>
+                MobileAds.Initialize(_ => { _sdkInitialized = true; }));
         }
 
         private void Update()
         {
+            if (AdsRemoved)
+            {
+                // Covers a purchase made while this scene is already live.
+                DestroyBanner();
+                return;
+            }
+
             // Wait for one-time SDK init to complete, then load a single banner.
             if (_sdkInitialized && !_loadRequested)
             {
