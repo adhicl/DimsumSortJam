@@ -125,6 +125,7 @@ namespace Controllers
             // Play Games has no Editor implementation — the plugin's dummy client never
             // completes, so skip straight to anonymous rather than hanging on the callback.
             if (Application.isEditor) return false;
+            if (!HasWebClientId()) return false;
 
             try
             {
@@ -157,6 +158,24 @@ namespace Controllers
         }
 
 #if GPGS_ENABLED && UNITY_ANDROID
+        /// <summary>
+        /// The Web App Client ID is what <c>RequestServerSideAccess</c> exchanges for the auth
+        /// code UGS needs. The GPGS setup window calls it "optional" — it is not, for this flow:
+        /// without it the plugin throws, we fall back to anonymous, and every player silently
+        /// loses their Play Games identity. Checked up front so the reason is in logcat instead
+        /// of buried in a caught exception.
+        /// </summary>
+        private static bool HasWebClientId()
+        {
+            var settings = PlayGamesSettings.LoadInstance();
+            if (settings != null && !string.IsNullOrEmpty(settings.WebClientId)) return true;
+
+            Debug.LogError("[GameServices] No Web App Client ID configured — Play Games sign-in " +
+                           "cannot run and every player will be anonymous. Set it in " +
+                           "Window > Google Play Games > Setup > Android setup.");
+            return false;
+        }
+
         private static Task<SignInStatus> AuthenticatePlayGamesAsync()
         {
             var tcs = new TaskCompletionSource<SignInStatus>();
@@ -206,6 +225,7 @@ namespace Controllers
 #if GPGS_ENABLED && UNITY_ANDROID
             if (Application.isEditor) return false;
             if (!IsSignedIn || IsPlayGamesAccount) return false;
+            if (!HasWebClientId()) return false;
 
             try
             {

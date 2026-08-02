@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using Commons;
+using Controllers;
 using Ricimi;
 using TMPro;
 using UnityEngine;
@@ -18,7 +19,14 @@ namespace UI
         [SerializeField] private Slider loadingSlider;
         [SerializeField] private TextMeshProUGUI loadingProgressText;
         [SerializeField] private TextMeshProUGUI loadingText;
+
+        [Tooltip("Longest the loading screen waits for Cloud Save before starting on local data.")]
+        [SerializeField] private float cloudSyncTimeout = 8f;
+
         public AudioMixer mixer;
+
+        private float _elapsed;
+        private bool _transitioning;
 
         private void Start()
         {
@@ -29,18 +37,40 @@ namespace UI
         private float progress = 0f;
         private void Update()
         {
-            progress = Mathf.Clamp(progress + Time.deltaTime, 0f, 1f);
+            _elapsed += Time.deltaTime;
+
+            // Hold the bar just short of full until the cloud save has resolved. Which scene
+            // to open is decided from currentLevel, so starting before the download lands
+            // could drop a returning player back into a level they already finished.
+            var target = IsCloudSyncSettled() ? 1f : 0.9f;
+            progress = Mathf.Clamp(progress + Time.deltaTime, 0f, target);
+
             loadingSlider.value = progress;
             loadingProgressText.text = $"{progress * 100f:N0}%";
-            if (progress >= 1f)
+
+            if (progress >= 1f && !_transitioning)
             {
+                _transitioning = true;
+
                 string newScene = "Home";
                 if (_gameSetting.currentLevel < 5)
                 {
                     newScene = Settings.GetNextLevelScene(_gameSetting.currentLevel, "Home");
                 }
-                Transition.LoadLevel(newScene, 0f, Settings.TransitionColor); 
+                Transition.LoadLevel(newScene, 0f, Settings.TransitionColor);
             }
+        }
+
+        /// <summary>
+        /// True once Cloud Save has finished its first pull, or once we have waited long
+        /// enough that a slow network should not keep the player staring at a loading bar.
+        /// Also true when there is no CloudSaveController at all, so playing from a scene
+        /// other than Splash still boots.
+        /// </summary>
+        private bool IsCloudSyncSettled()
+        {
+            var cloudSave = CloudSaveController.Instance;
+            return cloudSave == null || cloudSave.HasSynced || _elapsed >= cloudSyncTimeout;
         }
 
         private IEnumerator DoLoading()

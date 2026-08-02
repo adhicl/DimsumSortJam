@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Permissions the game needs, declared in one place so they are visible in source control
+     rather than inherited silently from plugin AARs. Unity merges every androidlib manifest
+     into the final one; duplicates across libraries collapse to a single declaration, so
+     restating what the Ads or Billing SDK also asks for is safe.
+
+     Deliberately NOT declared: location, storage, camera, contacts, phone state. The game
+     needs none of them, and each one that appears in the merged manifest has to be justified
+     in the Play Console Data safety form. -->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.yourfavoritegamestudio.jajanan.permissions">
+
+    <!-- Unity Gaming Services (Authentication, Cloud Save, Analytics), Google Play Games,
+         Google Play Billing and AdMob all talk to the network. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+
+    <!-- Lets the ads and Play services SDKs check connectivity before firing a request
+         instead of failing one. Read-only; no user data. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+
+    <!-- Advertising ID. Required from targetSdk 33 for AdMob to serve personalised ads;
+         without it the SDK gets a zeroed ID and fill drops. Must be declared in the Play
+         Console Data safety form as "used for advertising". -->
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" />
+
+    <!-- Google Play Billing (in-app purchases). -->
+    <uses-permission android:name="com.android.vending.BILLING" />
+
+    <!-- The game is playable on any device; none of these are required to install. -->
+    <uses-feature android:name="android.hardware.touchscreen" android:required="false" />
+    <uses-feature android:name="android.hardware.touchscreen.multitouch" android:required="false" />
+
+    <application />
+</manifest>

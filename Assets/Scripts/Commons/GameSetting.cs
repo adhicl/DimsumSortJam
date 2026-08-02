@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Globalization;
 using UnityEngine;
 
 namespace Commons
@@ -65,8 +66,21 @@ namespace Commons
             SaveData();
         }
 
+        /// <summary>
+        /// Raised after every local save. <see cref="Controllers.CloudSaveController"/> listens
+        /// so a cloud upload is queued without every save site having to know about it. Static
+        /// because this is a ScriptableObject asset — listeners come and go with scene loads
+        /// while the asset lives for the whole session.
+        /// </summary>
+        public static event Action<GameSetting> OnDataSaved;
+
+        /// <summary>Unix ms of the last local save; 0 on a fresh install. Used to order cloud saves.</summary>
+        public long SavedAt { get; private set; }
+
         public void SaveData()
         {
+            SavedAt = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            PlayerPrefs.SetString("savedAt", SavedAt.ToString(CultureInfo.InvariantCulture));
             PlayerPrefs.SetInt("currentLevel", currentLevel);
             PlayerPrefs.SetFloat("lifeTimer", lifeTimer);
             PlayerPrefs.SetInt("totalGold", totalGold);
@@ -82,10 +96,14 @@ namespace Commons
             PlayerPrefs.SetInt("musicMute", musicMute?1:0);
             PlayerPrefs.SetInt("removeAds", removeAds?1:0);
             PlayerPrefs.Save();
+
+            OnDataSaved?.Invoke(this);
         }
 
         public void LoadData()
         {
+            SavedAt = long.TryParse(PlayerPrefs.GetString("savedAt", "0"),
+                NumberStyles.Integer, CultureInfo.InvariantCulture, out var savedAt) ? savedAt : 0L;
             currentLevel = PlayerPrefs.GetInt("currentLevel", 0);
             lifeTimer = PlayerPrefs.GetFloat("lifeTimer", 15f);
             totalGold = PlayerPrefs.GetInt("totalGold", 100);
@@ -100,6 +118,88 @@ namespace Commons
             soundMute = PlayerPrefs.GetInt("soundMute", 0) == 1;
             musicMute = PlayerPrefs.GetInt("musicMute", 0) == 1;
             removeAds = PlayerPrefs.GetInt("removeAds", 0) == 1;
+        }
+
+        /// <summary>Copies the persisted fields out for upload to Cloud Save.</summary>
+        public SaveSnapshot CreateSnapshot()
+        {
+            return new SaveSnapshot
+            {
+                savedAt = SavedAt,
+                currentLevel = currentLevel,
+                lifeTimer = lifeTimer,
+                totalGold = totalGold,
+                totalLife = totalLife,
+                totalPowerup1 = totalPowerup1,
+                totalPowerup2 = totalPowerup2,
+                totalPowerup3 = totalPowerup3,
+                totalPowerup4 = totalPowerup4,
+                totalBooster1 = totalBooster1,
+                totalBooster2 = totalBooster2,
+                totalBooster3 = totalBooster3,
+                soundMute = soundMute,
+                musicMute = musicMute,
+                removeAds = removeAds
+            };
+        }
+
+        /// <summary>
+        /// Overwrites the in-memory state from a cloud snapshot and writes it straight to
+        /// PlayerPrefs, so the download survives a kill before the next gameplay save.
+        /// Keeps the snapshot's own <c>savedAt</c> rather than stamping "now" — otherwise a
+        /// download would immediately look newer than the record it came from.
+        /// </summary>
+        public void ApplySnapshot(SaveSnapshot snapshot)
+        {
+            currentLevel = snapshot.currentLevel;
+            lifeTimer = snapshot.lifeTimer;
+            totalGold = snapshot.totalGold;
+            totalLife = snapshot.totalLife;
+            totalPowerup1 = snapshot.totalPowerup1;
+            totalPowerup2 = snapshot.totalPowerup2;
+            totalPowerup3 = snapshot.totalPowerup3;
+            totalPowerup4 = snapshot.totalPowerup4;
+            totalBooster1 = snapshot.totalBooster1;
+            totalBooster2 = snapshot.totalBooster2;
+            totalBooster3 = snapshot.totalBooster3;
+            soundMute = snapshot.soundMute;
+            musicMute = snapshot.musicMute;
+            // removeAds stays whatever the store said this launch — IAPController re-derives
+            // ownership from Google Play, which outranks any cached snapshot.
+            removeAds |= snapshot.removeAds;
+
+            var restoredAt = SavedAt;
+            SaveData();
+            SavedAt = snapshot.savedAt;
+            PlayerPrefs.SetString("savedAt", SavedAt.ToString(CultureInfo.InvariantCulture));
+            PlayerPrefs.Save();
+
+            Debug.Log($"[GameSetting] Applied cloud snapshot (local {restoredAt} -> cloud {snapshot.savedAt}).");
+        }
+
+        /// <summary>
+        /// The saved state as plain data. Serialized to JSON by Cloud Save, so field names are
+        /// part of the stored format — renaming one silently drops that value for every
+        /// existing player. Add fields, don't rename them.
+        /// </summary>
+        [Serializable]
+        public class SaveSnapshot
+        {
+            public long savedAt;
+            public int currentLevel;
+            public float lifeTimer;
+            public int totalGold;
+            public int totalLife;
+            public int totalPowerup1;
+            public int totalPowerup2;
+            public int totalPowerup3;
+            public int totalPowerup4;
+            public int totalBooster1;
+            public int totalBooster2;
+            public int totalBooster3;
+            public bool soundMute;
+            public bool musicMute;
+            public bool removeAds;
         }
     }
 
