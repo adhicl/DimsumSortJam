@@ -16,3 +16,4 @@ missing:
 
 * = can be added later
 
+claude --resume 72142d36-bd3e-4f7c-bd6e-894d972f7aae

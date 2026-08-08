@@ -412,6 +412,33 @@ on a loss, so a player on their last life can keep going as long as they keep wi
 
 ---
 
+## Profile
+
+Tapping the avatar in Home's top bar opens `Edit-Profile-Popup SortFood`, which sets a **name**
+and an **avatar**. Both live on `GameSetting`, so they persist to PlayerPrefs and ride along in
+the Cloud Save snapshot with everything else — no separate sync.
+
+- **Nothing is written until Save.** Cancel and the X leave the profile untouched.
+- **The default name comes from Unity Authentication**: `Player-` plus the first four characters
+  of the UGS player id, uppercased (`Player-X2JF`). Seeded by `GameSetting.EnsureProfile`, which
+  runs on boot *after* the cloud pull — so a returning player's own name lands first and the
+  default never overwrites it. The popup calls it again on open, covering the case where sign-in
+  had not finished at boot.
+- The popup's **ID** row shows the first 8 characters of the real player id, which is what the
+  kit's `IXDA@DAY` placeholder was sized for.
+- **The avatar is stored as the sprite's name**, not an index into the catalog — reordering or
+  inserting an avatar would otherwise silently give every existing player a different face.
+- A cloud snapshot only overwrites the profile when it actually carries one, so syncing against a
+  save written before profiles existed cannot blank out a name the player just chose.
+
+`Assets/ScriptObjects/AvatarCatalog.asset` lists the 15 avatars in the order the popup shows them.
+Both the popup grid and the top bar resolve through it, so there is one list rather than two that
+can drift. **Adding an avatar is two edits and no code**: add a toggle to the popup's grid
+(`Content/Content/Content-Items/ScrollRect/Viewport/Content`) and the matching sprite to the
+catalog, in the same position.
+
+---
+
 ## The shop tab
 
 The shop is a tab in the Home scene (`Home.unity` → `Page 1` → `Panel-Shop`), not a popup. It is
@@ -551,7 +578,9 @@ Consequences worth knowing:
 | `Assets/Scripts/UI/NestedScrollRect.cs` | Vertical scrolling inside the horizontal pager without stealing swipes. |
 | `Assets/Scripts/UI/ResponsiveGrid.cs` | Divides a GridLayoutGroup's cells out of its real width, for the gold grid. |
 | `Assets/Scripts/UI/SafeAreaPanel.cs` | Notch/gesture-bar insets, plus the banner-ad inset on Home. |
-| `Assets/Scripts/UI/HomeScene.cs` | Home top bar: gold, and the heart's count / ∞ countdown. |
+| `Assets/Scripts/UI/HomeScene.cs` | Home top bar: gold, the heart's count / ∞ countdown, and the profile. |
+| `Assets/Scripts/UI/ProfilePopup.cs` | Edit-profile popup: name and avatar, saved on Save only. |
+| `Assets/Scripts/Commons/AvatarCatalog.cs` | The pickable avatars; `AvatarCatalog.asset` holds the list. |
 | `Assets/Scripts/Commons/GameSetting.cs` | Save data, plus the life economy: cap, spend, settle, daily grant. |
 | `Assets/Scripts/UI/RestorePurchasesButton.cs` | Wires the previously dead "Restore Purchases" button. |
 | `Assets/Scripts/UI/PrivacyOptionsButton.cs` | "Ad Privacy" entry; self-hides where not legally required. |

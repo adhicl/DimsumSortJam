@@ -23,6 +23,9 @@ namespace UI
         [Tooltip("Longest the loading screen waits for Cloud Save before starting on local data.")]
         [SerializeField] private float cloudSyncTimeout = 8f;
 
+        [Tooltip("Used only for the default avatar a brand new player starts with.")]
+        [SerializeField] private AvatarCatalog avatarCatalog;
+
         public AudioMixer mixer;
 
         private float _elapsed;
@@ -57,6 +60,12 @@ namespace UI
                 // would hand a second free window to someone who claimed today's elsewhere.
                 _gameSetting.RefreshLives();
                 _gameSetting.TryGrantDailyFreeUnlimitedLives();
+
+                // Seed a name and face for a brand new player. Also after the cloud pull, so a
+                // returning player's own profile lands first and this does nothing.
+                _gameSetting.EnsureProfile(
+                    GameServicesController.Instance != null ? GameServicesController.Instance.PlayerId : null,
+                    avatarCatalog != null ? avatarCatalog.DefaultId : null);
 
                 string newScene = "Home";
                 if (_gameSetting.currentLevel < 5)

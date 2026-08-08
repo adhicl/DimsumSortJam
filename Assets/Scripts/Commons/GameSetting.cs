@@ -25,6 +25,19 @@ namespace Commons
         public int totalLife;
         public int totalGold;
 
+        /// <summary>The player's display name. Empty until <see cref="EnsureProfile"/> fills it in.</summary>
+        public string playerName = string.Empty;
+
+        /// <summary>
+        /// Chosen avatar, stored as the sprite's name rather than an index into
+        /// <see cref="AvatarCatalog"/> — reordering or inserting an avatar would silently give
+        /// every existing player a different face if this were positional.
+        /// </summary>
+        public string avatarId = string.Empty;
+
+        /// <summary>Longest name the profile popup will accept.</summary>
+        public const int MaxPlayerNameLength = 16;
+
         /// <summary>
         /// Unix ms at which the current unlimited-lives window ends; 0 when there is none.
         /// Bundles sell time rather than a life count, so this is what the top bar counts down.
@@ -131,6 +144,57 @@ namespace Commons
 
                 return now.Date.AddDays(1) - now;
             }
+        }
+
+        /// <summary>
+        /// Gives a player without a profile yet a name and a face, so the top bar and the
+        /// profile popup are never blank. The name is seeded from the Unity Authentication
+        /// player id — the only identifier available before the player has typed anything —
+        /// shortened to something a human would accept as a name rather than the raw 28
+        /// characters. Does nothing once either field is set, so it never overwrites a choice.
+        /// </summary>
+        /// <param name="playerId">UGS player id, or null when sign-in has not finished.</param>
+        /// <param name="defaultAvatarId">First entry of the avatar catalog.</param>
+        public bool EnsureProfile(string playerId, string defaultAvatarId)
+        {
+            bool changed = false;
+
+            if (string.IsNullOrEmpty(playerName))
+            {
+                playerName = DefaultNameFor(playerId);
+                changed = true;
+            }
+
+            if (string.IsNullOrEmpty(avatarId) && !string.IsNullOrEmpty(defaultAvatarId))
+            {
+                avatarId = defaultAvatarId;
+                changed = true;
+            }
+
+            if (changed) SaveData();
+            return changed;
+        }
+
+        /// <summary>"Player-X2JF" from a UGS id, or a plain "Player" before sign-in lands.</summary>
+        public static string DefaultNameFor(string playerId)
+        {
+            if (string.IsNullOrEmpty(playerId)) return "Player";
+
+            string suffix = playerId.Substring(0, Math.Min(4, playerId.Length)).ToUpperInvariant();
+            return "Player-" + suffix;
+        }
+
+        /// <summary>
+        /// Trims and caps a name typed into the profile popup, falling back to the current one
+        /// (and then to a default) so the player can never end up nameless.
+        /// </summary>
+        public string SanitiseName(string typed, string playerId)
+        {
+            string clean = (typed ?? string.Empty).Trim();
+            if (clean.Length > MaxPlayerNameLength) clean = clean.Substring(0, MaxPlayerNameLength);
+
+            if (clean.Length > 0) return clean;
+            return string.IsNullOrEmpty(playerName) ? DefaultNameFor(playerId) : playerName;
         }
 
         /// <summary>
@@ -305,6 +369,8 @@ namespace Commons
                 unlimitedLivesUntil.ToString(CultureInfo.InvariantCulture));
             PlayerPrefs.SetString("lastFreeUnlimitedDay", lastFreeUnlimitedDay ?? string.Empty);
             PlayerPrefs.SetString("nextLifeAt", nextLifeAt.ToString(CultureInfo.InvariantCulture));
+            PlayerPrefs.SetString("playerName", playerName ?? string.Empty);
+            PlayerPrefs.SetString("avatarId", avatarId ?? string.Empty);
             PlayerPrefs.SetInt("totalPowerup1", totalPowerup1);
             PlayerPrefs.SetInt("totalPowerup2", totalPowerup2);
             PlayerPrefs.SetInt("totalPowerup3", totalPowerup3);
@@ -335,6 +401,8 @@ namespace Commons
             lastFreeUnlimitedDay = PlayerPrefs.GetString("lastFreeUnlimitedDay", string.Empty);
             nextLifeAt = long.TryParse(PlayerPrefs.GetString("nextLifeAt", "0"),
                 NumberStyles.Integer, CultureInfo.InvariantCulture, out var nextLife) ? nextLife : 0L;
+            playerName = PlayerPrefs.GetString("playerName", string.Empty);
+            avatarId = PlayerPrefs.GetString("avatarId", string.Empty);
             totalPowerup1 = PlayerPrefs.GetInt("totalPowerup1", 3);
             totalPowerup2 = PlayerPrefs.GetInt("totalPowerup2", 3);
             totalPowerup3 = PlayerPrefs.GetInt("totalPowerup3", 3);
@@ -360,6 +428,8 @@ namespace Commons
                 unlimitedLivesUntil = unlimitedLivesUntil,
                 lastFreeUnlimitedDay = lastFreeUnlimitedDay,
                 nextLifeAt = nextLifeAt,
+                playerName = playerName,
+                avatarId = avatarId,
                 totalPowerup1 = totalPowerup1,
                 totalPowerup2 = totalPowerup2,
                 totalPowerup3 = totalPowerup3,
@@ -394,6 +464,11 @@ namespace Commons
             totalBooster3 = snapshot.totalBooster3;
             soundMute = snapshot.soundMute;
             musicMute = snapshot.musicMute;
+
+            // Only take a profile the cloud actually has. Snapshots written before profiles
+            // existed carry nulls, and applying those would wipe a name the player just chose.
+            if (!string.IsNullOrEmpty(snapshot.playerName)) playerName = snapshot.playerName;
+            if (!string.IsNullOrEmpty(snapshot.avatarId)) avatarId = snapshot.avatarId;
             // removeAds stays whatever the store said this launch — IAPController re-derives
             // ownership from Google Play, which outranks any cached snapshot.
             removeAds |= snapshot.removeAds;
@@ -442,6 +517,8 @@ namespace Commons
             public long unlimitedLivesUntil;
             public string lastFreeUnlimitedDay;
             public long nextLifeAt;
+            public string playerName;
+            public string avatarId;
             public int totalPowerup1;
             public int totalPowerup2;
             public int totalPowerup3;

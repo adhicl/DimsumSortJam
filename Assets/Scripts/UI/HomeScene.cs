@@ -1,6 +1,7 @@
 using Commons;
 using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 namespace UI
 {
@@ -13,6 +14,15 @@ namespace UI
 
         [Tooltip("The ∞ glyph over the heart. Shown only while an unlimited-lives window runs.")]
         [SerializeField] private GameObject lifeInfinityIcon;
+
+        [Header("Profile")]
+        [SerializeField] private AvatarCatalog avatarCatalog;
+
+        [Tooltip("The top bar's avatar picture.")]
+        [SerializeField] private Image avatarImage;
+
+        [Tooltip("Optional — the player's name, if the bar shows one.")]
+        [SerializeField] private TextMeshProUGUI playerNameText;
 
         // The life counter ticks in real time, and gold changes the moment something is bought
         // in the shop tab, so the bar is refreshed on a timer rather than once in Start.
@@ -41,7 +51,25 @@ namespace UI
 
         private void Start()
         {
+            RefreshProfile();
             Refresh();
+        }
+
+        /// <summary>
+        /// Redraws the name and avatar. Called on load and again by the profile popup after a
+        /// save — the profile only changes when the player changes it, so unlike the currencies
+        /// it does not belong in the per-second tick.
+        /// </summary>
+        public void RefreshProfile()
+        {
+            if (_gameSetting == null) return;
+
+            if (avatarImage != null && avatarCatalog != null)
+            {
+                avatarImage.sprite = avatarCatalog.Get(_gameSetting.avatarId);
+            }
+
+            if (playerNameText != null) playerNameText.text = _gameSetting.playerName;
         }
 
         private void Update()

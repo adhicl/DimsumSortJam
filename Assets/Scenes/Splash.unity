@@ -1447,6 +1447,7 @@ MonoBehaviour:
   loadingProgressText: {fileID: 1825974314}
   loadingText: {fileID: 2099954686}
   cloudSyncTimeout: 8
+  avatarCatalog: {fileID: 11400000, guid: badc8f040f5112c418a12d5b8a6bec53, type: 2}
   mixer: {fileID: 24100000, guid: 7e984f512e89b60468e829489e8883e3, type: 2}
 --- !u!4 &468855531
 Transform:
