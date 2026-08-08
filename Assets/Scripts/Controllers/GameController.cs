@@ -365,6 +365,10 @@ namespace Controllers
         
         private void ShowLose()
         {
+            // The one place a life is actually spent. Every give-up path funnels through here,
+            // and a running unlimited-lives window makes it free — see GameSetting.TrySpendLife.
+            _gameSetting.TrySpendLife();
+
             _bgmController.StopMusic();
             _soundController.PlayFinishOverClip();
 

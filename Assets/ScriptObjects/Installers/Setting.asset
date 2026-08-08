@@ -85,7 +85,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 041bf4846739e7244ae0ad1cbddb780b, type: 2}
   - {fileID: 11400000, guid: 2195a7a50b4e6ff4db78815910488856, type: 2}
   lifeTimer: 999
-  totalLife: 999
+  totalLife: 5
   totalGold: 180
   totalPowerup1: 3
   totalPowerup2: 3

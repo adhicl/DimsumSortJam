@@ -25,6 +25,44 @@ namespace Commons
         public int totalLife;
         public int totalGold;
 
+        /// <summary>
+        /// Unix ms at which the current unlimited-lives window ends; 0 when there is none.
+        /// Bundles sell time rather than a life count, so this is what the top bar counts down.
+        /// Wall-clock based, so it keeps running while the app is closed — and, like the rest of
+        /// the save, it trusts the device clock (see next_step.md, "Known gaps").
+        /// </summary>
+        public long unlimitedLivesUntil;
+
+        /// <summary>
+        /// Local date ("yyyy-MM-dd") the free daily unlimited-lives window was last handed out.
+        /// Empty on a fresh install. Stored as the date rather than a timestamp so "once a day"
+        /// means a calendar day the player recognises, not a rolling 24 hours.
+        /// </summary>
+        public string lastFreeUnlimitedDay = string.Empty;
+
+        /// <summary>
+        /// Unix ms at which the next regenerated life lands; 0 when the bar is full and no
+        /// clock is running. Wall-clock like the unlimited window, so lives keep coming back
+        /// while the app is closed.
+        /// </summary>
+        public long nextLifeAt;
+
+        /// <summary>
+        /// Lives never go above this. One is spent per failed level, and the counter is handed
+        /// back full whenever an unlimited-lives window runs out.
+        /// </summary>
+        public const int MaxLife = 5;
+
+        /// <summary>Length of the free window every player gets once a day.</summary>
+        public const int FreeUnlimitedMinutesPerDay = 15;
+
+        /// <summary>How long one life takes to come back.</summary>
+        public const int LifeRegenMinutes = 30;
+
+        private const long LifeRegenPeriodMs = LifeRegenMinutes * 60000L;
+
+        private static long NowMs() => DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+
         public int totalPowerup1;
         public int totalPowerup2;
         public int totalPowerup3;
@@ -43,6 +81,180 @@ namespace Commons
         /// </summary>
         public bool removeAds;
 
+        /// <summary>How long the unlimited-lives window still has to run; zero when inactive.</summary>
+        public TimeSpan UnlimitedLivesRemaining
+        {
+            get
+            {
+                long ms = unlimitedLivesUntil - DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                return ms > 0L ? TimeSpan.FromMilliseconds(ms) : TimeSpan.Zero;
+            }
+        }
+
+        /// <summary>True while an unlimited-lives window is running.</summary>
+        public bool HasUnlimitedLives => UnlimitedLivesRemaining > TimeSpan.Zero;
+
+        /// <summary>
+        /// False once every life is spent and no unlimited window is running — the out-of-lives
+        /// gate on the Play button. Call <see cref="SettleUnlimitedLives"/> first so a window
+        /// that lapsed while the app was closed hands its lives back before this is read.
+        /// </summary>
+        public bool CanStartLevel => HasUnlimitedLives || totalLife > 0;
+
+        /// <summary>
+        /// How long until the next regenerated life; zero when the bar is already full. This is
+        /// the free way back in, so the out-of-lives popup prints it rather than making the
+        /// player guess.
+        /// </summary>
+        public TimeSpan TimeUntilNextLife
+        {
+            get
+            {
+                if (totalLife >= MaxLife || nextLifeAt == 0L) return TimeSpan.Zero;
+
+                long ms = nextLifeAt - NowMs();
+                return ms > 0L ? TimeSpan.FromMilliseconds(ms) : TimeSpan.Zero;
+            }
+        }
+
+        /// <summary>
+        /// How long until the free daily window can be claimed again; zero when it is available
+        /// right now.
+        /// </summary>
+        public TimeSpan TimeUntilNextFreeUnlimited
+        {
+            get
+            {
+                var now = DateTime.Now;
+                string today = now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+                if (lastFreeUnlimitedDay != today) return TimeSpan.Zero;
+
+                return now.Date.AddDays(1) - now;
+            }
+        }
+
+        /// <summary>
+        /// Brings the life state up to date with the wall clock: closes a lapsed unlimited
+        /// window and credits any lives that regenerated. The single entry point, so no caller
+        /// has to remember that there are two clocks. Idempotent and cheap — safe to call every
+        /// frame, on every boot, and before every read of <see cref="CanStartLevel"/>.
+        /// </summary>
+        public void RefreshLives()
+        {
+            bool changed = SettleUnlimitedLives();
+            changed |= RegenerateLives();
+
+            if (changed) SaveData();
+        }
+
+        /// <summary>
+        /// Closes a window that has run out and hands the player a full set of lives, which is
+        /// what "unlimited until 8pm, then back to 5" means. Clearing the deadline is the latch
+        /// that makes this idempotent. Returns true only on the call that settled a window.
+        /// </summary>
+        private bool SettleUnlimitedLives()
+        {
+            if (unlimitedLivesUntil == 0L) return false;
+            if (NowMs() < unlimitedLivesUntil) return false;
+
+            unlimitedLivesUntil = 0L;
+            totalLife = MaxLife;
+            nextLifeAt = 0L;
+            return true;
+        }
+
+        /// <summary>
+        /// Credits lives the regeneration clock has earned. Returns true when anything changed.
+        /// </summary>
+        private bool RegenerateLives()
+        {
+            if (totalLife >= MaxLife)
+            {
+                // Filled by something else — a purchase, or a window ending. Stop the clock so
+                // the next life is a full period away rather than arriving instantly.
+                if (nextLifeAt == 0L) return false;
+                nextLifeAt = 0L;
+                return true;
+            }
+
+            long now = NowMs();
+
+            if (nextLifeAt == 0L)
+            {
+                // Short of full with no clock running: a save written before regeneration
+                // existed. Start the period from now rather than back-paying for the gap.
+                nextLifeAt = now + LifeRegenPeriodMs;
+                return true;
+            }
+
+            if (now < nextLifeAt) return false;
+
+            // Pay out every period that elapsed, not just one — closing the app for three
+            // hours should return six lives' worth, capped at the bar.
+            while (now >= nextLifeAt && totalLife < MaxLife)
+            {
+                totalLife++;
+                nextLifeAt += LifeRegenPeriodMs;
+            }
+
+            if (totalLife >= MaxLife) nextLifeAt = 0L;
+            return true;
+        }
+
+        /// <summary>
+        /// Charges the player for a failed attempt. Free while an unlimited-lives window is
+        /// running — that is the whole point of the window. Returns false when they had none
+        /// left to spend, so the caller can decide what to do about it.
+        /// </summary>
+        public bool TrySpendLife()
+        {
+            RefreshLives();
+
+            if (HasUnlimitedLives) return true;
+            if (totalLife <= 0) return false;
+
+            // Start the clock on the way down from full. Only then: a second loss must not
+            // push the pending life further away, or losing twice would cost more than twice.
+            if (totalLife >= MaxLife) nextLifeAt = NowMs() + LifeRegenPeriodMs;
+
+            totalLife--;
+            SaveData();
+            return true;
+        }
+
+        /// <summary>
+        /// Hands out the once-a-day free unlimited-lives window. Call it on boot, after Cloud
+        /// Save has resolved — running it before the download lands would grant a second window
+        /// to a player who already claimed today's on another device.
+        /// </summary>
+        public bool TryGrantDailyFreeUnlimitedLives()
+        {
+            string today = DateTime.Now.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+            if (lastFreeUnlimitedDay == today) return false;
+
+            lastFreeUnlimitedDay = today;
+            GrantUnlimitedLifeMinutes(FreeUnlimitedMinutesPerDay);
+            SaveData();
+
+            Debug.Log($"[GameSetting] Daily free unlimited lives: {FreeUnlimitedMinutesPerDay} min.");
+            return true;
+        }
+
+        /// <summary>
+        /// Extends the unlimited-lives window. Stacks from whichever is later, "now" or the
+        /// existing deadline: counting from now would burn the time left on a window still
+        /// running, and counting from the deadline would silently credit hours that already
+        /// elapsed if the last window lapsed days ago.
+        /// </summary>
+        private void GrantUnlimitedLifeMinutes(int minutes)
+        {
+            if (minutes <= 0) return;
+
+            long now = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            long from = Math.Max(now, unlimitedLivesUntil);
+            unlimitedLivesUntil = from + minutes * 60000L;
+        }
+
         /// <summary>
         /// Credits an IAP reward and persists it. Called by IAPController before the purchase
         /// is confirmed with the store.
@@ -50,16 +262,20 @@ namespace Commons
         public void ApplyReward(IAPCatalog.Reward reward)
         {
             totalGold += reward.gold;
-            totalLife += reward.lives;
+
+            // Lives are capped, so the Life Refill tops up to full rather than stockpiling.
+            totalLife = Math.Min(totalLife + reward.lives, MaxLife);
+
+            GrantUnlimitedLifeMinutes(reward.unlimitedLifeHours * 60);
 
             totalPowerup1 += reward.powerupEach;
             totalPowerup2 += reward.powerupEach;
             totalPowerup3 += reward.powerupEach;
             totalPowerup4 += reward.powerupEach;
 
-            totalBooster1 += reward.boosterEach;
-            totalBooster2 += reward.boosterEach;
-            totalBooster3 += reward.boosterEach;
+            // Boosters are not sold: nothing in the catalog grants them while the feature
+            // is unimplemented. The totals below are still saved and restored so existing
+            // save data survives.
 
             if (reward.removesAds) removeAds = true;
 
@@ -85,6 +301,10 @@ namespace Commons
             PlayerPrefs.SetFloat("lifeTimer", lifeTimer);
             PlayerPrefs.SetInt("totalGold", totalGold);
             PlayerPrefs.SetInt("totalLife", totalLife);
+            PlayerPrefs.SetString("unlimitedLivesUntil",
+                unlimitedLivesUntil.ToString(CultureInfo.InvariantCulture));
+            PlayerPrefs.SetString("lastFreeUnlimitedDay", lastFreeUnlimitedDay ?? string.Empty);
+            PlayerPrefs.SetString("nextLifeAt", nextLifeAt.ToString(CultureInfo.InvariantCulture));
             PlayerPrefs.SetInt("totalPowerup1", totalPowerup1);
             PlayerPrefs.SetInt("totalPowerup2", totalPowerup2);
             PlayerPrefs.SetInt("totalPowerup3", totalPowerup3);
@@ -107,7 +327,14 @@ namespace Commons
             currentLevel = PlayerPrefs.GetInt("currentLevel", 0);
             lifeTimer = PlayerPrefs.GetFloat("lifeTimer", 15f);
             totalGold = PlayerPrefs.GetInt("totalGold", 100);
-            totalLife = PlayerPrefs.GetInt("totalLife", 99);
+            // Clamped, not just defaulted: saves written before lives were capped hold values
+            // far above MaxLife, and an uncapped counter makes the whole life economy a no-op.
+            totalLife = Math.Min(PlayerPrefs.GetInt("totalLife", MaxLife), MaxLife);
+            unlimitedLivesUntil = long.TryParse(PlayerPrefs.GetString("unlimitedLivesUntil", "0"),
+                NumberStyles.Integer, CultureInfo.InvariantCulture, out var until) ? until : 0L;
+            lastFreeUnlimitedDay = PlayerPrefs.GetString("lastFreeUnlimitedDay", string.Empty);
+            nextLifeAt = long.TryParse(PlayerPrefs.GetString("nextLifeAt", "0"),
+                NumberStyles.Integer, CultureInfo.InvariantCulture, out var nextLife) ? nextLife : 0L;
             totalPowerup1 = PlayerPrefs.GetInt("totalPowerup1", 3);
             totalPowerup2 = PlayerPrefs.GetInt("totalPowerup2", 3);
             totalPowerup3 = PlayerPrefs.GetInt("totalPowerup3", 3);
@@ -130,6 +357,9 @@ namespace Commons
                 lifeTimer = lifeTimer,
                 totalGold = totalGold,
                 totalLife = totalLife,
+                unlimitedLivesUntil = unlimitedLivesUntil,
+                lastFreeUnlimitedDay = lastFreeUnlimitedDay,
+                nextLifeAt = nextLifeAt,
                 totalPowerup1 = totalPowerup1,
                 totalPowerup2 = totalPowerup2,
                 totalPowerup3 = totalPowerup3,
@@ -168,6 +398,25 @@ namespace Commons
             // ownership from Google Play, which outranks any cached snapshot.
             removeAds |= snapshot.removeAds;
 
+            // Paid time is never taken away by a sync. The rest of the snapshot is applied
+            // wholesale, but a player who bought an unlimited-lives window on another device
+            // should keep whichever window runs longer.
+            unlimitedLivesUntil = Math.Max(unlimitedLivesUntil, snapshot.unlimitedLivesUntil);
+
+            // The regeneration clock travels with the life count it belongs to — taking the
+            // downloaded lives but keeping this device's timer would either hand out a free
+            // life or restart a wait the player already sat through.
+            totalLife = Math.Min(totalLife, MaxLife);
+            nextLifeAt = snapshot.nextLifeAt;
+
+            // ISO dates sort lexically, so the later claim wins — otherwise hopping devices
+            // would hand out a second free window on a day already claimed.
+            if (string.CompareOrdinal(snapshot.lastFreeUnlimitedDay ?? string.Empty,
+                    lastFreeUnlimitedDay ?? string.Empty) > 0)
+            {
+                lastFreeUnlimitedDay = snapshot.lastFreeUnlimitedDay;
+            }
+
             var restoredAt = SavedAt;
             SaveData();
             SavedAt = snapshot.savedAt;
@@ -190,6 +439,9 @@ namespace Commons
             public float lifeTimer;
             public int totalGold;
             public int totalLife;
+            public long unlimitedLivesUntil;
+            public string lastFreeUnlimitedDay;
+            public long nextLifeAt;
             public int totalPowerup1;
             public int totalPowerup2;
             public int totalPowerup3;

@@ -52,6 +52,12 @@ namespace UI
             {
                 _transitioning = true;
 
+                // Both run only now, after the cloud pull has resolved: refreshing early would
+                // regenerate onto lives the download is about to overwrite, and granting early
+                // would hand a second free window to someone who claimed today's elsewhere.
+                _gameSetting.RefreshLives();
+                _gameSetting.TryGrantDailyFreeUnlimitedLives();
+
                 string newScene = "Home";
                 if (_gameSetting.currentLevel < 5)
                 {

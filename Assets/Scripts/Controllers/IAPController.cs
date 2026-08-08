@@ -32,6 +32,9 @@ namespace Controllers
         // Ordered oldest-first so trimming drops the orders least likely to be re-delivered.
         private readonly List<string> _processedOrders = new List<string>();
 
+        // Non-consumables the player already owns, re-derived from the store on every launch.
+        private readonly HashSet<string> _ownedNonConsumables = new HashSet<string>();
+
         /// <summary>True once products have been fetched and prices are safe to display.</summary>
         public bool IsReady { get; private set; }
 
@@ -39,6 +42,9 @@ namespace Controllers
         public event Action<string> OnPurchaseSucceeded;
         public event Action<string, string> OnPurchaseFailed;
         public event Action<string> OnPurchaseDeferred;
+
+        /// <summary>Raised when <see cref="IsOwned"/> starts returning true for a new product.</summary>
+        public event Action OnOwnershipChanged;
 
         private void Awake()
         {
@@ -112,14 +118,18 @@ namespace Controllers
                 string productId = ProductIdOf(order);
                 if (productId == null || !IAPCatalog.IsNonConsumable(productId)) continue;
 
-                if (productId == IAPCatalog.RemoveAds || productId == IAPCatalog.StarterPack)
+                MarkOwned(productId);
+
+                // Read the entitlement off the catalog rather than naming products here, so a
+                // new ads-removing bundle cannot be added without also restoring on reinstall.
+                if (!IAPCatalog.Rewards.TryGetValue(productId, out var reward)) continue;
+                if (!reward.removesAds) continue;
+
+                if (!gameSetting.removeAds)
                 {
-                    if (!gameSetting.removeAds)
-                    {
-                        gameSetting.removeAds = true;
-                        gameSetting.SaveData();
-                        Debug.Log($"[IAP] Restored entitlement from {productId}.");
-                    }
+                    gameSetting.removeAds = true;
+                    gameSetting.SaveData();
+                    Debug.Log($"[IAP] Restored entitlement from {productId}.");
                 }
             }
         }
@@ -167,6 +177,10 @@ namespace Controllers
                 Debug.Log($"[IAP] Granted '{productId}'.");
                 OnPurchaseSucceeded?.Invoke(productId);
             }
+
+            // Runs for a re-delivered order too — ownership is about the entitlement, not
+            // about whether this particular delivery paid out.
+            if (IAPCatalog.IsNonConsumable(productId)) MarkOwned(productId);
 
             _store.ConfirmPurchase(pendingOrder);
         }
@@ -226,7 +240,7 @@ namespace Controllers
         }
 
         /// <summary>
-        /// Re-delivers non-consumables (remove_ads, starter_pack). Wire this to a
+        /// Re-delivers non-consumables (remove_ads, starter_pack, bundle_no_ads). Wire this to a
         /// "Restore Purchases" button — required by Apple, good practice on Android.
         /// </summary>
         public void RestorePurchases()
@@ -259,7 +273,20 @@ namespace Controllers
         public bool IsAvailable(string productId) =>
             IsReady && _store.GetProductById(productId)?.availableToPurchase == true;
 
+        /// <summary>
+        /// True once a non-consumable has been bought. Always false for consumables, which can
+        /// be bought again and again. Shop cards use this to take themselves off the shelf
+        /// rather than showing a dead buy button for something the player already has.
+        /// </summary>
+        public bool IsOwned(string productId) => _ownedNonConsumables.Contains(productId);
+
         // --- Helpers ---
+
+        private void MarkOwned(string productId)
+        {
+            if (!_ownedNonConsumables.Add(productId)) return;
+            OnOwnershipChanged?.Invoke();
+        }
 
         private static string ProductIdOf(Order order) =>
             order?.CartOrdered?.Items()?.FirstOrDefault()?.Product?.definition?.id;

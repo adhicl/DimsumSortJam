@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace Commons
@@ -66,6 +67,48 @@ namespace Commons
 
             string formattedTime = $"{minutes:00}:{seconds:00}";
             return formattedTime;
+        }
+
+        /// <summary>
+        /// The unlimited-lives countdown, always two segments so it fits the top bar pill.
+        /// An hour or more shows hours:minutes ("7:59"); under an hour switches to
+        /// minutes:seconds, so the free daily window reads "15:00" and ticks down visibly.
+        /// </summary>
+        public static string GetCountdownFormat(TimeSpan remaining)
+        {
+            if (remaining <= TimeSpan.Zero) return "0:00";
+
+            if (remaining.TotalHours >= 1d)
+                return $"{(int)remaining.TotalHours}:{remaining.Minutes:00}";
+
+            return $"{remaining.Minutes}:{remaining.Seconds:00}";
+        }
+
+        /// <summary>
+        /// A wait written out for prose — "7h 12m", "42m" — where the bare "7:12" of
+        /// <see cref="GetCountdownFormat"/> could be read as minutes and seconds.
+        /// </summary>
+        public static string GetWaitFormat(TimeSpan remaining)
+        {
+            if (remaining <= TimeSpan.Zero) return "now";
+            if (remaining.TotalMinutes < 1d) return "under a minute";
+
+            // Rounded up, not truncated: a 30-minute wait that reads "29m" the instant it
+            // starts looks like the game short-changed the player.
+            int totalMinutes = (int)Math.Ceiling(remaining.TotalMinutes);
+            int hours = totalMinutes / 60;
+            int minutes = totalMinutes % 60;
+
+            return hours > 0 ? $"{hours}h {minutes}m" : $"{minutes}m";
+        }
+
+        /// <summary>
+        /// The shop's short form for a purchasable unlimited-lives window: "2h", "1d".
+        /// </summary>
+        public static string GetLifeWindowLabel(int hours)
+        {
+            if (hours >= 24 && hours % 24 == 0) return (hours / 24) + "d";
+            return hours + "h";
         }
     }
 }
