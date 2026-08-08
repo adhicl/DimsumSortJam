@@ -1,14 +1,18 @@
 missing:
 - profile need to be wired
-- buy heart -> shop
-- setup shop tab
+- buy heart -> shop *
+- setup shop tab *
 - setup daily mission + library tab
 - rate us
-- bundle powerup 
+- bundle powerup *
 - bundle booster *
-- heart logic -> daily 12 hours
+- heart logic -> daily 15 minutes free *
 - add more levels
 - booster before start *
+
+- setup to google play
+- setup auth for google play 
+
 
 * = can be added later
 
