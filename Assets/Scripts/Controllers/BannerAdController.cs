@@ -1,3 +1,4 @@
+using System;
 using Commons;
 using GoogleMobileAds.Api;
 using UnityEngine;
@@ -26,6 +27,17 @@ namespace Controllers
         // Shared across scenes so MobileAds.Initialize only runs once.
         private static bool _sdkInitialized;
 
+        /// <summary>
+        /// Height of the on-screen banner in device pixels, or 0 when no banner is being shown.
+        /// UI that must stay clear of the ad (see <see cref="UI.SafeAreaPanel"/>) reads this and
+        /// listens to <see cref="BannerHeightChanged"/>, because an adaptive banner only reports
+        /// its real height once the ad has finished loading.
+        /// </summary>
+        public static float BannerHeightPixels { get; private set; }
+
+        /// <summary>Raised on the Unity main thread whenever <see cref="BannerHeightPixels"/> changes.</summary>
+        public static event Action<float> BannerHeightChanged;
+
         private BannerView _bannerView;
         private bool _loadRequested;
 
@@ -48,7 +60,11 @@ namespace Controllers
 
         private void Start()
         {
-            if (AdsRemoved) return;
+            if (AdsRemoved)
+            {
+                SetBannerHeight(0f);
+                return;
+            }
 
             // Marshal ad callbacks onto the Unity main thread so we can touch
             // GameObjects/UI safely from the event handlers.
@@ -72,6 +88,7 @@ namespace Controllers
             {
                 // Covers a purchase made while this scene is already live.
                 DestroyBanner();
+                SetBannerHeight(0f);
                 return;
             }
 
@@ -92,6 +109,19 @@ namespace Controllers
 
             string unitId = useTestAd ? TestAdUnitId : AdUnitId;
             _bannerView = new BannerView(unitId, adaptiveSize, AdPosition.Bottom);
+
+            // An adaptive banner does not know its height until the ad is back, so the UI can
+            // only be inset once this fires. Handlers run on the main thread (see Start).
+            BannerView loadedView = _bannerView;
+            loadedView.OnBannerAdLoaded += () =>
+            {
+                // A newer request may have replaced this view while the ad was in flight.
+                if (_bannerView == loadedView)
+                {
+                    SetBannerHeight(loadedView.GetHeightInPixels());
+                }
+            };
+
             _bannerView.LoadAd(new AdRequest());
         }
 
@@ -104,9 +134,25 @@ namespace Controllers
             }
         }
 
+        /// <summary>
+        /// Publishes the reserved height, notifying listeners only when the value actually moves.
+        /// </summary>
+        private static void SetBannerHeight(float heightPixels)
+        {
+            heightPixels = Mathf.Max(0f, heightPixels);
+            if (Mathf.Approximately(BannerHeightPixels, heightPixels)) return;
+
+            BannerHeightPixels = heightPixels;
+            BannerHeightChanged?.Invoke(heightPixels);
+        }
+
         private void OnDestroy()
         {
             DestroyBanner();
+
+            // The last known height is deliberately kept across a scene change: the next scene
+            // shows a banner of the same size, so holding the inset avoids the UI jumping down
+            // and back up again while that banner loads.
         }
     }
 }

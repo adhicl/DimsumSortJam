@@ -1,3 +1,4 @@
+using Controllers;
 using UnityEngine;
 
 namespace UI
@@ -26,6 +27,11 @@ namespace UI
         [Tooltip("Inset the right edge. Only useful in landscape.")]
         [SerializeField] private bool padRight;
 
+        [Tooltip("Also inset the bottom edge by the height of the banner ad, so the ad cannot " +
+                 "cover the content (e.g. the bottom tab bar). Needs padBottom to be meaningful " +
+                 "on its own, but works independently of it.")]
+        [SerializeField] private bool padBannerAd;
+
         [Header("Extra padding (canvas units)")]
         [SerializeField] private float extraTopPadding;
         [SerializeField] private float extraBottomPadding;
@@ -43,9 +49,28 @@ namespace UI
         private static float _screenWidth;
         private static float _screenHeight;
 
-        private void Start()
+        private void OnEnable()
         {
             Measure();
+            Apply();
+
+            if (padBannerAd)
+            {
+                // The banner is adaptive, so its height only arrives once the ad has loaded.
+                BannerAdController.BannerHeightChanged += OnBannerHeightChanged;
+            }
+        }
+
+        private void OnDisable()
+        {
+            if (padBannerAd)
+            {
+                BannerAdController.BannerHeightChanged -= OnBannerHeightChanged;
+            }
+        }
+
+        private void OnBannerHeightChanged(float heightPixels)
+        {
             Apply();
         }
 
@@ -157,8 +182,18 @@ namespace UI
 
             RectTransform rect = (RectTransform)transform;
 
+            // The banner sits flush with the bottom of the window, on top of the safe-area inset,
+            // so the two stack rather than overlap.
+            float bottomPixels = padBottom ? _insetBottom : 0f;
+            if (padBannerAd)
+            {
+                bottomPixels += BannerAdController.BannerHeightPixels;
+            }
+
+            bottomPixels = Mathf.Clamp(bottomPixels, 0f, _screenHeight * 0.5f);
+
             float minX = padLeft ? _insetLeft / _screenWidth : 0f;
-            float minY = padBottom ? _insetBottom / _screenHeight : 0f;
+            float minY = bottomPixels / _screenHeight;
             float maxX = padRight ? 1f - _insetRight / _screenWidth : 1f;
             float maxY = padTop ? 1f - _insetTop / _screenHeight : 1f;
 

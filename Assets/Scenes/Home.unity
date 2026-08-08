@@ -24016,6 +24016,7 @@ MonoBehaviour:
   padBottom: 1
   padLeft: 0
   padRight: 0
+  padBannerAd: 1
   extraTopPadding: 0
   extraBottomPadding: 0
   logInsets: 0

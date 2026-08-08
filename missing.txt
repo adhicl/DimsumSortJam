@@ -1,0 +1,14 @@
+missing:
+- profile need to be wired
+- buy heart -> shop
+- setup shop tab
+- setup daily mission + library tab
+- rate us
+- bundle powerup 
+- bundle booster *
+- heart logic -> daily 12 hours
+- add more levels
+- booster before start *
+
+* = can be added later
+
