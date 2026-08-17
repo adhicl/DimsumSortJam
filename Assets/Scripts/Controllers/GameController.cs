@@ -8,6 +8,7 @@ using IClasses;
 using Models;
 using Ricimi;
 using Spawners;
+using UI;
 using UnityEngine;
 using UnityEngine.Serialization;
 using Zenject;
@@ -316,7 +317,10 @@ namespace Controllers
         {
             if (gameStatus == Settings.GAME_STATUS.play)
             {
-                if (!isTimerPause)
+                // Anything covering the game holds the countdown: an open popup (settings,
+                // unlock basket, revive) or a rewarded video, which can run for well over
+                // half a minute. isTimerPause stays the power-up's own freeze.
+                if (!isTimerPause && !Popup.AnyOpen && !RewardedAdController.IsShowingAd)
                 {
                     _timer -= Time.deltaTime;
                 }
@@ -343,6 +347,12 @@ namespace Controllers
         public GameObject popupLose;
         public GameObject popupRequestLose;
         public GameObject popupOutOfMove;
+
+        [Tooltip("Shown when the player taps a closed basket: unlock with coins or a rewarded ad.")]
+        public GameObject popupUnlockBasket;
+
+        [Tooltip("Seconds added to the timer when a closed basket is unlocked, by coins or by ad.")]
+        [SerializeField] private float basketUnlockTimeBonus = 20f;
 
         [Tooltip("Seconds added to the timer when the player revives by watching an ad.")]
         [SerializeField] private float reviveTimeBonus = 60f;
@@ -394,6 +404,41 @@ namespace Controllers
             m_popup = Instantiate(popupOutOfMove, m_canvas.transform, false);
             m_popup.SetActive(true);
             m_popup.GetComponent<Popup>().Open();
+        }
+
+        // Shown when the player taps a Closed basket. Offers two ways to open it — coins or a
+        // rewarded ad — and runs <paramref name="onUnlock"/> if the player takes either. The
+        // countdown is held while the popup is up so deciding does not cost the player time.
+        public void ShowUnlockBasketPopup(Action onUnlock)
+        {
+            // Both routes out of the popup pay the same time bonus, so it is added here rather
+            // than in each button handler - there is no way to unlock without going through this.
+            void Unlock()
+            {
+                _timer += basketUnlockTimeBonus;
+                onUnlock?.Invoke();
+            }
+
+            // No popup assigned (the tutorial scenes): unlock for free rather than swallow the tap.
+            if (popupUnlockBasket == null)
+            {
+                Unlock();
+                return;
+            }
+
+            Settings.GAME_STATUS previousStatus = gameStatus;
+            gameStatus = Settings.GAME_STATUS.pause;
+
+            m_popup = Instantiate(popupUnlockBasket, m_canvas.transform, false);
+            m_popup.SetActive(true);
+
+            var popup = m_popup.GetComponent<Popup>();
+            // Restoring on close rather than in each button handler covers every way out of the
+            // popup, including the X and the cancel button.
+            popup.onClose += () => gameStatus = previousStatus;
+
+            m_popup.GetComponent<UnlockBasketPopup>().Setup(Unlock);
+            popup.Open();
         }
 
         // Called by the out-of-move popup's REVIVE button after a rewarded ad is watched.

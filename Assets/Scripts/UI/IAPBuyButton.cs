@@ -106,9 +106,11 @@ namespace UI
 
             if (priceText != null)
             {
-                priceText.text = available
-                    ? iap.GetLocalizedPrice(productId)
-                    : "—";
+                // GetLocalizedPrice can still come back empty for a product the store listed
+                // without price metadata; blanking the button would look broken, so keep the
+                // same dash the unavailable case uses.
+                string price = available ? iap.GetLocalizedPrice(productId) : null;
+                priceText.text = string.IsNullOrEmpty(price) ? "—" : price;
             }
         }
 

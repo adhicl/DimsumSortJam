@@ -451,8 +451,8 @@ namespace Models
         private void OnMouseDown()
         {
             // A Closed basket (as opposed to a Locked one, which opens by matching its
-            // dimsum) is unlocked by watching a rewarded ad. On reward it becomes a
-            // normal empty Displayed basket the player can sort into.
+            // dimsum) is unlocked through the unlock popup: pay coins or watch a rewarded ad.
+            // Either way it becomes a normal empty Displayed basket the player can sort into.
             if (_isOpen == DisplayedBasket.Closed)
             {
                 SoundController.Instance.PlayButtonClickClip();
@@ -463,14 +463,7 @@ namespace Models
                     SetOpen(DisplayedBasket.Displayed);
                 }
 
-                if (RewardedAdController.Instance != null)
-                {
-                    RewardedAdController.Instance.ShowAd(UnlockBasket);
-                }
-                else
-                {
-                    UnlockBasket();
-                }
+                _gameController.ShowUnlockBasketPopup(UnlockBasket);
             }
         }
         

@@ -13,5 +13,5 @@ MonoBehaviour:
   m_Name: PlayGamesSettings
   m_EditorClassIdentifier: Google.Play.Games::GooglePlayGames.PlayGamesSettings
   mAppId: 820043441288
-  mWebClientId: 
+  mWebClientId: 820043441288-gkbt1qknq3bt9mog17uaacn6nqeh6qgg.apps.googleusercontent.com
   mNearbyServiceId: 

@@ -19,24 +19,36 @@ any of it functions on a real device.
 
 ## 0. Blockers — nothing works until these are done
 
-- [ ] **Set the Web App Client ID in Unity** (§7). It is currently empty — confirmed: `mWebClientId`
-      in `Assets/GooglePlayGames/Resources/PlayGamesSettings.asset` is blank. The GPGS setup window
-      labels it "optional", but `RequestServerSideAccess` — the call that turns a Play Games
-      session into the auth code UGS needs — throws without it. The game catches that and falls
-      back to anonymous, so **Play Games sign-in silently never happens and Cloud Save is keyed
-      to a per-install anonymous id instead of the player's Google account.** Everything else in
-      §2 is done: App ID `820043441288` and the Android setup are in place.
-      `GameServicesController` now logs this as an error on device rather than failing quietly.
-- [ ] **Create the 15 in-app products** in Play Console (§1). Until they exist and are Active, the
-      shop tab shows `…` on every card and every buy button stays disabled.
+- [x] ~~**Set the Web App Client ID in Unity**~~ — **done, verified in the project on 2026-08-17.**
+      `mWebClientId` in `Assets/GooglePlayGames/Resources/PlayGamesSettings.asset` is
+      `820043441288-gkbt1qknq3bt9mog17uaacn6nqeh6qgg.apps.googleusercontent.com`, matching
+      `and.ClientId` in `ProjectSettings/GooglePlayGameSettings.txt`, with
+      `android.SetupDone=true`. The numeric prefix matches App ID `820043441288`, so it belongs to
+      the right Play Games project.
+      **Still to confirm on device:** that this is the **game server (web)** OAuth client and not
+      the Android one — both end in `.apps.googleusercontent.com` and the two cannot be told apart
+      from the string alone. Proof is a logcat line reading `(Google Play Games)` rather than
+      `(anonymous)` (§8). Until that run happens, Cloud Save identity is still unproven.
+- [ ] **Create the 15 in-app products** in Play Console (§1) — **reported done 2026-08-17, not yet
+      verified.** Play Console state lives outside this repo, so nothing here can confirm it: the
+      Editor's `[IAP] 15 products ready` is Unity's built-in *fake* store answering, not Google
+      Play. The only proof is that same line from a **device build signed and installed from a
+      Play track**, with a licence-tester account. Fewer than 15 means an ID mismatch or a product
+      left Inactive — cross-check against the ID list in §1, which is generated from
+      `IAPCatalog.cs` and must match character for character.
 - [x] ~~Enable Cloud Save~~ — **verified working** (§3). A live save/load round-trip against the
       real service succeeded from the Editor on 2026-08-08.
 - [x] ~~Enable Authentication~~ — **verified working** (§3). Sign-in returns a real UGS player id.
 - [x] ~~Replace the AdMob App ID~~ — set to `ca-app-pub-8590881680208951~1081208993`, matching
       the ad units' publisher. Ads are fully configured: real App ID, both banners and the
       rewarded ad on live units.
-- [ ] **Publish the two legal pages** at the URLs above (§5). The Settings buttons now open them,
-      and Google Play rejects apps whose privacy policy URL 404s.
+- [x] ~~**Publish the two legal pages**~~ — **both live, fetched 2026-08-17** (§5). `app-ads.txt`
+      is up too, carrying the correct publisher line for `pub-8590881680208951`.
+- [ ] **Extend the privacy policy** (§5). The published page covers Google AdMob / advertising ID
+      and Google Play Games, but **does not mention Unity Gaming Services (pseudonymous player id,
+      Cloud Save) or Google Play Billing (purchase records)** — both of which the app uses. Play's
+      Data safety review compares the form against the policy, and this gap is exactly the kind of
+      mismatch that gets a submission rejected.
 
 ---
 
@@ -57,19 +69,31 @@ mismatch makes the product silently vanish from the shop.
 > infinity heart, and the Home top bar counts it down. `Reward.lives` still exists for non-purchase
 > rewards but no product uses it. See "Lives" below.
 
+> **Two currencies below.** **USD** is the price to enter if the Play developer account's home
+> currency is US dollars; **IDR** if it is Indonesian rupiah. You only ever type *one* of them —
+> Play auto-converts every other country from whichever you enter, and you can override
+> individual countries afterwards. Every USD figure is a standard Play price point, and the IDR
+> column is the same ladder at **~Rp 16.000 / $1**, rounded to a rupiah charm price.
+>
+> **The Grants column is written to be pasted into the Play Console product description**, so it
+> reads as a sentence rather than as table shorthand. If your store listing is in English, switch
+> the thousands separator from `.` to `,` on the way in (`2.500` → `2,500`); leave it as-is for an
+> Indonesian listing.
+
 ### Gold — consumables, repeatable (the 3x2 grid at the bottom of the shop tab)
 
-| # | Product ID | Suggested name | Grants | Suggested price |
-|---|---|---|---|---|
-| 1 | `coins_500` | Handful of Coins | +500 gold | Rp 15.000 |
-| 2 | `coins_1200` | Bag of Coins | +1.200 gold | Rp 29.000 |
-| 3 | `coins_3000` | Crate of Coins | +3.000 gold | Rp 65.000 |
-| 4 | `coins_8000` | Vault of Coins | +8.000 gold | Rp 149.000 |
-| 5 | `coins_20000` | Hoard of Coins | +20.000 gold | Rp 319.000 |
-| 6 | `coins_50000` | Fortune of Coins | +50.000 gold | Rp 699.000 |
+| # | Product ID | Suggested name | Grants | Price (USD) | Price (IDR) |
+|---|---|---|---|---|---|
+| 1 | `coins_500` | Handful of Coins | 500 gold | $0.99 | Rp 15.000 |
+| 2 | `coins_1200` | Bag of Coins | 1.200 gold | $1.99 | Rp 29.000 |
+| 3 | `coins_3000` | Crate of Coins | 3.000 gold | $3.99 | Rp 65.000 |
+| 4 | `coins_8000` | Vault of Coins | 8.000 gold | $9.99 | Rp 159.000 |
+| 5 | `coins_20000` | Hoard of Coins | 20.000 gold | $19.99 | Rp 319.000 |
+| 6 | `coins_50000` | Fortune of Coins | 50.000 gold | $39.99 | Rp 639.000 |
 
-Gold-per-rupiah improves with every tier (33 → 41 → 46 → 54 → 63 → 72 gold per Rp 1.000), which
-is what makes the ladder worth climbing. Keep that shape if you re-price.
+Value improves with every tier, which is the only reason to climb the ladder — **505 → 603 →
+752 → 801 → 1.001 → 1.250** gold per $1, or 33 → 41 → 46 → 50 → 63 → 78 gold per Rp 1.000. Keep
+that shape if you re-price: a tier that is worse value than the one below it will never sell.
 
 ### Bundles — consumables, repeatable
 
@@ -78,25 +102,31 @@ empty life bar goes through a bundle, so the out-of-lives popup and the top bar'
 send the player to the shop tab. If you already created `lives_refill` in Play Console,
 deactivate it.
 
-| # | Product ID | Name on the card | Gold | Power-ups (each of 4) | Unlimited lives | Suggested price |
-|---|---|---|---|---|---|---|
-| 7 | `powerup_bundle` | Power-Up Bundle | — | 5 | 1h | Rp 39.000 |
-| 8 | `bundle_big` | Big Bundle | 2.500 | 2 | 2h | Rp 82.000 |
-| 9 | `bundle_great` | Great Bundle | 5.500 | 3 | 3h | Rp 159.000 |
-| 10 | `bundle_ultra` | Ultra Bundle | 12.000 | 6 | 6h | Rp 449.000 |
-| 11 | `bundle_superior` | Superior Bundle | 25.000 | 12 | 12h | Rp 790.000 |
-| 12 | `bundle_legendary` | Legendary Bundle | 50.000 | 24 | 1d | Rp 1.590.000 |
+| # | Product ID | Name on the card | Grants | Price (USD) | Price (IDR) |
+|---|---|---|---|---|---|
+| 7 | `powerup_bundle` | Power-Up Bundle | 5 of each power-up (20 total) and 1 hour of unlimited lives | $2.99 | Rp 47.000 |
+| 8 | `bundle_big` | Big Bundle | 2.500 gold, 2 of each power-up (8 total) and 2 hours of unlimited lives | $4.99 | Rp 79.000 |
+| 9 | `bundle_great` | Great Bundle | 5.500 gold, 3 of each power-up (12 total) and 3 hours of unlimited lives | $9.99 | Rp 159.000 |
+| 10 | `bundle_ultra` | Ultra Bundle | 12.000 gold, 6 of each power-up (24 total) and 6 hours of unlimited lives | $29.99 | Rp 479.000 |
+| 11 | `bundle_superior` | Superior Bundle | 25.000 gold, 12 of each power-up (48 total) and 12 hours of unlimited lives | $49.99 | Rp 799.000 |
+| 12 | `bundle_legendary` | Legendary Bundle | 50.000 gold, 24 of each power-up (96 total) and a full day of unlimited lives | $99.99 | Rp 1.599.000 |
 
-"Power-ups (each of 4)" means the amount is credited to *every* power-up slot — a Great Bundle
-hands over 3 of each, 12 power-ups in total.
+**"N of each power-up" is not a typo.** There are four power-up slots and a bundle credits the
+same amount to *every* one of them, so a Great Bundle hands over 3 of each — 12 power-ups in
+total. Both numbers are in the Grants text because the per-slot figure is what the shop card
+prints, and the total is what makes the bundle sound worth its price on the store page.
+
+**Unlimited lives** is a window of real time during which losing a level costs nothing — it is
+not a stack of lives. Worth saying plainly in the store description, because "6 hours of
+unlimited lives" is otherwise easy to misread as an amount rather than a duration.
 
 ### Non-consumables — bought once, restorable
 
-| # | Product ID | Name on the card | Grants | Suggested price |
-|---|---|---|---|---|
-| 13 | `remove_ads` | No Ads | Hides banner ads permanently | Rp 99.000 |
-| 14 | `starter_pack` | Starter Pack | +4.000 gold, 2h unlimited lives, +2 of each power-up | Rp 63.000 |
-| 15 | `bundle_no_ads` | No Ads Bundle | Removes ads, +2.000 gold, 1h unlimited lives, +2 of each power-up | Rp 199.000 |
+| # | Product ID | Name on the card | Grants | Price (USD) | Price (IDR) |
+|---|---|---|---|---|---|
+| 13 | `remove_ads` | No Ads | Removes banner ads permanently | $5.99 | Rp 99.000 |
+| 14 | `starter_pack` | Starter Pack | 4.000 gold, 2 of each power-up (8 total) and 2 hours of unlimited lives | $3.99 | Rp 65.000 |
+| 15 | `bundle_no_ads` | No Ads Bundle | Removes banner ads permanently, plus 2.000 gold, 2 of each power-up (8 total) and 1 hour of unlimited lives | $12.99 | Rp 199.000 |
 
 All three turn their card off once owned (`ShopCard`), so the shelf never shows a dead buy
 button. `bundle_no_ads` and `starter_pack` are non-consumable specifically so the entitlement
@@ -109,7 +139,19 @@ survives a reinstall — `IAPController` re-derives ads-removal from whichever o
 - [ ] The app needs at least one build uploaded to a track (Internal testing is fine) before the
       store returns prices. Products on a draft app report "unavailable".
 - Prices are a starting point — the game never displays hard-coded prices, it shows the store's
-  localized price string. Changing a price in the console needs no code change.
+  localized price string. Changing a price in the console needs no code change, and no currency
+  in the tables above is ever compiled into the build.
+- After Play auto-converts, **spot-check the ladder in a couple of big markets** (US, ID, IN, BR).
+  Conversion rounds per country and can occasionally flatten two neighbouring tiers into the same
+  price, which kills the reason to buy the bigger one.
+- **The Grants column is derived from `IAPCatalog.Rewards`, not from the console.** Play Console
+  descriptions are free text and nothing validates them against the build, so a store page can
+  promise a number the game does not grant. If you change a reward in `IAPCatalog.cs`, the shop
+  card updates itself but the store description does not — edit it here and in Play Console.
+- Two prices repeat across sections on purpose: `coins_3000` / `starter_pack` at $3.99, and
+  `coins_8000` / `bundle_great` at $9.99. In both pairs the non-gold product is the better deal
+  at the same price, which is the point — it is what makes the Starter Pack and the bundles read
+  as bargains next to plain gold.
 - All 15 products now have UI. Fewer than 15 in the `[IAP]` log line means an ID mismatch or an
   inactive product in the console.
 
@@ -190,26 +232,78 @@ services answer. What that run proved, and what it could not:
 - [ ] **Confirm in the AdMob console** that this app's status is *Ready* and not
       "Requires attention" — a newly created app can sit in review, and units return no fill
       until it clears.
-- [ ] **Privacy & messaging ▸ GDPR** — create and **publish** a consent message for the app.
-      Also do **US states** if you serve the US.
+- [ ] **Privacy & messaging ▸ GDPR** — create and **publish** a consent message (§4a below).
       *Without a published message the UMP form never appears, `CanRequestAds()` stays false in
-      the EEA, and ads silently stop serving there.*
-- [ ] **app-ads.txt** — publish it at `https://yourfavoritegamestudio.com/app-ads.txt` with the
-      line AdMob gives you, and set the developer website in your Play listing to that domain.
-      Without it you lose most programmatic demand.
+      the EEA, and ads silently stop serving there — with no error to explain why.*
+- [x] ~~**app-ads.txt**~~ — live at `https://yourfavoritegamestudio.com/app-ads.txt`, fetched
+      2026-08-17, carrying `google.com, pub-8590881680208951, DIRECT, f08c47fec0942fa0` — the
+      publisher actually serving the ads. Still set the developer website in your Play listing to
+      that domain, or the file is never looked for.
+
+### 4a. GDPR consent message
+
+> **This is not something to build in the game.** The form's UI is authored in the AdMob console,
+> downloaded at runtime, and drawn by Google's SDK. A hand-built Unity popup would not be a
+> Google-certified CMP, so the consent it collected would not be recognised. The Unity half is
+> already done and needs no changes — see the end of this section.
+
+**AdMob ▸ Privacy & messaging ▸ European regulations (GDPR) ▸ Create message**
+
+1. **Pick this app.** Messages are per-app, not per-account — one published against a different
+   app in the same account does nothing here.
+2. **Consent options.** Include *Consent* and *Manage options*. *Do not consent* is optional; leave
+   it off and the only route to refusing is through *Manage options*.
+3. **Ad partners.** The default Google list is fine. The partner list is part of what the player
+   consents to, so widening it later re-prompts everyone who already answered.
+4. **Privacy policy URL** → `https://yourfavoritegamestudio.com/privacy-policy.html` (live, checked
+   2026-08-17). The message will not publish against a URL that does not resolve.
+5. **Publish it.** *Save* alone leaves the message inactive, and an inactive message behaves
+   exactly like no message at all — this is the single most common reason the form never appears.
+   Confirm the status reads **Published**, not *Draft*.
+6. **US states.** If you serve the US, repeat under **US state regulations** — it is a separate
+   message and is not covered by the GDPR one.
+
+**This is blocked by the item above it:** while the app sits in *Requires attention*, no unit
+returns fill and the consent flow cannot be exercised end to end.
+
+**Proving it works.** On a device in a regulated region, logcat prints (from
+`ConsentController.cs:88`):
+
+```
+[Consent] Status=Obtained, canRequestAds=True
+```
+
+Outside the EEA the form correctly never appears. To see it anyway, on the `Consent` object in
+`Splash.unity` set **Debug Geography** to `EEA` and paste the device's hashed id into **Test Device
+Hashed Ids** — the Ads SDK prints that id in logcat on the first run. **Set it back to `Disabled`
+before shipping.**
+
+**No Unity work is required for any of this.** `Assets/Scripts/Controllers/ConsentController.cs`
+already runs the flow on boot from `Splash` and gates every ad-SDK start behind `WhenAdsAllowed`,
+and `Assets/Scripts/UI/PrivacyOptionsButton.cs` (on `Settings-Popup Food Sort Home.prefab`) already
+provides the "change your choice" entry GDPR requires, hiding itself where it is not required.
 
 ---
 
 ## 5. Your website
 
-- [ ] Publish **https://yourfavoritegamestudio.com/privacy-policy.html**
-- [ ] Publish **https://yourfavoritegamestudio.com/terms-of-use.html**
-- [ ] Publish **https://yourfavoritegamestudio.com/app-ads.txt** (see §4)
+All three fetched and confirmed live on **2026-08-17**:
+
+- [x] ~~Publish **https://yourfavoritegamestudio.com/privacy-policy.html**~~ — live, dated 1 Aug 2026.
+- [x] ~~Publish **https://yourfavoritegamestudio.com/terms-of-use.html**~~ — live.
+- [x] ~~Publish **https://yourfavoritegamestudio.com/app-ads.txt**~~ — live, and the line matches
+      the publisher actually serving the ads:
+      `google.com, pub-8590881680208951, DIRECT, f08c47fec0942fa0`.
 
 The privacy policy must disclose that the game uses **Google AdMob** (advertising ID, ad
 personalization), **Google Play Games** (account identifier), **Unity Gaming Services**
 (pseudonymous player id), and **Google Play Billing** (purchase records). Play's Data safety
 review checks that the policy actually covers what the app does.
+
+- [ ] **Two of those four are missing from the published page.** It covers AdMob and Play Games;
+      it says nothing about **Unity Gaming Services** or **Google Play Billing**. Add a line for
+      each — UGS stores a pseudonymous player id plus game progress on Unity's servers, and Play
+      Billing means purchase records. This has to agree with the Data safety form in §6.
 
 ---
 
@@ -219,9 +313,12 @@ review checks that the policy actually covers what the app does.
 - [ ] **Data safety** form — declare data collected by ads and IAP. This is a review blocker if
       it disagrees with your privacy policy.
 - [ ] **Ads** declaration → *Yes, this app contains ads*.
-- [ ] **App content ▸ Target audience** — if the audience includes children, the ad and consent
-      requirements change materially (and `tagForUnderAgeOfConsent` on the `Consent` object in
-      Splash should be turned on).
+- [ ] **App content ▸ Target audience** → declare a **general audience** (not children).
+      Decided 2026-08-17. That matches the build: `tagForUnderAgeOfConsent` is `false` on the
+      `Consent` object in `Splash.unity`, so the standard GDPR consent flow applies and
+      personalized ads stay available.
+      If that ever changes, three things move together — turn `tagForUnderAgeOfConsent` on
+      (which disables personalized ads), redo this declaration, and revisit the Data safety form.
 
 ### Android permissions the build requests
 
@@ -252,11 +349,10 @@ Small tasks that pair with the console work above, listed so nothing is missed:
 - [x] ~~**Window ▸ Google Play Games ▸ Setup ▸ Android setup** → Resources Definition XML~~ — done.
       App ID `820043441288` and package `com.yourfavoritegamestudio.Jajanan` are written into
       `PlayGamesSettings.asset` and the androidlib manifest.
-- [ ] **Same window: fill in "Web App Client ID"** — the one field still empty, and a launch
-      blocker (see §0). Use the **game server** OAuth client ID from §2a (the long
-      `…apps.googleusercontent.com` string, *not* the Android credential). Paste it, click
-      **Setup**, and confirm `mWebClientId` is non-empty in
-      `Assets/GooglePlayGames/Resources/PlayGamesSettings.asset`.
+- [x] ~~**Same window: fill in "Web App Client ID"**~~ — done, `mWebClientId` is set to
+      `820043441288-gkbt1qknq3bt9mog17uaacn6nqeh6qgg.apps.googleusercontent.com`. It must be the
+      **game server** OAuth client from §2a rather than the Android credential; the two are
+      indistinguishable by sight, so §8's `(Google Play Games)` log line is what settles it.
 - [x] ~~AdMob App ID~~ — done. For future reference: set it only in
       `GoogleMobileAdsSettings.asset`; the plugin's `ManifestProcessor` rewrites
       `GoogleMobileAdsPlugin.androidlib/AndroidManifest.xml` on every Android build, so

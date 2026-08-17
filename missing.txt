@@ -1,5 +1,5 @@
 missing:
-- profile need to be wired
+- profile need to be wired 
 - buy heart -> shop *
 - setup shop tab *
 - setup daily mission + library tab
@@ -10,8 +10,9 @@ missing:
 - add more levels
 - booster before start *
 
-- setup to google play
-- setup auth for google play 
+- setup to google play *
+- setup auth for google play  *
+- setup IAP *
 
 
 * = can be added later

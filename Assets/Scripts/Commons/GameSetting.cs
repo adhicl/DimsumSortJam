@@ -286,6 +286,27 @@ namespace Commons
             return true;
         }
 
+        /// <summary>Coins charged to unlock a closed basket.</summary>
+        public const int BasketUnlockCost = 450;
+
+        /// <summary>Coins charged to revive with extra time after running out.</summary>
+        public const int ReviveCost = 600;
+
+        /// <summary>
+        /// Spends coins if the player can afford it, and changes nothing if they cannot. Callers
+        /// gate the UI on the same call that performs the purchase, so a double tap cannot
+        /// spend twice.
+        /// </summary>
+        public bool TrySpendGold(int amount)
+        {
+            if (amount <= 0) return true;
+            if (totalGold < amount) return false;
+
+            totalGold -= amount;
+            SaveData();
+            return true;
+        }
+
         /// <summary>
         /// Hands out the once-a-day free unlimited-lives window. Call it on boot, after Cloud
         /// Save has resolved — running it before the download lands would grant a second window

@@ -22,10 +22,41 @@ namespace Ricimi
         
         public event Action onClose;
 
+        // How many popups are currently on screen. The play timer reads this so a level's
+        // countdown does not drain while the player is sitting in a dialog. Counted rather
+        // than a bool because popups can overlap (a shop popup opened from another popup).
+        private static int s_openCount;
+
+        /// <summary>True while at least one popup is on screen.</summary>
+        public static bool AnyOpen => s_openCount > 0;
+
+        // Statics survive scene loads but not domain reloads; with "Enter Play Mode Options"
+        // reload disabled they would survive those too, so reset explicitly on every start.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetOpenCount() => s_openCount = 0;
+
+        private bool m_counted;
+
         public void Open()
         {
             SoundController.Instance.PlayOpenPopupClip();
+
+            if (!m_counted)
+            {
+                m_counted = true;
+                s_openCount++;
+            }
+
             AddBackground();
+        }
+
+        // Decremented here rather than in Close() so a popup torn down by a scene load, or
+        // destroyed any other way, still releases its hold on the timer.
+        private void OnDestroy()
+        {
+            if (!m_counted) return;
+            m_counted = false;
+            s_openCount--;
         }
 
         public void Close()

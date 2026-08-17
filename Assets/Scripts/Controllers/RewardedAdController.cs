@@ -29,6 +29,13 @@ namespace Controllers
         private RewardedAd _rewardedAd;
         private bool _isLoading;
 
+        /// <summary>
+        /// True from the moment a rewarded ad is handed to the SDK until it closes or fails.
+        /// A rewarded video can run for 30 seconds or more, and the level countdown must not
+        /// drain underneath it. Static so the timer can ask without holding a reference.
+        /// </summary>
+        public static bool IsShowingAd { get; private set; }
+
         private string AdUnitId =>
             (useTestAd || string.IsNullOrEmpty(androidLiveAdUnitId))
                 ? AndroidTestAdUnitId
@@ -94,15 +101,35 @@ namespace Controllers
         private void RegisterReloadHandlers(RewardedAd ad)
         {
             // Rewarded ads are single-use: reload as soon as the current one goes away.
-            ad.OnAdFullScreenContentClosed += LoadAd;
+            ad.OnAdFullScreenContentClosed += () =>
+            {
+                IsShowingAd = false;
+                LoadAd();
+            };
             ad.OnAdFullScreenContentFailed += (AdError err) =>
             {
+                IsShowingAd = false;
                 Debug.LogWarning($"[RewardedAd] Failed to present: {err}");
                 LoadAd();
             };
         }
 
         public bool IsReady => _rewardedAd != null && _rewardedAd.CanShowAd();
+
+        /// <summary>
+        /// Whether the "watch an ad" option should be offered to the player. Deliberately not the
+        /// same as <see cref="IsReady"/>: in the Editor <see cref="ShowAd"/> grants the reward
+        /// without a real ad, so gating a button on IsReady would leave it greyed out forever and
+        /// the flow could never be exercised in Play mode.
+        /// </summary>
+        public bool IsAvailable
+        {
+#if UNITY_EDITOR
+            get => true;
+#else
+            get => IsReady;
+#endif
+        }
 
         /// <summary>
         /// Shows a rewarded ad. <paramref name="onReward"/> fires once the user has
@@ -113,6 +140,8 @@ namespace Controllers
         {
             if (IsReady)
             {
+                // Cleared by the closed/failed handlers registered in RegisterReloadHandlers.
+                IsShowingAd = true;
                 _rewardedAd.Show(_ => onReward?.Invoke());
                 return;
             }
@@ -131,6 +160,9 @@ namespace Controllers
 
         private void OnDestroy()
         {
+            // Never leave the timer frozen because the controller died mid-ad.
+            IsShowingAd = false;
+
             if (_rewardedAd != null)
             {
                 _rewardedAd.Destroy();
