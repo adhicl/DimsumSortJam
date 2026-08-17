@@ -327,7 +327,7 @@ namespace Controllers
                 
                 if (_timer <= 0f)
                 {
-                    ShowOutOfMove();
+                    ShowOutOfTime();
                 }
             }
         }
@@ -354,8 +354,18 @@ namespace Controllers
         [Tooltip("Seconds added to the timer when a closed basket is unlocked, by coins or by ad.")]
         [SerializeField] private float basketUnlockTimeBonus = 20f;
 
-        [Tooltip("Seconds added to the timer when the player revives by watching an ad.")]
-        [SerializeField] private float reviveTimeBonus = 60f;
+        [Tooltip("Shown when the countdown reaches zero: revive by adding time, or give up.")]
+        public GameObject popupOutOfTime;
+
+        [Tooltip("Seconds added to the timer by a revive. Matches the '+45s' printed on the popup art.")]
+        [SerializeField] private float reviveTimeBonus = 45f;
+
+        [Tooltip("How many reshuffles to try before admitting the board cannot be rescued.")]
+        [SerializeField] private int maxReshuffleAttempts = 5;
+
+        // The revive popup to bring back if the player cancels the lose confirmation. Held as a
+        // prefab rather than an instance because the popup is destroyed on the way to the confirm.
+        private GameObject _reviveSource;
 
         public bool isTimerPause = false;
         
@@ -373,43 +383,89 @@ namespace Controllers
             m_popup.GetComponent<Popup>().Open();
         }
         
-        private void ShowLose()
-        {
-            // The one place a life is actually spent. Every give-up path funnels through here,
-            // and a running unlimited-lives window makes it free — see GameSetting.TrySpendLife.
-            _gameSetting.TrySpendLife();
 
-            _bgmController.StopMusic();
-            _soundController.PlayFinishOverClip();
+        // The countdown reached zero. The only way on is more time, so this popup sells time -
+        // reshuffling the board would not help a player whose clock has run out.
+        public void ShowOutOfTime()
+        {
+            ShowRevivePopup(popupOutOfTime != null ? popupOutOfTime : popupOutOfMove);
+        }
+
+        // Last resort for a dead board: no basket left to unlock and no reshuffle found a
+        // solvable arrangement. Offers a revive before the level is actually lost.
+        public void ShowOutOfMove()
+        {
+            ShowRevivePopup(popupOutOfMove);
+        }
+
+        private void ShowRevivePopup(GameObject prefab)
+        {
+            gameStatus = Settings.GAME_STATUS.pause;
+
+            if (prefab == null)
+            {
+                // Nothing assigned: skip straight to the confirmation rather than stranding
+                // the player in a paused level with no popup.
+                ShowLoseConfirm();
+                return;
+            }
+
+            _reviveSource = prefab;
+            m_popup = Instantiate(prefab, m_canvas.transform, false);
+            m_popup.SetActive(true);
+            m_popup.GetComponent<Popup>().Open();
+        }
+
+        /// <summary>
+        /// Asks the player to confirm giving up. Nothing is spent yet — the life is only
+        /// charged by <see cref="CommitLose"/> if they go through with it, and cancelling
+        /// brings back the revive popup they came from.
+        /// </summary>
+        public void ShowLoseConfirm()
+        {
+            gameStatus = Settings.GAME_STATUS.pause;
+
+            if (popupLose == null)
+            {
+                // No confirmation available: commit rather than leave the level stuck.
+                CommitLose();
+                return;
+            }
 
             m_popup = Instantiate(popupLose, m_canvas.transform, false);
             m_popup.SetActive(true);
             m_popup.GetComponent<Popup>().Open();
         }
 
-        // Shown when the player runs out of moves or time. Offers a revive (watch an ad
-        // for extra time) before the game is actually lost. The music keeps playing so a
-        // revive resumes seamlessly; giving up routes to ShowLose via ConfirmLose().
-        public void ShowOutOfMove()
+        /// <summary>Cancelled the confirmation — put the revive popup back.</summary>
+        public void ReopenRevivePopup()
         {
-            gameStatus = Settings.GAME_STATUS.pause;
-
-            if (popupOutOfMove == null)
+            if (_reviveSource == null)
             {
-                // No revive popup assigned: fall back to the normal lose flow.
-                ShowLose();
+                gameStatus = Settings.GAME_STATUS.play;
                 return;
             }
+            ShowRevivePopup(_reviveSource);
+        }
 
-            m_popup = Instantiate(popupOutOfMove, m_canvas.transform, false);
-            m_popup.SetActive(true);
-            m_popup.GetComponent<Popup>().Open();
+        /// <summary>
+        /// The player confirmed. This is where the level is actually lost: one life, then Home.
+        /// </summary>
+        public void CommitLose()
+        {
+            gameStatus = Settings.GAME_STATUS.lose;
+
+            // The one place a life is spent. A running unlimited-lives window makes it free.
+            _gameSetting.TrySpendLife();
+
+            _bgmController.StopMusic();
+            _soundController.PlayFinishOverClip();
         }
 
         // Shown when the player taps a Closed basket. Offers two ways to open it — coins or a
         // rewarded ad — and runs <paramref name="onUnlock"/> if the player takes either. The
         // countdown is held while the popup is up so deciding does not cost the player time.
-        public void ShowUnlockBasketPopup(Action onUnlock)
+        public void ShowUnlockBasketPopup(Action onUnlock, Action onDecline = null)
         {
             // Both routes out of the popup pay the same time bonus, so it is added here rather
             // than in each button handler - there is no way to unlock without going through this.
@@ -433,11 +489,22 @@ namespace Controllers
             m_popup.SetActive(true);
 
             var popup = m_popup.GetComponent<Popup>();
-            // Restoring on close rather than in each button handler covers every way out of the
-            // popup, including the X and the cancel button.
-            popup.onClose += () => gameStatus = previousStatus;
+            var unlockPopup = m_popup.GetComponent<UnlockBasketPopup>();
 
-            m_popup.GetComponent<UnlockBasketPopup>().Setup(Unlock);
+            // Restoring on close rather than in each button handler covers every way out of the
+            // popup, including the X and the cancel button. When the popup was opened because the
+            // board is stuck, walking away is a decision, so the caller gets told instead.
+            popup.onClose += () =>
+            {
+                if (onDecline != null && !unlockPopup.Unlocked)
+                {
+                    onDecline();
+                    return;
+                }
+                gameStatus = previousStatus;
+            };
+
+            unlockPopup.Setup(Unlock);
             popup.Open();
         }
 
@@ -449,10 +516,11 @@ namespace Controllers
             gameStatus = Settings.GAME_STATUS.play;
         }
 
-        // Called by the out-of-move popup's Leave button: commit to the loss.
+        // Called by a revive popup's Leave button. Does not lose yet: the player still has to
+        // confirm, and cancelling brings the revive popup back.
         public void ConfirmLose()
         {
-            ShowLose();
+            ShowLoseConfirm();
         }
 
         private IEnumerator ShowWin()
@@ -475,35 +543,90 @@ namespace Controllers
 
         public void CheckIsGameNoMove()
         {
+            if (HasAnyMove()) return;
+            HandleNoMoves();
+        }
+
+        /// <summary>
+        /// True while the player still has something to do: either a match is available on top,
+        /// or some basket's contents can be moved into space that exists somewhere else.
+        /// </summary>
+        private bool HasAnyMove()
+        {
             MDimSum[] sameDimsumOnTop = GetDimsumsOnTop();
-            if (sameDimsumOnTop.Length == 0)        //no matched dimsum
+            if (sameDimsumOnTop.Length > 0) return true;    // a match is available
+
+            int hasSingleEmptyBasket = 0;
+            int hasDoubleEmptyBasket = 0;
+            int hasTripleEmptyBasket = 0;
+            foreach (var basket in _gameBaskets)
             {
-                int hasSingleEmptyBasket = 0;
-                int hasDoubleEmptyBasket = 0;
-                int hasTripleEmptyBasket = 0;
-                foreach (var basket in _gameBaskets)
-                {
-                    int totalEmpty = 3 - basket.TotalFilledDimsums();
-                    if (totalEmpty == 1) hasSingleEmptyBasket++;
-                    else if (totalEmpty == 2) hasDoubleEmptyBasket++;
-                    else if (totalEmpty == 3) hasTripleEmptyBasket++;
-                }
+                int totalEmpty = 3 - basket.TotalFilledDimsums();
+                if (totalEmpty == 1) hasSingleEmptyBasket++;
+                else if (totalEmpty == 2) hasDoubleEmptyBasket++;
+                else if (totalEmpty == 3) hasTripleEmptyBasket++;
+            }
 
-                bool stillHasMove = false;
-                foreach (var basket in _gameBaskets)
-                {
-                    if (basket.HasStillTrayLeft())
-                    {
-                        if (hasSingleEmptyBasket > 0 && basket.TotalFilledDimsums() == 1) stillHasMove = true;
-                        if (hasDoubleEmptyBasket > 0 && basket.TotalFilledDimsums() == 2) stillHasMove = true;
-                        if (hasTripleEmptyBasket > 0 && basket.TotalFilledDimsums() == 3) stillHasMove = true;
-                    }
-                }
+            foreach (var basket in _gameBaskets)
+            {
+                if (!basket.HasStillTrayLeft()) continue;
+                if (hasSingleEmptyBasket > 0 && basket.TotalFilledDimsums() == 1) return true;
+                if (hasDoubleEmptyBasket > 0 && basket.TotalFilledDimsums() == 2) return true;
+                if (hasTripleEmptyBasket > 0 && basket.TotalFilledDimsums() == 3) return true;
+            }
 
-                if (!stillHasMove)
-                {
-                    ShowOutOfMove();
-                }
+            return false;
+        }
+
+        /// <summary>True when at least one basket is still closed and could be bought open.</summary>
+        private bool HasLockedBasketLeft()
+        {
+            foreach (var basket in _gameBaskets)
+            {
+                if (basket.GetOpenBasket() == DisplayedBasket.Closed) return true;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// The board is stuck. Three rescues in order of preference: sell the player an extra
+        /// basket, reshuffle what is left into something playable, or — only if neither works —
+        /// offer a revive.
+        /// </summary>
+        private void HandleNoMoves()
+        {
+            if (HasLockedBasketLeft())
+            {
+                // Space is the actual problem, so opening a basket is the fix that fits.
+                // Declining is a decision to give up, and routes to the same confirmation.
+                ShowUnlockBasketPopup(UnlockStuckBasket, ShowLoseConfirm);
+                return;
+            }
+
+            // No basket left to sell. Reshuffling is free, so try it before charging the player
+            // for anything — but a shuffle is random and can land on another dead board, so
+            // check the result and try again rather than handing back the same problem.
+            for (int attempt = 0; attempt < maxReshuffleAttempts; attempt++)
+            {
+                PowerUpRefeshItems();
+                if (HasAnyMove()) return;
+            }
+
+            Debug.LogWarning($"[Game] No move after {maxReshuffleAttempts} reshuffles; offering a revive.");
+            ShowOutOfMove();
+        }
+
+        // Opens the first still-closed basket. Used when the unlock popup is reached because the
+        // board is stuck rather than because the player tapped a particular basket.
+        private void UnlockStuckBasket()
+        {
+            foreach (var basket in _gameBaskets)
+            {
+                if (basket.GetOpenBasket() != DisplayedBasket.Closed) continue;
+
+                _soundController.PlayBasketOpenClip();
+                basket.SetOpen(DisplayedBasket.Displayed);
+                return;
             }
         }
 

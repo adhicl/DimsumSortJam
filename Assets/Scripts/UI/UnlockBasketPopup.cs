@@ -44,6 +44,12 @@ namespace UI
         private bool _resolved;
 
         /// <summary>
+        /// True once the player has taken one of the two unlock routes. Lets the caller tell a
+        /// deliberate dismissal apart from a successful unlock on close.
+        /// </summary>
+        public bool Unlocked => _resolved;
+
+        /// <summary>
         /// Hands the popup the action that opens the basket. Called before <see cref="Popup.Open"/>.
         /// </summary>
         public void Setup(Action onUnlock)

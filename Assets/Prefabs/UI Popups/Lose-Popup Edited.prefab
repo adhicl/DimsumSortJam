@@ -13,7 +13,6 @@ GameObject:
   - component: {fileID: 8952734674741523116}
   - component: {fileID: 734410752247850258}
   - component: {fileID: 3334169557857305082}
-  - component: {fileID: 7743291494918678770}
   m_Layer: 5
   m_Name: Button-Close
   m_TagString: Untagged
@@ -93,13 +92,13 @@ MonoBehaviour:
   m_OnClick:
     m_PersistentCalls:
       m_Calls:
-      - m_Target: {fileID: 4521475051754562967}
-        m_TargetAssemblyTypeName: Ricimi.Popup, Assembly-CSharp
-        m_MethodName: Close
+      - m_Target: {fileID: 6579285882123601175}
+        m_TargetAssemblyTypeName: UI.LoseQuitPopup, Assembly-CSharp
+        m_MethodName: CancelLeave
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgumentAssemblyTypeName: 
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -111,19 +110,7 @@ MonoBehaviour:
         m_Mode: 1
         m_Arguments:
           m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
-          m_IntArgument: 0
-          m_FloatArgument: 0
-          m_StringArgument: 
-          m_BoolArgument: 0
-        m_CallState: 2
-      - m_Target: {fileID: 7743291494918678770}
-        m_TargetAssemblyTypeName: Ricimi.PopupOpener, Assembly-CSharp
-        m_MethodName: OpenPopup
-        m_Mode: 1
-        m_Arguments:
-          m_ObjectArgument: {fileID: 0}
-          m_ObjectArgumentAssemblyTypeName: UnityEngine.Object, UnityEngine
+          m_ObjectArgumentAssemblyTypeName: 
           m_IntArgument: 0
           m_FloatArgument: 0
           m_StringArgument: 
@@ -163,19 +150,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &7743291494918678770
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5613486583368274863}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: bdc9dc369ee2a427d82cbd5d7894c8c9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::Ricimi.PopupOpener
-  popupPrefab: {fileID: 7157274846169513049, guid: 67c454b06e496064e940a7d187c2fdef, type: 3}
 --- !u!1001 &871519145346854465
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -606,17 +580,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 0eb879127add40249f81405576c6a13d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UI.LoseQuitPopup
---- !u!114 &4521475051754562967 stripped
-MonoBehaviour:
-  m_CorrespondingSourceObject: {fileID: 3650101050574556118, guid: cb2a8babf76824ad5b762087dcb5fac3, type: 3}
-  m_PrefabInstance: {fileID: 871519145346854465}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2230877863764409827}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7c79359d96b884fc3a08ffce0bef2280, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!224 &9213652073011325483 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 8342132936794457194, guid: cb2a8babf76824ad5b762087dcb5fac3, type: 3}
@@ -636,7 +599,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
-      value: 3
+      value: 2
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
@@ -653,7 +616,7 @@ PrefabInstance:
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 4521475051754562967}
+      objectReference: {fileID: 6579285882123601175}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
       value: 
@@ -676,7 +639,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
-      value: Close
+      value: ConfirmLeave
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
@@ -688,7 +651,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
-      value: Ricimi.Popup, Assembly-CSharp
+      value: UI.LoseQuitPopup, Assembly-CSharp
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
@@ -700,11 +663,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Arguments.m_ObjectArgumentAssemblyTypeName
-      value: UnityEngine.Object, UnityEngine
+      value: 
       objectReference: {fileID: 0}
     - target: {fileID: 5103456250582158927, guid: 63a1b89fdea0e490db2149c721436af8, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[2].m_Arguments.m_ObjectArgumentAssemblyTypeName

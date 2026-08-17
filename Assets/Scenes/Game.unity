@@ -725,12 +725,14 @@ MonoBehaviour:
   successVFXPrefab: {fileID: 3824124065015996849, guid: 6729d02dffd7ec442b2fea7dcf65a718, type: 3}
   gameStatus: 0
   popupWin: {fileID: 5663603077647245247, guid: 296f2890ab1163a44835fe4a0584e8c9, type: 3}
-  popupLose: {fileID: 7157274846169513049, guid: 67c454b06e496064e940a7d187c2fdef, type: 3}
+  popupLose: {fileID: 2230877863764409827, guid: 802fed4ae2f388546b3cbafc65b46c43, type: 3}
   popupRequestLose: {fileID: 3712287877593531365, guid: 1e8dba3e5625ace4699cd1a3d04da450, type: 3}
   popupOutOfMove: {fileID: 7157274846169513049, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
   popupUnlockBasket: {fileID: 2875766372118975236, guid: 53599fcc777982844983cebc4d3fdc29, type: 3}
   basketUnlockTimeBonus: 20
-  reviveTimeBonus: 60
+  popupOutOfTime: {fileID: 7157274846169513049, guid: 67c454b06e496064e940a7d187c2fdef, type: 3}
+  reviveTimeBonus: 45
+  maxReshuffleAttempts: 5
   isTimerPause: 0
   m_canvas: {fileID: 1382755113}
 --- !u!4 &317537327

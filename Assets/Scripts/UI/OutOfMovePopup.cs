@@ -127,15 +127,16 @@ namespace UI
             GetComponent<Popup>().Close();
         }
 
-        // Wired to the "Leave" button. Commits to the loss.
+        // Wired to the "Leave" button and to the corner X. Neither loses the level outright —
+        // both hand over to the confirmation popup, which is where the life is actually spent.
         public void LeaveGiveUp()
         {
             if (_resolved) return;
             _resolved = true;
 
-            SoundController.Instance.PlayFinishOverClip();
+            SoundController.Instance.PlayButtonClickClip();
             GetComponent<Popup>().Close();
-            GameController.Instance.ConfirmLose();
+            GameController.Instance.ShowLoseConfirm();
         }
     }
 }

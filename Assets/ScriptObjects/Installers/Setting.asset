@@ -49,20 +49,21 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 28b93a627dd6d8246928cb447c4996cf, type: 3}
   - {fileID: 21300000, guid: c908349af031e134faa562745c4e2350, type: 3}
   - {fileID: 21300000, guid: e493849d6c0345e4b9fd3304f6dd9255, type: 3}
-  currentLevel: 2
-  maximumLevel: 20
-  currentLevelData: {fileID: 11400000, guid: c7a814a80a1c48b4aa81880b3801fd8a, type: 2}
+  currentLevel: 5
+  maximumLevel: 50
+  currentLevelData: {fileID: 11400000, guid: 50b2b008943bb4549ad8c7d111ab6a81, type: 2}
   currentDimsumSprites:
-  - {fileID: 21300000, guid: f15a121a1cf1e2041891a6be88c10266, type: 3}
+  - {fileID: 21300000, guid: c908349af031e134faa562745c4e2350, type: 3}
+  - {fileID: 21300000, guid: ec4991944ceba5141a2607e69c338d0f, type: 3}
   - {fileID: 21300000, guid: 822f0cb2c971178478fe48680268bd51, type: 3}
-  - {fileID: 21300000, guid: 359d001e08e4d1648a880d47159bf6b1, type: 3}
+  - {fileID: 21300000, guid: df398dcb70e97034f841669c58c6f53e, type: 3}
   - {fileID: 21300000, guid: 3d49f2d049069f2479fe340b9adaeef3, type: 3}
+  - {fileID: 21300000, guid: b73785b457437b44c87c52698aa73fa7, type: 3}
+  - {fileID: 21300000, guid: 01b89b10e13da6544bd71820bd402fac, type: 3}
+  - {fileID: 21300000, guid: 359d001e08e4d1648a880d47159bf6b1, type: 3}
   - {fileID: 21300000, guid: 1e81c59d44a3d8448933898d708b5c08, type: 3}
   - {fileID: 21300000, guid: 4920a144dd65bf447bdaaf057df4b090, type: 3}
-  - {fileID: 21300000, guid: df398dcb70e97034f841669c58c6f53e, type: 3}
-  - {fileID: 21300000, guid: 01b89b10e13da6544bd71820bd402fac, type: 3}
-  - {fileID: 21300000, guid: b73785b457437b44c87c52698aa73fa7, type: 3}
-  - {fileID: 21300000, guid: c908349af031e134faa562745c4e2350, type: 3}
+  - {fileID: 21300000, guid: f15a121a1cf1e2041891a6be88c10266, type: 3}
   allLevelData:
   - {fileID: 11400000, guid: 652393e91ddf9ed47994f22e7824c512, type: 2}
   - {fileID: 11400000, guid: 87f5a7992d0ba5d4a97c2641f34cddfb, type: 2}
@@ -84,9 +85,44 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 16b59377f79657c4094efc54f157f8a0, type: 2}
   - {fileID: 11400000, guid: 041bf4846739e7244ae0ad1cbddb780b, type: 2}
   - {fileID: 11400000, guid: 2195a7a50b4e6ff4db78815910488856, type: 2}
+  - {fileID: 11400000, guid: b5fddb0b8e0b77349a50f4c9de37b435, type: 2}
+  - {fileID: 11400000, guid: ed94238d4e719f94ebdbc6d85fb1a484, type: 2}
+  - {fileID: 11400000, guid: a270ffec73659da4d83bb9f362b8a558, type: 2}
+  - {fileID: 11400000, guid: e2f79f06e9e34454ea0b391da217cef9, type: 2}
+  - {fileID: 11400000, guid: 64502b3786f7f684d9139d7d6720130c, type: 2}
+  - {fileID: 11400000, guid: 5220606d6a678c647bd47ff44a18b9b4, type: 2}
+  - {fileID: 11400000, guid: f668909917b7d9c4487ba15f244fe7f6, type: 2}
+  - {fileID: 11400000, guid: 93c8079075d1c504091fb2fdeff27d4e, type: 2}
+  - {fileID: 11400000, guid: 1a28113481e5b5846901c2dcca043ad6, type: 2}
+  - {fileID: 11400000, guid: f405e149eac2bf34984ba683d299dac8, type: 2}
+  - {fileID: 11400000, guid: bdd3d0d9114067346832711bf4e99763, type: 2}
+  - {fileID: 11400000, guid: 2d274b0056686774c9d5e7cc8767f0dd, type: 2}
+  - {fileID: 11400000, guid: 35d4302925b89cb4b9c9b5f84b0d13b6, type: 2}
+  - {fileID: 11400000, guid: aa75a22def2b5204885dd702d38db662, type: 2}
+  - {fileID: 11400000, guid: 6a6ae7f2a703d9e4f8d2b370c4327cae, type: 2}
+  - {fileID: 11400000, guid: 2ae743208b8fc1648b2bcc47cbedf055, type: 2}
+  - {fileID: 11400000, guid: 8a42c8eda567d554ebdc94f5a33bc40e, type: 2}
+  - {fileID: 11400000, guid: ae7b143208bda2e4c89969bad16a6656, type: 2}
+  - {fileID: 11400000, guid: e0fbac29e99533e438d83d8770793d23, type: 2}
+  - {fileID: 11400000, guid: 923bf16d8cfc35e44804498c4ece6eda, type: 2}
+  - {fileID: 11400000, guid: e0d2c346ac8931e4d999d37c828005ef, type: 2}
+  - {fileID: 11400000, guid: 7e9f3c2b47ebdb1449647894f73d267d, type: 2}
+  - {fileID: 11400000, guid: 6b3c7341930364f4e85c0bdf0ebe3735, type: 2}
+  - {fileID: 11400000, guid: c8d1fff8ac859fb4a9ac8ce121ac5ab3, type: 2}
+  - {fileID: 11400000, guid: 9e080b9489d2c5d41b65dbe0da9de94e, type: 2}
+  - {fileID: 11400000, guid: 23bf84711e6a04b41860d24d731f913a, type: 2}
+  - {fileID: 11400000, guid: 07bf01c314babc54eb7ea3dc36392d84, type: 2}
+  - {fileID: 11400000, guid: 51f437a4bad26b14193a7d79de69d7d8, type: 2}
+  - {fileID: 11400000, guid: 13edb9733a491424b8362e27ddcf186b, type: 2}
+  - {fileID: 11400000, guid: db164f40893db2449af1f61cc226e491, type: 2}
   lifeTimer: 999
-  totalLife: 5
-  totalGold: 180
+  totalLife: 3
+  totalGold: 400
+  playerName: 
+  avatarId: 
+  unlimitedLivesUntil: 0
+  lastFreeUnlimitedDay: 2026-08-17
+  nextLifeAt: 1786964293822
   totalPowerup1: 3
   totalPowerup2: 3
   totalPowerup3: 3
@@ -96,3 +132,4 @@ MonoBehaviour:
   totalBooster3: 3
   soundMute: 0
   musicMute: 0
+  removeAds: 0
