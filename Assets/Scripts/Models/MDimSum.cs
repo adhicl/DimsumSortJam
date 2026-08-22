@@ -175,9 +175,27 @@ namespace Models
         {
             //Debug.Log($"Reset {dimsumType}");
             this.dimsumType = dimsumType;
+
+            // The pool only reactivates the GameObject, so anything the previous life changed is
+            // still set. A DOMove left over from the last drag keeps running and walks the piece
+            // off the slot it was just placed in, and one despawned during a power-up comes back
+            // on the Effect layer at 0.7 scale. Callers set position and start their own tweens
+            // after this returns, so killing here is safe.
+            transform.DOKill();
+            transform.localScale = Vector3.one;
+            BackToBottom();
+
             if (gameSetting.currentDimsumSprites.Length > dimsumType)
             {
                 _renderer.sprite = gameSetting.currentDimsumSprites[dimsumType];
+            }
+            else
+            {
+                // Silently keeping the previous sprite shows the wrong food, and a never-used
+                // pool object has none at all and renders nothing. Both are level-data faults
+                // worth seeing rather than a piece that quietly goes missing.
+                Debug.LogError("[Dimsum] type " + dimsumType + " has no sprite: this level loaded only "
+                               + gameSetting.currentDimsumSprites.Length + ".");
             }
         }
 

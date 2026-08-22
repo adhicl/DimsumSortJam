@@ -1,4 +1,5 @@
 using Commons;
+using DG.Tweening;
 using IClasses;
 using UnityEngine;
 using Zenject;
@@ -15,6 +16,28 @@ namespace Models
 
         public class Pool : MonoMemoryPool<MTray>
         {
+            protected override void Reinitialize(MTray item)
+            {
+                item.ResetForSpawn();
+            }
+        }
+
+        /// <summary>
+        /// Puts back everything the tray's last life changed. A tray is faded to nothing on its
+        /// way out (see <c>MDropArea.CreateDimsumFromTray</c>) and <see cref="MonoMemoryPool{T}"/>
+        /// only deactivates the GameObject — it does not touch the renderer. Without this, a
+        /// recycled tray comes back at alpha 0 and the plate is simply invisible, which is why it
+        /// looked random: it only bites once the pool starts handing back used trays.
+        /// </summary>
+        public void ResetForSpawn()
+        {
+            // A fade still in flight would otherwise empty the tray again after it respawns.
+            selfRenderer.DOKill();
+
+            Color colour = selfRenderer.color;
+            selfRenderer.color = new Color(colour.r, colour.g, colour.b, 1f);
+
+            CleanDimsums();
         }
 
         public void SetRendererOrder(int order)

@@ -572,6 +572,33 @@ on a loss, so a player on their last life can keep going as long as they keep wi
 
 ---
 
+## The board — pooling and rebuilds
+
+Pieces (`MDimSum`) and plates (`MTray`) come from Zenject `MonoMemoryPool`s. **The pool only calls
+`SetActive(false)`/`SetActive(true)`** — it restores nothing else. Everything an object's previous
+life changed is still set when it comes back, which is what made items go missing "randomly": it
+depends entirely on whether the pool hands you a fresh object or a used one.
+
+Five separate causes, all fixed:
+
+| Cause | Effect |
+|---|---|
+| A tray is faded to alpha 0 on its way out, then despawned. `MTray.Pool` had no `Reinitialize`. | Recycled plates came back **fully transparent**. |
+| `CreateTray` fills the **last** tray (highest sorting order = front), but the refill callback filled `trayList[0]` (**back**). | The plate the player sees was blank. Only on baskets with **3+ trays** — with one or two the indices coincide. |
+| That callback read `arrayDimsums[0]` unguarded. | Threw inside a DOTween callback on the final row. |
+| `TotalFilledDimsums()` dereferenced null slots. | NRE unwound through `RemoveDimsum` and **aborted `OnEndDrag` before `DoDropPlaceAt`** — the dragged piece was never placed. Hit when a basket emptied with no trays left. |
+| `BackToBottom()` rebuilds from a 2-second coroutine; nothing stopped a second one starting. | Overlapping rebuilds each despawned what the other had just made and each appended a fresh stack to `trayList`. |
+
+That last one was reachable two ways: spamming the refresh power-up, and `HandleNoMoves`, whose
+retry loop called `PowerUpRefeshItems()` and re-checked **in the same frame**. Since the rebuild
+lands ~2s later, the check always re-read the old stuck board — so every attempt was burnt
+instantly, one pending rebuild was stacked per basket per attempt, and the out-of-move popup
+appeared even though a playable board was about to materialise. It is now the coroutine
+`ReshuffleUntilPlayable`, which waits on `MDropArea.IsRebuilding` between attempts.
+
+**Rule for anything pooled here:** reset it on spawn, and `DOKill()` its tweens. A `DOMove` left
+running from the last drag will happily walk a piece off the slot it was just placed in.
+
 ## Profile
 
 Tapping the avatar in Home's top bar opens `Edit-Profile-Popup SortFood`, which sets a **name**
@@ -716,12 +743,40 @@ Consequences worth knowing:
 
 ---
 
+## Popups — the silent dead-button trap
+
+`Unlock-Basket-Popup`'s close button did nothing. It was wired to **`LeaveGiveUp` on a null
+target** — a leftover from the prefab being duplicated from `Out-Of-Move-Popup`. Re-rooting the
+copy broke the reference, and **UnityEvent skips a persistent call whose target is missing without
+a word**: no exception, no warning. The button still played its click sound, so it looked alive.
+
+It is now `[Popup.Close] [UnlockBasketPopup.PlaySoundButton]`, matching every other popup.
+
+Because the failure is invisible, there is a checker: **Tools ▸ Popups ▸ Validate Popup Buttons**
+(`Assets/Editor/PopupButtonValidator.cs`). It walks every prefab containing a `Popup` and reports
+
+- **dangling** — a persistent call with a missing target; the button is dead. *Currently zero
+  across all 58 popup prefabs.*
+- **empty** — no listeners and nothing on the button binds one. Several are fine: `UnlockBasketPopup`
+  binds its two option buttons in `Awake` from serialized fields, and `RestorePurchasesButton` /
+  `PrivacyOptionsButton` / `OpenUrlButton` bind themselves. Run it after duplicating any kit popup.
+
+One genuinely dead button remains by design, not by accident: **'Rate Us'** in
+`Settings-Popup Food Sort Home` has no listener and no component — it is the unimplemented
+`rate us window` item from `missing.txt`.
+
+> **Testing popups over MCP:** the Editor does not tick frames while unfocused, so `Popup.Close()`
+> appears to do nothing — its `WaitForSeconds` destroy coroutine never advances and `Time.frameCount`
+> stays frozen. Set `Application.runInBackground = true` first, or you will chase a bug that is not
+> there.
+
 ## Reference — what is already wired in Unity
 
 | File / object | Role |
 |---|---|
 | `Assets/Scripts/Commons/IAPCatalog.cs` | The 15 products, types, and rewards. Single source of truth. |
 | `Assets/Editor/ShopTabBuilder.cs` | Generates the shop row prefabs and the Home shop tab from the catalog. |
+| `Assets/Editor/PopupButtonValidator.cs` | **Tools ▸ Popups ▸ Validate Popup Buttons** — finds buttons wired to a missing target. |
 | `Assets/Prefabs/UI/Generated/Shop/` | The four generated row templates — edit these to restyle. |
 | `Assets/Scripts/Controllers/IAPController.cs` | Store connection, two-step purchase flow, granting, restore, dedup ledger, non-consumable ownership. |
 | `Assets/Scripts/Controllers/GameServicesController.cs` | UGS init, Play Games sign-in with anonymous fallback, `LinkWithPlayGamesAsync`. |

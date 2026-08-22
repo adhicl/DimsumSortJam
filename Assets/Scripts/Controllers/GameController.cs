@@ -702,14 +702,56 @@ namespace Controllers
             // No basket left to sell. Reshuffling is free, so try it before charging the player
             // for anything — but a shuffle is random and can land on another dead board, so
             // check the result and try again rather than handing back the same problem.
+            if (_reshuffleRoutine == null)
+            {
+                _reshuffleRoutine = StartCoroutine(ReshuffleUntilPlayable());
+            }
+        }
+
+        private Coroutine _reshuffleRoutine;
+
+        /// <summary>
+        /// Reshuffles until the board has a move again, waiting for each attempt to actually land.
+        ///
+        /// <see cref="PowerUpRefeshItems"/> looks synchronous but is not: every basket rebuilds
+        /// itself from a coroutine that only completes a couple of seconds later. Re-checking
+        /// immediately therefore re-read the *old*, stuck board every time — which burnt all the
+        /// attempts inside a single frame, stacked one pending rebuild per attempt onto every
+        /// basket, and then showed out-of-moves even though a perfectly playable board was about
+        /// to appear.
+        /// </summary>
+        private IEnumerator ReshuffleUntilPlayable()
+        {
             for (int attempt = 0; attempt < maxReshuffleAttempts; attempt++)
             {
                 PowerUpRefeshItems();
-                if (HasAnyMove()) return;
+
+                // Let the rebuild coroutines start, then let them finish before judging the board.
+                yield return null;
+                while (AnyBasketRebuilding())
+                {
+                    yield return null;
+                }
+
+                if (HasAnyMove())
+                {
+                    _reshuffleRoutine = null;
+                    yield break;
+                }
             }
 
             Debug.LogWarning($"[Game] No move after {maxReshuffleAttempts} reshuffles; offering a revive.");
+            _reshuffleRoutine = null;
             ShowOutOfMove();
+        }
+
+        private bool AnyBasketRebuilding()
+        {
+            foreach (var basket in _gameBaskets)
+            {
+                if (basket.IsRebuilding) return true;
+            }
+            return false;
         }
 
         /// <summary>

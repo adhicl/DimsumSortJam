@@ -339,8 +339,11 @@ namespace Models
         {
             if (arrayDimsums.Count <= 0) return;
 
-            Transform[] trayTransforms = trayList[0].GetDimsumPositions();
-            
+            // The front of the stack — the plate the player can actually see, and the only one
+            // carrying sprites. The new pieces animate out of it, so its slots are the start
+            // positions. (CreateTray fills the LAST entry, which has the highest sorting order.)
+            Transform[] trayTransforms = trayList[^1].GetDimsumPositions();
+
             DimsumCombination firstCombination = arrayDimsums[0];
             arrayDimsums.RemoveAt(0);
             int[] row = firstCombination.ToArray();
@@ -365,9 +368,18 @@ namespace Models
                 trayList.Remove(mTray);
                 _traySpawner.Remove(mTray);
 
-                if (trayList.Count > 0)
+                // Refill the tray that is now at the FRONT of the stack. CreateTray puts the
+                // sprites on the last entry — the highest sorting order — so the front is
+                // trayList[^1], not trayList[0]. Filling [0] painted the plate hidden at the
+                // back and left the visible one empty, which is what "the item in the plate is
+                // not rendered" was: it only showed up on baskets with three or more trays,
+                // because with one or two the two indices happen to be the same tray.
+                //
+                // The count check matters too: arrayDimsums was emptied at the top of this
+                // method on the last row, and arrayDimsums[0] then threw inside this callback.
+                if (trayList.Count > 0 && arrayDimsums.Count > 0)
                 {
-                    trayList[0].SetDimsums(arrayDimsums[0].ToArray());
+                    trayList[^1].SetDimsums(arrayDimsums[0].ToArray());
                 }
             };
         }
@@ -382,7 +394,12 @@ namespace Models
             int total = 0;
             foreach (var mDimSum in mDimSums)
             {
-                if (mDimSum.dimsumType != -1) total++;
+                // Empty slots really are null — RemoveDimsum nulls them, and CreateDimsum skips
+                // the -1 entries of a partly filled row. Without this guard an emptied basket
+                // with no trays left threw here, and because the throw unwinds through
+                // RemoveDimsum it aborted OnEndDrag before DoDropPlaceAt ever ran: the piece
+                // being dropped was never placed into the basket.
+                if (mDimSum != null && mDimSum.dimsumType != -1) total++;
             }
 
             return total;
@@ -492,15 +509,25 @@ namespace Models
             }
         }
 
+        /// <summary>True from the moment a reshuffle is requested until the basket is rebuilt.</summary>
+        public bool IsRebuilding => _rebuildRoutine != null;
+
+        private Coroutine _rebuildRoutine;
+
         public void BackToBottom(DimsumCombination[] dimsumArray)
         {
-            StartCoroutine(RecreateDropArea(dimsumArray));
+            // The rebuild only lands two seconds later, so a second reshuffle arriving before then
+            // used to stack another one on top: both fired together, each despawning the pieces the
+            // other had just created and each appending a whole new stack to trayList. The visible
+            // result was duplicated plates with pieces missing under them.
+            if (_rebuildRoutine != null) StopCoroutine(_rebuildRoutine);
+            _rebuildRoutine = StartCoroutine(RecreateDropArea(dimsumArray));
         }
 
         private IEnumerator RecreateDropArea(DimsumCombination[] dimsumArray)
         {
             yield return new WaitForSeconds(2f);
-            
+
             for (int i = 0; i < mDimSums.Length; i++)
             {
                 if (mDimSums[i] != null)
@@ -527,6 +554,8 @@ namespace Models
             // gLockedBasket.SetActive(false);
             // gUnlockPaper.SetActive(true);
             this.transform.localEulerAngles = Vector3.zero;
+
+            _rebuildRoutine = null;
         }
         
         #endregion
