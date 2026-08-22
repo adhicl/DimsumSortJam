@@ -25,14 +25,14 @@ namespace UI
 
         /// <summary>
         /// Wired to "Leave". Spends the life and lets the button's own SceneTransition carry the
-        /// player Home — the life must be charged before the scene unloads.
+        /// player Home — the life must be charged before the scene unloads. The game-over sting
+        /// belongs to CommitLose, so it is not played a second time here.
         /// </summary>
         public void ConfirmLeave()
         {
             if (_resolved) return;
             _resolved = true;
 
-            SoundController.Instance.PlayFinishOverClip();
             GameController.Instance.CommitLose();
         }
 

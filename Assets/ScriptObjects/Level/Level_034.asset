@@ -1,0 +1,185 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 033bb20ac4b645eaa17fe13f4a28bd39, type: 3}
+  m_Name: Level_034
+  m_EditorClassIdentifier: Assembly-CSharp::Commons.LevelData
+  TotalGoal: 135
+  TotalVariation: 20
+  currentLevel:
+  - dimsum1: 1
+    dimsum2: 2
+    dimsum3: -1
+  - dimsum1: 13
+    dimsum2: -1
+    dimsum3: -1
+  - dimsum1: 15
+    dimsum2: 13
+    dimsum3: -1
+  - dimsum1: 9
+    dimsum2: -1
+    dimsum3: -1
+  - dimsum1: 0
+    dimsum2: -1
+    dimsum3: -1
+  - dimsum1: 2
+    dimsum2: 1
+    dimsum3: -1
+  - dimsum1: 7
+    dimsum2: -1
+    dimsum3: -1
+  - dimsum1: 2
+    dimsum2: 12
+    dimsum3: -1
+  - dimsum1: 0
+    dimsum2: 1
+    dimsum3: -1
+  - dimsum1: 3
+    dimsum2: 12
+    dimsum3: 3
+  - dimsum1: 11
+    dimsum2: 5
+    dimsum3: 11
+  - dimsum1: 0
+    dimsum2: 16
+    dimsum3: 4
+  - dimsum1: 14
+    dimsum2: 18
+    dimsum3: 8
+  - dimsum1: 15
+    dimsum2: 19
+    dimsum3: 9
+  - dimsum1: 17
+    dimsum2: 2
+    dimsum3: 3
+  - dimsum1: 4
+    dimsum2: 8
+    dimsum3: 3
+  - dimsum1: 3
+    dimsum2: 10
+    dimsum3: 1
+  - dimsum1: 18
+    dimsum2: 5
+    dimsum3: 6
+  - dimsum1: 3
+    dimsum2: 1
+    dimsum3: 12
+  - dimsum1: 3
+    dimsum2: 1
+    dimsum3: 11
+  - dimsum1: 12
+    dimsum2: 4
+    dimsum3: 17
+  - dimsum1: 10
+    dimsum2: 10
+    dimsum3: 8
+  - dimsum1: 15
+    dimsum2: 19
+    dimsum3: 6
+  - dimsum1: 15
+    dimsum2: 14
+    dimsum3: 5
+  - dimsum1: 17
+    dimsum2: 0
+    dimsum3: 12
+  - dimsum1: 3
+    dimsum2: 0
+    dimsum3: 7
+  - dimsum1: 9
+    dimsum2: 5
+    dimsum3: 16
+  - dimsum1: 11
+    dimsum2: 8
+    dimsum3: 17
+  - dimsum1: 1
+    dimsum2: 1
+    dimsum3: 4
+  - dimsum1: 12
+    dimsum2: 0
+    dimsum3: 6
+  - dimsum1: 8
+    dimsum2: 7
+    dimsum3: 15
+  - dimsum1: 11
+    dimsum2: 19
+    dimsum3: 5
+  - dimsum1: 6
+    dimsum2: 14
+    dimsum3: 8
+  - dimsum1: 4
+    dimsum2: 10
+    dimsum3: 9
+  - dimsum1: 0
+    dimsum2: 17
+    dimsum3: 6
+  - dimsum1: 15
+    dimsum2: 9
+    dimsum3: 17
+  - dimsum1: 0
+    dimsum2: 7
+    dimsum3: 14
+  - dimsum1: 1
+    dimsum2: 16
+    dimsum3: 3
+  - dimsum1: 18
+    dimsum2: 0
+    dimsum3: 16
+  - dimsum1: 2
+    dimsum2: 4
+    dimsum3: 10
+  - dimsum1: 13
+    dimsum2: 18
+    dimsum3: 6
+  - dimsum1: 2
+    dimsum2: 14
+    dimsum3: 4
+  - dimsum1: 2
+    dimsum2: 7
+    dimsum3: 19
+  - dimsum1: 19
+    dimsum2: 19
+    dimsum3: 10
+  - dimsum1: 16
+    dimsum2: 14
+    dimsum3: 9
+  - dimsum1: 16
+    dimsum2: 5
+    dimsum3: 13
+  - dimsum1: 2
+    dimsum2: 11
+    dimsum3: 18
+  - dimsum1: 4
+    dimsum2: 13
+    dimsum3: 4
+  - dimsum1: 2
+    dimsum2: 13
+    dimsum3: 7
+  - dimsum1: 18
+    dimsum2: -1
+    dimsum3: -1
+  firstDisplayed: 000000000100000000000000020000000000000000000000020000000000000000000000000000000000000000000000
+  currentDropArea: 060000000000000006000000000000000600000006000000000000000600000005000000050000000500000005000000
+  requestMissions:
+  - totalRequestItems: 2
+    requestTimeShow: 22
+    getOnTopOnly: 0
+  - totalRequestItems: 2
+    requestTimeShow: 45
+    getOnTopOnly: 0
+  - totalRequestItems: 1
+    requestTimeShow: 68
+    getOnTopOnly: 0
+  - totalRequestItems: 2
+    requestTimeShow: 90
+    getOnTopOnly: 1
+  - totalRequestItems: 2
+    requestTimeShow: 112
+    getOnTopOnly: 0

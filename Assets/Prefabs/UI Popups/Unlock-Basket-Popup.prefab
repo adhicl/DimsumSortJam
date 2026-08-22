@@ -275,6 +275,14 @@ PrefabInstance:
       propertyPath: m_SizeDelta.x
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 3835720700287394721, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: -151.7
+      objectReference: {fileID: 0}
+    - target: {fileID: 3835720700287394721, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 276.57
+      objectReference: {fileID: 0}
     - target: {fileID: 4723776707167377855, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -343,6 +351,10 @@ PrefabInstance:
       propertyPath: m_SizeDelta.x
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 5793254101571835688, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: 79
+      objectReference: {fileID: 0}
     - target: {fileID: 6584813742693868845, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -361,7 +373,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7157274846169513049, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
       propertyPath: m_Name
-      value: Out-Of-Move-Unlock Popup Variant
+      value: Unlock-Basket-Popup
       objectReference: {fileID: 0}
     - target: {fileID: 7364216789692416188, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
       propertyPath: m_AnchorMax.y

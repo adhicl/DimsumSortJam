@@ -413,8 +413,8 @@ and leaves buy buttons disabled.
 Two states, one heart in the top bar.
 
 **Normal.** `GameSetting.totalLife` counts down from `GameSetting.MaxLife` (**5**). Losing a level
-costs one — `GameController.ShowLose()` calls `TrySpendLife()`, which is the only place in the
-game a life is spent. Every give-up path funnels through `ShowLose`, so there is one hook, not
+costs one — `GameController.CommitLose()` calls `TrySpendLife()`, which is the only place in the
+game a life is spent. Every give-up path funnels through `CommitLose`, so there is one hook, not
 several. The top bar shows a plain heart and the number.
 
 **Unlimited.** `unlimitedLivesUntil` is a Unix-ms deadline; while it is in the future
@@ -477,6 +477,70 @@ calendar day the player recognises rather than a rolling 24 hours.
 | 7h 59m | `7:59` |
 | 15 minutes | `15:00` (minutes:seconds) |
 | 59 seconds | `0:59` |
+
+### Losing a level
+
+Two conditions end a level, and each has its own popup:
+
+| Condition | Trigger | Popup |
+|---|---|---|
+| Out of time | `_timer` reaches 0 → `ShowOutOfTime()` | `Out-Of-Time-Popup Variant` ("OUT OF TIME") |
+| Out of moves | dead board survives every rescue → `ShowOutOfMove()` | `Out-Of-Move-Popup` ("GAME OVER") |
+
+Both are the same component (`OutOfMovePopup`) — only the wording differs — and both offer a
+revive for an ad or `ReviveCost` coins before anything is lost.
+
+Leaving is a **two-step** flow, and the controller owns the routing:
+
+```
+out of time  ─┐                    ┌─ Leave  → CommitLose(): spend the life,
+              ├─→ Lose-Popup Edited ┤          then SceneTransition → Home
+out of moves ─┘   "lose your heart" └─ Cancel → ReopenRevivePopup(): back to
+                                               whichever popup you came from
+```
+
+**`GameController._loseReason` is what Cancel reads**, and it is recorded at each point a loss
+begins — not just when a revive popup opens. That distinction is the whole fix: a stuck board can
+reach the confirmation *without any revive popup*, by declining the offer to open a basket
+(`GiveUpStuckBoard`). Remembering the popup instead of the reason meant that route came back to
+whatever was last on screen — after any earlier timeout, the out-of-time popup — or to nothing at
+all on the first loss, dropping the player onto a dead board with the clock running.
+
+**The life is spent in `CommitLose` and nowhere else**, so backing out is always free. Neither
+revive popup's Leave button nor its corner X charges anything; both call `LeaveGiveUp()`, which
+closes and hands over to `ShowLoseConfirm()`.
+
+Both revive popups route their Leave through the controller rather than through a `PopupOpener` on
+the button. A `PopupOpener` holds a prefab, not a reason, and it also skips `LeaveGiveUp`'s
+`_resolved` latch — which left REVIVE tappable through the half-second closing animation.
+
+### Input while a popup is open
+
+The board is world-space colliders driven by `OnMouseDown`/`OnMouseDrag`/`OnMouseUp`, which Unity
+dispatches by physics raycast. **A uGUI popup on top of it does not reliably stop those messages**,
+so every board input handler asks `GameController.AcceptsBoardInput` first:
+
+```csharp
+gameStatus != win && gameStatus != lose && !Popup.AnyOpen && !RewardedAdController.IsShowingAd
+```
+
+Two traps that shape it:
+
+- **It cannot be `gameStatus == play`.** A level sits in `pause` until the first drag, and it is
+  that drag calling `DoStartTimer()` that starts it — so requiring `play` would deadlock the level.
+- **Which is exactly why `Popup.AnyOpen` has to be in there.** `DoStartTimer()` sets the status back
+  to `play` unconditionally, so dragging a dimsum through an open popup used to resume the level
+  underneath it — and with the clock already at zero, `Update()` would re-fire `ShowOutOfTime()`
+  and stack a fresh popup every frame. Tapping a closed basket through a popup likewise stacked the
+  unlock offer on top.
+
+`isTimerPause` is deliberately *not* consulted — the freeze power-up stops the clock while the
+player keeps sorting. The guards fail **open** (`controller != null && !controller.Accepts…`) so a
+missing injection can never leave the board unresponsive.
+
+`OnMouseUp` is gated on `_moved` instead: Unity still delivers it for a press the handler ignored,
+and ending a drag that never began would play the drop sound and tween the piece to a stale
+`_initialPosition`.
 
 ### The out-of-lives gate
 

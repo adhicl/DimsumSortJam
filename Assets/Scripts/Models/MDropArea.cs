@@ -450,6 +450,10 @@ namespace Models
 
         private void OnMouseDown()
         {
+            // Without this, tapping a closed basket through an open popup would stack a second
+            // popup — the unlock offer — on top of the one already on screen.
+            if (_gameController != null && !_gameController.AcceptsBoardInput) return;
+
             // A Closed basket (as opposed to a Locked one, which opens by matching its
             // dimsum) is unlocked through the unlock popup: pay coins or watch a rewarded ad.
             // Either way it becomes a normal empty Displayed basket the player can sort into.

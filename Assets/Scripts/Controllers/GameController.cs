@@ -220,6 +220,25 @@ namespace Controllers
             return array;
         }
 
+        /// <summary>
+        /// True while the board should answer touches. The board stays visible behind a popup, and
+        /// nothing about a uGUI overlay stops Unity delivering OnMouseDown to a world collider — so
+        /// every board input handler has to ask this first.
+        ///
+        /// It cannot simply be "gameStatus == play": the level sits in <c>pause</c> until the first
+        /// drag, and it is that drag calling <see cref="DoStartTimer"/> that starts it. Which is
+        /// also why an open popup has to block input rather than the status alone doing it —
+        /// dragging through a popup would set the status back to play underneath it.
+        ///
+        /// <c>isTimerPause</c> is deliberately not consulted: the freeze power-up stops the clock
+        /// while the player keeps sorting.
+        /// </summary>
+        public bool AcceptsBoardInput =>
+            gameStatus != Settings.GAME_STATUS.win
+            && gameStatus != Settings.GAME_STATUS.lose
+            && !Popup.AnyOpen
+            && !RewardedAdController.IsShowingAd;
+
         private bool hasStartGame = false;
         public void DoStartTimer()
         {
@@ -315,6 +334,10 @@ namespace Controllers
 
         private void Update()
         {
+#if UNITY_EDITOR
+            HandleTestShortcuts();
+#endif
+
             if (gameStatus == Settings.GAME_STATUS.play)
             {
                 // Anything covering the game holds the countdown: an open popup (settings,
@@ -363,9 +386,19 @@ namespace Controllers
         [Tooltip("How many reshuffles to try before admitting the board cannot be rescued.")]
         [SerializeField] private int maxReshuffleAttempts = 5;
 
-        // The revive popup to bring back if the player cancels the lose confirmation. Held as a
-        // prefab rather than an instance because the popup is destroyed on the way to the confirm.
-        private GameObject _reviveSource;
+        /// <summary>Which of the two failure conditions ended the level.</summary>
+        public enum LoseReason
+        {
+            OutOfTime,
+            OutOfMoves
+        }
+
+        // Why the level is being lost, so cancelling the confirmation comes back to the popup the
+        // player actually came from. The reason is recorded rather than the popup instance or its
+        // prefab: a stuck board can reach the confirmation without any revive popup ever opening,
+        // and a remembered prefab would then be a stale one from an earlier loss. Defaults to
+        // out-of-moves because the out-of-time popup sells time, which never rescues a dead board.
+        private LoseReason _loseReason = LoseReason.OutOfMoves;
 
         public bool isTimerPause = false;
         
@@ -384,23 +417,95 @@ namespace Controllers
         }
         
 
+#if UNITY_EDITOR
+        /// <summary>
+        /// Editor-only shortcuts for exercising the two lose popups by hand. Out-of-moves is the
+        /// one that needs them: it only fires once the closed-basket offer and every reshuffle
+        /// have failed, so there is no practical way to reach it by playing normally.
+        ///
+        /// O = out of moves, T = out of time. Compiled out of player builds.
+        /// </summary>
+        private void HandleTestShortcuts()
+        {
+            bool wantOutOfMoves = Input.GetKeyDown(KeyCode.O);
+            bool wantOutOfTime = Input.GetKeyDown(KeyCode.T);
+            if (!wantOutOfMoves && !wantOutOfTime) return;
+
+            // Report the refusal rather than swallowing the key. A popup already on screen is the
+            // usual reason, and silence there is indistinguishable from the shortcut being broken.
+            if (!AcceptsBoardInput)
+            {
+                Debug.LogWarning("[Game] TEST: key ignored — status=" + gameStatus
+                                 + ", popupOpen=" + Popup.AnyOpen
+                                 + ", showingAd=" + RewardedAdController.IsShowingAd
+                                 + ". Close what is on screen and try again.");
+                return;
+            }
+
+            if (wantOutOfMoves) TestForceOutOfMoves();
+            else TestForceOutOfTime();
+        }
+
+        /// <summary>
+        /// Also on the component's right-click menu, so it works when the Game view does not have
+        /// keyboard focus — and on a device build, where the key shortcut does not exist.
+        /// </summary>
+        [ContextMenu("TEST/Force Out Of Moves")]
+        private void TestForceOutOfMoves()
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("[Game] TEST: enter Play mode first.");
+                return;
+            }
+            Debug.Log("[Game] TEST: forcing out of moves.");
+            ShowOutOfMove();
+        }
+
+        [ContextMenu("TEST/Force Out Of Time")]
+        private void TestForceOutOfTime()
+        {
+            if (!Application.isPlaying)
+            {
+                Debug.LogWarning("[Game] TEST: enter Play mode first.");
+                return;
+            }
+            Debug.Log("[Game] TEST: forcing out of time.");
+            _timer = 0f;
+            ShowOutOfTime();
+        }
+#endif
+
         // The countdown reached zero. The only way on is more time, so this popup sells time -
         // reshuffling the board would not help a player whose clock has run out.
         public void ShowOutOfTime()
         {
-            ShowRevivePopup(popupOutOfTime != null ? popupOutOfTime : popupOutOfMove);
+            _loseReason = LoseReason.OutOfTime;
+            ShowRevivePopup();
         }
 
         // Last resort for a dead board: no basket left to unlock and no reshuffle found a
         // solvable arrangement. Offers a revive before the level is actually lost.
         public void ShowOutOfMove()
         {
-            ShowRevivePopup(popupOutOfMove);
+            _loseReason = LoseReason.OutOfMoves;
+            ShowRevivePopup();
         }
 
-        private void ShowRevivePopup(GameObject prefab)
+        // Opens the revive popup that matches the current reason. Also the way back in when the
+        // player cancels the confirmation, which is why it reads _loseReason rather than taking
+        // a prefab: the caller cancelling has no idea which popup started this.
+        private void ShowRevivePopup()
         {
             gameStatus = Settings.GAME_STATUS.pause;
+
+            GameObject prefab = _loseReason == LoseReason.OutOfTime ? popupOutOfTime : popupOutOfMove;
+
+            // A scene that wired only one of the two (the tutorials) still gets an offer.
+            if (prefab == null)
+            {
+                prefab = _loseReason == LoseReason.OutOfTime ? popupOutOfMove : popupOutOfTime;
+            }
 
             if (prefab == null)
             {
@@ -410,7 +515,6 @@ namespace Controllers
                 return;
             }
 
-            _reviveSource = prefab;
             m_popup = Instantiate(prefab, m_canvas.transform, false);
             m_popup.SetActive(true);
             m_popup.GetComponent<Popup>().Open();
@@ -437,15 +541,14 @@ namespace Controllers
             m_popup.GetComponent<Popup>().Open();
         }
 
-        /// <summary>Cancelled the confirmation — put the revive popup back.</summary>
+        /// <summary>
+        /// Cancelled the confirmation — put the revive popup back. Out-of-time after a timeout,
+        /// out-of-move after a dead board; there is always a reason, so this can never leave the
+        /// player looking at a lost level with no popup on it.
+        /// </summary>
         public void ReopenRevivePopup()
         {
-            if (_reviveSource == null)
-            {
-                gameStatus = Settings.GAME_STATUS.play;
-                return;
-            }
-            ShowRevivePopup(_reviveSource);
+            ShowRevivePopup();
         }
 
         /// <summary>
@@ -514,13 +617,6 @@ namespace Controllers
             _timer += reviveTimeBonus;
             isTimerPause = false;
             gameStatus = Settings.GAME_STATUS.play;
-        }
-
-        // Called by a revive popup's Leave button. Does not lose yet: the player still has to
-        // confirm, and cancelling brings the revive popup back.
-        public void ConfirmLose()
-        {
-            ShowLoseConfirm();
         }
 
         private IEnumerator ShowWin()
@@ -599,7 +695,7 @@ namespace Controllers
             {
                 // Space is the actual problem, so opening a basket is the fix that fits.
                 // Declining is a decision to give up, and routes to the same confirmation.
-                ShowUnlockBasketPopup(UnlockStuckBasket, ShowLoseConfirm);
+                ShowUnlockBasketPopup(UnlockStuckBasket, GiveUpStuckBoard);
                 return;
             }
 
@@ -614,6 +710,18 @@ namespace Controllers
 
             Debug.LogWarning($"[Game] No move after {maxReshuffleAttempts} reshuffles; offering a revive.");
             ShowOutOfMove();
+        }
+
+        /// <summary>
+        /// Walked away from the offer to open a basket on a stuck board. This route reaches the
+        /// confirmation without any revive popup having opened, so it has to record the reason
+        /// itself — otherwise cancelling would come back to whatever popup was last shown, which
+        /// after an earlier timeout is the out-of-time one.
+        /// </summary>
+        private void GiveUpStuckBoard()
+        {
+            _loseReason = LoseReason.OutOfMoves;
+            ShowLoseConfirm();
         }
 
         // Opens the first still-closed basket. Used when the unlock popup is reached because the

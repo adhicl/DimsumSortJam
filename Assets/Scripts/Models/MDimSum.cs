@@ -26,6 +26,9 @@ namespace Models
         private void OnMouseDown()
         {
             if (mainCamera == null) return;
+            // A popup covering the board does not stop Unity delivering this, and OnStartDrag
+            // would call DoStartTimer and resume the level underneath the popup.
+            if (gameController != null && !gameController.AcceptsBoardInput) return;
             OnStartDrag();
         }
 
@@ -33,6 +36,9 @@ namespace Models
         {
             if (mainCamera == null) return;
             if (!_moved) return;
+            // A popup opening mid-drag freezes the piece where it is rather than letting the
+            // player keep sliding it around over the popup. Releasing still resolves the drag.
+            if (gameController != null && !gameController.AcceptsBoardInput) return;
             Vector2 mousePosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
             this.transform.position = new Vector3(mousePosition.x, mousePosition.y, -1f);
         }
@@ -41,6 +47,10 @@ namespace Models
         private void OnMouseUp()
         {
             if (mainCamera == null) return;
+            // Unity still sends this to whatever received OnMouseDown, including a press this
+            // script ignored. Ending a drag that never started would play the drop sound and
+            // tween the piece to a stale _initialPosition, so only finish a real one.
+            if (!_moved) return;
             OnEndDrag();
         }
 
