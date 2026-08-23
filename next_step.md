@@ -599,6 +599,127 @@ appeared even though a playable board was about to materialise. It is now the co
 **Rule for anything pooled here:** reset it on spawn, and `DOKill()` its tweens. A `DOMove` left
 running from the last drag will happily walk a piece off the slot it was just placed in.
 
+### Dragging — the held piece grows
+
+This is a phone game, so a piece under the fingertip is a piece the player cannot see. While a drag
+is live, `MDimSum` grows it to **1.5x** (`dragScale`, a `[SerializeField]` on the dimsum prefab —
+tune it in the Inspector, no code change). It tweens up over 0.12s on grab and back down over 0.15s
+on release.
+
+**Floating the piece above the finger was tried and removed.** Every offset large enough to
+actually clear a fingertip made the piece feel unstuck from the thumb, and it moved the collider
+with the sprite — which is what `OnTriggerEnter2D` and `MDropArea.CheckDropPosition` read, so the
+piece resolved to a higher slot than it looked like it was going to. (`Settings.THRESHOLD_HEIGHT`,
+0.7, is the top-slot/bottom-slot cutoff measured from the basket centre to the piece, so a lift
+shifts it directly.) The grow gives the same visibility without ever separating what the player
+sees from what they hit. **If you reintroduce a lift, the drop test has to be offset by the same
+amount** or aiming will lie.
+
+The scale tween is held in `_scaleTween` and killed before a new one starts. A second `DOScale`
+does not replace the first, it just adds one, so re-grabbing a piece inside the drop's shrink would
+otherwise leave two of them writing `localScale` every frame. `Reset` clears `_moved` and the tween
+reference too, so a piece despawned mid-drag by a power-up cannot come back still believing it is
+held — the same pooling trap as everything above.
+
+## Power-ups — gating, spending, and the buy popup
+
+Four power-ups sit in the top bar (`PlayTopBar`, inside `Panel-Game.prefab`). The button order is
+not guessable from the numbers, so `GameController` names the slots:
+
+| Slot | Button | Effect | Unlocks at | Needs a match? |
+|---|---|---|---|---|
+| 1 | Package | Packs away three matching dim sum | Lv. 7 | **yes** |
+| 2 | Magnifier | Reveals and clears three matching dim sum | Lv. 2 | **yes** |
+| 3 | Shuffle | Rearranges everything still on the plates | Lv. 14 | no |
+| 4 | Extra time | Freezes the timer for 15s | Lv. 10 | no |
+
+### Three gates, all greyed rather than hidden
+
+`PlayTopBar.RefreshInteractable` sets `interactable` — never `SetActive` — so the row never
+reshuffles under the player's thumb mid-level. A button lights up only when the level is unlocked,
+the level is still running (not won or lost), **and**, for the package and the magnifier, the
+board is actually holding three of a kind.
+
+That last check goes through `GameController.HasReadyMatch`, which calls the very same
+`GetDimsumReadyOnTop()` the two power-ups use to pick their targets. That is the point: **if the
+button is lit, pressing it does something.** A cheaper re-implementation could drift from it and
+put the player back to burning a power-up on an empty board.
+
+It polls (`refreshInterval`, 0.15s) rather than waiting to be told, because the board changes
+without the player touching a button — a basket completing, a refill landing, a rebuild finishing.
+`HasReadyMatch` returns false when `_gameBaskets` is still null: the top bar's `Start` runs before
+the controller has built the board, and without that guard it throws on the first frame.
+
+### Spending, and running out
+
+**Every power-up goes through `GameController.TryUsePowerup`**, which spends one or opens the buy
+popup. There is no route that fires an effect without paying for it — before this, nothing ever
+decremented `totalPowerup1..4` and the power-ups were effectively infinite.
+
+`GameSetting` addresses the four counters by number (`GetPowerup`, `AddPowerup`,
+`TrySpendPowerup`) so the UI can loop instead of repeating itself four times. Like `TrySpendGold`,
+the check and the charge are one call, so a double tap cannot spend two.
+
+Running out is **not** one of the interactable gates. An empty power-up stays pressable and opens
+the shop, and the "+" badge on the button (shown only at zero) does the same.
+
+### The buy popup
+
+`Buy-Powerup-Popup.prefab` + `BuyPowerupPopup.cs`, duplicated from `Unlock-Basket-Popup` so the
+two read as one shop: same layout, same two options — **500 coins** (`GameSetting.PowerupCost`) or
+a rewarded ad — and the same greying when an option is unavailable.
+
+It sells the one power-up the player reached for rather than a shelf, so `ShowBuyPowerupPopup(slot)`
+hands it a slot and it dresses itself from the `entries` array on the prefab: title, one-sentence
+description, and **the same icon the top-bar button uses**. Adding a fifth power-up is an Inspector
+edit, not a code change.
+
+Buying does not fire the power-up — the popup closes, the button lights up with its new count, and
+the player spends it when they mean to.
+
+### Gaining one — the icon flies down to the button
+
+Modelled on `WinPopup.SpawnCoins`, which throws coins at the coin pill. On a gain, `PlayTopBar`
+spawns one icon per power-up, kicks it away from where it came from, then flies it into the button
+it belongs to (`flyDuration` 0.55s, all four numbers tunable on the prefab). **The button pops
+(`DOPunchScale`) and the sound plays when the icon lands**, not when the coins were taken.
+
+**It is driven by the top bar watching the counter, not by the popup announcing a sale.** That
+covers every source — coins, a rewarded ad, an IAP bundle crediting all four at once — and nothing
+has to remember to notify the bar. The popup's only contribution is
+`PlayTopBar.SetGainOrigin(worldPos)`, a static it calls just before crediting so the icon appears
+to leave the art the player is looking at. It is consumed by the next gain; unset means the middle
+of the screen, which is all a bundle or an ad reward can claim anyway.
+
+Details that matter:
+
+- **The label holds its old value while the icon is in the air.** It prints
+  `count - inFlight[slot]`, so the number ticks up on arrival — the same read as coins landing in
+  the pill. The "+" badge uses the same held-back figure, so it clears on arrival too.
+- The **first** read only records a baseline. Loading a save with three power-ups in it is not
+  something the player just earned.
+- **One sound however many counters moved**, carried by the last icon of a batch. A bundle credits
+  all four, and four overlapping copies of one clip is a mess, not a fanfare.
+- Flown icons are capped at `maxFlyIcons` (5) — a bundle can credit a lot — parented to the canvas
+  root and pushed to the back of the sibling list so they pass *over* the popup, with
+  `raycastTarget` off so they never eat a tap.
+- The flight `Sequence` is given `SetTarget(rt).SetLink(flyer)`. **A bare `Sequence` belongs to
+  nothing**, so DOTween cannot tell its object has gone and it outlives a scene change still
+  driving a destroyed transform. The arrival callback also re-checks `this` for the same reason.
+- The punch tween is **killed and the scale reset before a new one starts**. `DOPunchScale` springs
+  back to whatever scale it captured on start, so a second pop landing on a running one would
+  strand the button at the size the first had reached. Scale does not feed layout, so popping a
+  button cannot shove the rest of the row sideways in the toolbar's `HorizontalLayoutGroup`.
+
+The icon that flies is read off the button's own `Active/Icon`, never serialized separately, so the
+thing that lands can never be a different power-up's art. Note the toolbar is **bottom**-anchored
+despite the class being called `PlayTopBar`. The level is paused while the popup is up, restored in
+`popup.onClose` so every exit is covered.
+
+`popupBuyPowerup` is wired on the `GameController` in **all eight play scenes** (`Game` +
+`Tutorial1..7`) and on `Ctrl.prefab`. The scenes' `Ctrl` objects are **not** prefab instances, so
+each one has to be wired separately — setting it on `Ctrl.prefab` alone changes nothing.
+
 ## Profile
 
 Tapping the avatar in Home's top bar opens `Edit-Profile-Popup SortFood`, which sets a **name**
@@ -638,32 +759,33 @@ a single vertical scroll laid out to match the reference screenshots in `screens
 | **BUNDLES** | the 7 bundles from §1, cheapest first |
 | **GOLD** | the 6 gold tiers as a 3x2 grid |
 
-**It is generated, not hand-built.** `Assets/Editor/ShopTabBuilder.cs` runs in two stages:
+**It was generated once, and is maintained by hand now.** The generator
+(`Assets/Editor/ShopTabBuilder.cs`) has been removed — it only ever ran at the start, and its
+rebuild deleted and re-created the whole tab, which became a hazard once the rows were edited by
+hand. If you ever want it back: `git show 5c232b5:Assets/Editor/ShopTabBuilder.cs`.
 
-1. **Tools ▸ Shop ▸ Rebuild Shop Prefabs Only** writes the row templates to
-   `Assets/Prefabs/UI/Generated/Shop/`:
+What it left behind is the part that matters. `Assets/Prefabs/UI/Generated/Shop/` holds the row
+templates ("Generated" in the path is historical now):
 
-   | Prefab | What it is |
-   |---|---|
-   | `Shop-Section-Header.prefab` | The full-width section bar |
-   | `Shop-Bundle-Row.prefab` | One bundle row, every optional piece included |
-   | `Shop-Gold-Tile.prefab` | One gold tile |
-   | `Shop-Gold-Panel.prefab` | The 3-column grid the tiles sit in |
+| Prefab | What it is |
+|---|---|
+| `Shop-Section-Header.prefab` | The full-width section bar |
+| `Shop-Bundle-Row.prefab` | One bundle row, every optional piece included |
+| `Shop-Gold-Tile.prefab` | One gold tile |
+| `Shop-Gold-Panel.prefab` | The 3-column grid the tiles sit in |
 
-   Alongside them, `Illustrations/` holds the **hand-made** animated art the No Ads cards use —
-   `Shop-Illustration-Sealbear.prefab` and `Shop-Illustration-Bunny-Mail.prefab`, lifted from the
-   kit's other panels. The builder only *places* these; it never generates or overwrites them,
-   and "Rebuild Shop Prefabs Only" leaves them alone. A card opts in with `IllustrationPath` on
-   its `CardSpec`, which also hides that card's flat icon. Placement lives in the illustration
-   prefab itself, so moving the art moves with it.
+**The rows in the scene are real prefab instances of these**, so restyling every bundle at once
+still means editing `Shop-Bundle-Row.prefab` — one edit, no code.
 
-2. **Tools ▸ Shop ▸ Rebuild Shop Tab** does that, then instantiates those prefabs into Page 1 and
-   fills them in. The rows in the scene are real prefab instances, so restyling every bundle at
-   once means editing `Shop-Bundle-Row.prefab` — no code, no rebuild.
+Alongside them, `Illustrations/` holds the **hand-made** animated art the No Ads cards use —
+`Shop-Illustration-Sealbear.prefab` and `Shop-Illustration-Bunny-Mail.prefab`, lifted from the
+kit's other panels. Placement lives inside the illustration prefab itself, so moving the art moves
+with it, and a card showing one hides its flat icon.
 
-Every amount printed on a card is read from `IAPCatalog.Rewards`, so the shelf can never
-advertise something different from what the purchase grants. Prices are never generated —
-`IAPBuyButton` fills them in from the store at runtime.
+Every amount printed on a card has to match `IAPCatalog.Rewards`, or the shelf advertises
+something different from what the purchase grants — nothing enforces that now, so check it by eye.
+Prices are the exception: never author them, `IAPBuyButton` fills them in from the store at
+runtime in the player's own currency.
 
 ### Built out of CuteKawaiiGUIPack, not invented
 
@@ -698,23 +820,19 @@ width comes from the parent. Without that the fitter looks correct and changes n
 
 Consequences worth knowing:
 
-- **Hand edits inside the scene's `Shop-Generated` are lost on the next rebuild** — but edits to
-  the four prefabs are not. Layout and styling belong in the prefabs; which rows exist, and their
-  colour families, belong in `ShopTabBuilder.cs`.
-  **Rebuild Shop Tab lists anything added by hand and asks before destroying it** rather than
-  silently wiping it. If you drop art straight into a card in the scene it is still throwaway —
-  save it under `Illustrations/` and point a `CardSpec` at it, the way the two No Ads
-  illustrations are handled, and it survives every rebuild.
+- **Layout and styling belong in the four prefabs, not in the scene.** Editing a card in
+  `Shop-Generated` changes that one row; editing `Shop-Bundle-Row.prefab` changes all of them.
+  Art added to a card directly in the scene is fine now that nothing regenerates the tab, but
+  saving it under `Illustrations/` as its own prefab — the way the two No Ads illustrations are
+  handled — keeps its placement with the art instead of in the scene.
 - The ∞ on the unlimited-lives hearts is not in Dosis, so TMP falls back to LiberationSans and
   bakes the glyph on demand. That fallback is a **Dynamic** atlas with its source TTF referenced,
   so the glyph is produced at runtime — the committed atlas file is only a cache, and a diff
   appearing in it after a play session is noise, not a required asset change.
-- **Rebuild Shop Tab no longer regenerates the prefabs** (it only does so if they are missing).
-  The prefabs are meant to be edited once generated, and rewriting them on every tab rebuild
-  would throw that away. Use **Rebuild Shop Prefabs Only** to go back to the generated styling —
-  that one *does* overwrite.
-- Adding a product is two edits: `IAPCatalog.cs` (id, type, reward) and the matching
-  `CardSpec`/tier array in `ShopTabBuilder.cs`. Then rebuild, then create it in Play Console.
+- **Adding a product is three steps, and nothing links them:** add it to `IAPCatalog.cs` (id,
+  type, reward), duplicate a row in `Home.unity`'s shop page and point its `IAPBuyButton` at the
+  new id, then create the product in Play Console. A product missing from any one of the three is
+  silent — no card, or a card that cannot be bought.
 - Filling a row in never adds or removes objects — every optional piece (art, power-up grid,
   extras, description, badge) exists in the prefab and is switched off per card, so instances
   carry value overrides only and stay easy to read in the Inspector.
@@ -731,8 +849,9 @@ Consequences worth knowing:
   scene's horizontal pager, and a plain ScrollRect eats the horizontal swipe — the player would
   be stuck on the shop page with only the tab buttons to get out.
 - The coin sprites in `CuteKawaiiGUIPack` are numbered **biggest hoard first**
-  (`Coins-1-Chest` … `Coins-6` is a single coin), which is why `ShopTabBuilder` aliases them to
-  `Coin1`..`Coin6` in ascending order. Use the aliases.
+  (`Coins-1-Chest` … `Coins-6` is a single coin), so the gold tiles run through them in reverse:
+  the cheapest tier uses the highest-numbered sprite. Check the art against the tier when adding
+  one — the numbering reads backwards from what you would expect.
 - The background is the same scrolling tile prefab the other tabs use, in the shop's own colour:
   Home is `Backgrund-Tiles-Blue`, Missions `Backgrund-Tiles-Violet`, shop `Backgrund-Tiles-Green`.
 - **Everything that used to open a currency popup now opens this tab.** Both top-bar pills carry
@@ -752,18 +871,36 @@ a word**: no exception, no warning. The button still played its click sound, so 
 
 It is now `[Popup.Close] [UnlockBasketPopup.PlaySoundButton]`, matching every other popup.
 
-Because the failure is invisible, there is a checker: **Tools ▸ Popups ▸ Validate Popup Buttons**
-(`Assets/Editor/PopupButtonValidator.cs`). It walks every prefab containing a `Popup` and reports
+All 58 prefabs containing a `Popup` were checked at the time of the fix; that was the only broken
+one. **Check by hand after duplicating any kit popup** — that is how this one happened. Select the
+button and read its On Click list in the Inspector: a dead entry shows the object slot as
+`Missing` or `None`, and the method name greyed out. Two things not to mistake for a fault:
 
-- **dangling** — a persistent call with a missing target; the button is dead. *Currently zero
-  across all 58 popup prefabs.*
-- **empty** — no listeners and nothing on the button binds one. Several are fine: `UnlockBasketPopup`
-  binds its two option buttons in `Awake` from serialized fields, and `RestorePurchasesButton` /
-  `PrivacyOptionsButton` / `OpenUrlButton` bind themselves. Run it after duplicating any kit popup.
+- A button with **no listeners at all** is often correct here. `UnlockBasketPopup` binds its two
+  option buttons in `Awake` from serialized fields, and `RestorePurchasesButton` /
+  `PrivacyOptionsButton` / `OpenUrlButton` bind themselves.
+- **'Rate Us'** in `Settings-Popup Food Sort Home` really is dead, by omission — it is the
+  unimplemented `rate us window` item from `missing.txt`.
 
-One genuinely dead button remains by design, not by accident: **'Rate Us'** in
-`Settings-Popup Food Sort Home` has no listener and no component — it is the unimplemented
-`rate us window` item from `missing.txt`.
+It happened again, and not in a popup: all four **power-up buttons** in `Panel-Game.prefab` had a
+dangling `PlayButtonClickClip` call, so they never played a click sound. They now point at
+`PlayTopBar.PlayButtonSound`, which existed for exactly this and was going unused.
+
+### Editing a prefab's On Click list without breaking the scene
+
+Fixing those four is a trap worth writing down. **Never resize `m_OnClick.m_PersistentCalls.m_Calls`
+on a prefab asset** — the scene's prefab-instance overrides are keyed on the *array index*, so
+removing an entry silently drops the scene's own calls. Retarget in place instead: set `m_Target`,
+`m_TargetAssemblyTypeName` and `m_MethodName` on the existing element and leave the array length
+alone.
+
+Two more things that make this confusing:
+
+- A call pointing at a **scene** object (`GameController.PowerUpMagnifier`) reads as a **null
+  target inside the prefab asset** — it is only resolvable in the scene. It is not broken; do not
+  "clean it up".
+- A scene can pin its own `m_Target` for an element, which **wins over the prefab**. Fixing the
+  prefab is not enough — the scenes have to be fixed too. All eight were.
 
 > **Testing popups over MCP:** the Editor does not tick frames while unfocused, so `Popup.Close()`
 > appears to do nothing — its `WaitForSeconds` destroy coroutine never advances and `Time.frameCount`
@@ -775,8 +912,6 @@ One genuinely dead button remains by design, not by accident: **'Rate Us'** in
 | File / object | Role |
 |---|---|
 | `Assets/Scripts/Commons/IAPCatalog.cs` | The 15 products, types, and rewards. Single source of truth. |
-| `Assets/Editor/ShopTabBuilder.cs` | Generates the shop row prefabs and the Home shop tab from the catalog. |
-| `Assets/Editor/PopupButtonValidator.cs` | **Tools ▸ Popups ▸ Validate Popup Buttons** — finds buttons wired to a missing target. |
 | `Assets/Prefabs/UI/Generated/Shop/` | The four generated row templates — edit these to restyle. |
 | `Assets/Scripts/Controllers/IAPController.cs` | Store connection, two-step purchase flow, granting, restore, dedup ledger, non-consumable ownership. |
 | `Assets/Scripts/Controllers/GameServicesController.cs` | UGS init, Play Games sign-in with anonymous fallback, `LinkWithPlayGamesAsync`. |
@@ -797,6 +932,9 @@ One genuinely dead button remains by design, not by accident: **'Rate Us'** in
 | `Assets/Scripts/UI/ProfilePopup.cs` | Edit-profile popup: name and avatar, saved on Save only. |
 | `Assets/Scripts/Commons/AvatarCatalog.cs` | The pickable avatars; `AvatarCatalog.asset` holds the list. |
 | `Assets/Scripts/Commons/GameSetting.cs` | Save data, plus the life economy: cap, spend, settle, daily grant. |
+| `Assets/Scripts/UI/PlayTopBar.cs` | The four power-up buttons: level / match / level-running gates, counts, and the "+" badge. |
+| `Assets/Scripts/UI/BuyPowerupPopup.cs` | Sells one power-up for coins or a rewarded ad; dressed per slot from the prefab's `entries`. |
+| `Assets/Prefabs/UI Popups/Buy-Powerup-Popup.prefab` | That popup. Wired on the `GameController` in all eight play scenes. |
 | `Assets/Scripts/UI/RestorePurchasesButton.cs` | Wires the previously dead "Restore Purchases" button. |
 | `Assets/Scripts/UI/PrivacyOptionsButton.cs` | "Ad Privacy" entry; self-hides where not legally required. |
 | `Assets/Scripts/UI/OpenUrlButton.cs` | Opens the privacy/terms URLs. |

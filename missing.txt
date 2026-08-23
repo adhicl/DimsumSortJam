@@ -1,20 +1,31 @@
 missing:
-- profile need to be wired 
+- profile need to be wired *
 - buy heart -> shop *
 - setup shop tab *
 - setup daily mission + library tab
-- rate us
+- rate us window, show rate the game 
 - bundle powerup *
 - bundle booster *
 - heart logic -> daily 15 minutes free *
-- add more levels
+- add more levels *
 - booster before start *
 
 - setup to google play *
 - setup auth for google play  *
 - setup IAP *
 
+- fix game lose popup, revive, etc *
+- check powerup disable
+- check powerup popup to buy
+- fix item in plate not shown *
+- always shown game version number
 
-* = can be added later
+
+* = is fixed
 
 claude --resume 72142d36-bd3e-4f7c-bd6e-894d972f7aae
+
+Hi, I am also in the middle of close testing. Let us help each other.
+Please join google group: https://groups.google.com/g/yourfavoritegamestudiotester
+Web Link: https://play.google.com/apps/testing/com.yourfavoritegamestudio.Jajanan
+Android Link: https://play.google.com/store/apps/details?id=com.yourfavoritegamestudio.Jajanan

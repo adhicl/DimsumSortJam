@@ -20,8 +20,26 @@ namespace Models
         
         #region drag
 
+        [Header("Drag feel")]
+        [Tooltip("How much bigger the piece gets while it is held, so it reads from under a fingertip. Feedback only — the drop test reads the transform, not the sprite bounds.")]
+        [SerializeField] private float dragScale = 1.5f;
+
         private bool _moved = false;
         private Vector2 _initialPosition;
+
+        // Held so grabbing and dropping can each cancel the other's scale tween. Starting a second
+        // DOScale does not replace the first, it just adds one: re-grabbing a piece inside the
+        // drop's 0.15s shrink leaves both writing localScale every frame. The later tween happens
+        // to win today, so this is insurance rather than a fix for a visible bug, and it keeps
+        // tweens from piling up on a fast player. Only the scale tween is tracked, so cancelling
+        // it never touches the DOMove that settles a piece into its slot.
+        private Tween _scaleTween;
+
+        private void ScaleTo(float target, float duration)
+        {
+            if (_scaleTween != null && _scaleTween.IsActive()) _scaleTween.Kill();
+            _scaleTween = transform.DOScale(Vector3.one * target, duration);
+        }
 
         private void OnMouseDown()
         {
@@ -39,6 +57,11 @@ namespace Models
             // A popup opening mid-drag freezes the piece where it is rather than letting the
             // player keep sliding it around over the popup. Releasing still resolves the drag.
             if (gameController != null && !gameController.AcceptsBoardInput) return;
+            // The piece tracks the touch point exactly. It was briefly floated above the finger
+            // so a fingertip could not cover it, but every offset big enough to help felt like the
+            // piece had come unstuck from the thumb, and it moved the collider too — which is what
+            // picks the basket and the slot, so the piece landed higher than it looked. Growing it
+            // does the same job without separating what the player sees from what they hit.
             Vector2 mousePosition = mainCamera.ScreenToWorldPoint(Input.mousePosition);
             this.transform.position = new Vector3(mousePosition.x, mousePosition.y, -1f);
         }
@@ -68,6 +91,8 @@ namespace Models
             _dropAtIndex = -1;
             
             _moved = true;
+            ScaleTo(dragScale, 0.12f);
+
             _initialPosition = this.transform.position;
             this.transform.position = new Vector3(_initialPosition.x, _initialPosition.y, 120f);
         }
@@ -79,6 +104,11 @@ namespace Models
             _renderer.sortingLayerID = SortingLayer.NameToID("Game");
             
             _moved = false;
+            // Back to board size. The DOMove that settles the piece into its slot runs alongside
+            // this one; a position tween and a scale tween touch different properties, so those
+            // two really are independent.
+            ScaleTo(1f, 0.15f);
+
             if (_dropAt != null)
             {
                 int indexPos = _dropAt.CheckDropPosition(this.transform);
@@ -183,6 +213,11 @@ namespace Models
             // after this returns, so killing here is safe.
             transform.DOKill();
             transform.localScale = Vector3.one;
+            // A piece despawned mid-drag (a power-up clearing the board) never reaches OnEndDrag,
+            // so it would come back out of the pool still believing it was held — drawn a lift
+            // above the finger and at drag size.
+            _moved = false;
+            _scaleTween = null;
             BackToBottom();
 
             if (gameSetting.currentDimsumSprites.Length > dimsumType)

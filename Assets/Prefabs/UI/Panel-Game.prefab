@@ -840,6 +840,7 @@ MonoBehaviour:
   addPowerup2Btn: {fileID: 1329703159186287944}
   addPowerup3Btn: {fileID: 2308602031656638869}
   addPowerup4Btn: {fileID: 4410016224484472946}
+  refreshInterval: 0.15
 --- !u!114 &7593672055467403418
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -856,6 +857,7 @@ MonoBehaviour:
   padBottom: 1
   padLeft: 0
   padRight: 0
+  padBannerAd: 0
   extraTopPadding: 0
   extraBottomPadding: 0
   logInsets: 0
@@ -2134,8 +2136,20 @@ PrefabInstance:
       value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1190821602234646161}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: PlayButtonSound
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
       value: PowerUpMagnifier
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UI.PlayTopBar, Assembly-CSharp
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3535,8 +3549,20 @@ PrefabInstance:
       value: Game-Item-Amount (3)
       objectReference: {fileID: 0}
     - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1190821602234646161}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: PlayButtonSound
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
       value: PowerUpTimerDown
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UI.PlayTopBar, Assembly-CSharp
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -3861,8 +3887,20 @@ PrefabInstance:
       value: Game-Item-Amount (2)
       objectReference: {fileID: 0}
     - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1190821602234646161}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: PlayButtonSound
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
       value: PowerUpRefeshItems
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UI.PlayTopBar, Assembly-CSharp
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -4888,6 +4926,18 @@ PrefabInstance:
     - target: {fileID: 8123891493973931555, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
       propertyPath: m_IsActive
       value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 1190821602234646161}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: PlayButtonSound
+      objectReference: {fileID: 0}
+    - target: {fileID: 9058853702859899387, guid: ef3b64e289d782a41819bf4c0a04bbc6, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UI.PlayTopBar, Assembly-CSharp
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

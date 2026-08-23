@@ -292,6 +292,66 @@ namespace Commons
         /// <summary>Coins charged to revive with extra time after running out.</summary>
         public const int ReviveCost = 600;
 
+        /// <summary>Coins charged for one power-up, whichever of the four it is.</summary>
+        public const int PowerupCost = 500;
+
+        /// <summary>How many power-ups one purchase or one rewarded ad hands over.</summary>
+        public const int PowerupPurchaseAmount = 1;
+
+        /// <summary>
+        /// The four power-up counters addressed by number rather than by name, so the top bar and
+        /// the buy popup can loop over them instead of repeating themselves four times. Slots are
+        /// 1-based to match <c>totalPowerup1..4</c>. An out-of-range slot reads as zero and spends
+        /// nothing rather than throwing: a bad index here comes from a misconfigured Inspector
+        /// field, and a popup that quietly offers nothing beats one that breaks the level.
+        /// </summary>
+        public int GetPowerup(int slot)
+        {
+            switch (slot)
+            {
+                case 1: return totalPowerup1;
+                case 2: return totalPowerup2;
+                case 3: return totalPowerup3;
+                case 4: return totalPowerup4;
+                default: return 0;
+            }
+        }
+
+        /// <summary>Credits power-ups to one slot and saves. Used by the buy popup.</summary>
+        public void AddPowerup(int slot, int amount)
+        {
+            if (amount <= 0) return;
+            switch (slot)
+            {
+                case 1: totalPowerup1 += amount; break;
+                case 2: totalPowerup2 += amount; break;
+                case 3: totalPowerup3 += amount; break;
+                case 4: totalPowerup4 += amount; break;
+                default: return;
+            }
+            SaveData();
+        }
+
+        /// <summary>
+        /// Spends one power-up from a slot, or reports that the player has none. Like
+        /// <see cref="TrySpendGold"/> the check and the charge are a single call, so a double tap
+        /// cannot spend two.
+        /// </summary>
+        public bool TrySpendPowerup(int slot)
+        {
+            if (GetPowerup(slot) <= 0) return false;
+            switch (slot)
+            {
+                case 1: totalPowerup1--; break;
+                case 2: totalPowerup2--; break;
+                case 3: totalPowerup3--; break;
+                case 4: totalPowerup4--; break;
+                default: return false;
+            }
+            SaveData();
+            return true;
+        }
+
         /// <summary>
         /// Spends coins if the player can afford it, and changes nothing if they cannot. Callers
         /// gate the UI on the same call that performs the purchase, so a double tap cannot

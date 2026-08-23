@@ -76,3 +76,7 @@ Assets/Resources/PerformanceTestRunInfo.json
 Assets/Resources/PerformanceTestRunInfo.json.meta
 Assets/Resources/PerformanceTestRunSettings.json
 Assets/Resources/PerformanceTestRunSettings.json.meta
+
+# Local cache written by the Ollama enhancer tool when it is run from this folder.
+# Not part of the project; safe to delete.
+.myollamaenhancer/

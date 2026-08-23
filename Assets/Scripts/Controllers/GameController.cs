@@ -380,6 +380,9 @@ namespace Controllers
         [Tooltip("Shown when the countdown reaches zero: revive by adding time, or give up.")]
         public GameObject popupOutOfTime;
 
+        [Tooltip("Shown when a power-up is tapped with none left: buy one with coins or a rewarded ad.")]
+        public GameObject popupBuyPowerup;
+
         [Tooltip("Seconds added to the timer by a revive. Matches the '+45s' printed on the popup art.")]
         [SerializeField] private float reviveTimeBonus = 45f;
 
@@ -609,6 +612,41 @@ namespace Controllers
 
             unlockPopup.Setup(Unlock);
             popup.Open();
+        }
+
+        /// <summary>
+        /// Shown when a power-up is tapped with none left. Offers the same two routes as the
+        /// basket unlock — coins or a rewarded ad — for the one power-up the player just reached
+        /// for, rather than making them pick from a shelf they did not ask for.
+        ///
+        /// The countdown is held while the popup is up, so shopping does not cost the player the
+        /// level. Buying does not fire the power-up: the popup closes, the button lights up with
+        /// its new count, and the player spends it when they mean to.
+        /// </summary>
+        public void ShowBuyPowerupPopup(int slot)
+        {
+            // No popup assigned (the tutorial scenes) - stay silent rather than pausing the level
+            // with nothing to show. The tutorials hand out their own power-ups.
+            if (popupBuyPowerup == null || m_canvas == null) return;
+
+            // Two taps on an empty power-up would otherwise stack a second popup on the first.
+            if (Popup.AnyOpen) return;
+
+            Settings.GAME_STATUS previousStatus = gameStatus;
+            gameStatus = Settings.GAME_STATUS.pause;
+
+            m_popup = Instantiate(popupBuyPowerup, m_canvas.transform, false);
+            m_popup.SetActive(true);
+
+            var popup = m_popup.GetComponent<Popup>();
+            var buyPopup = m_popup.GetComponent<BuyPowerupPopup>();
+
+            // Restoring on close rather than in each button handler covers every way out,
+            // including the X and a purchase.
+            if (popup != null) popup.onClose += () => { gameStatus = previousStatus; };
+
+            if (buyPopup != null) buyPopup.Setup(slot);
+            if (popup != null) popup.Open();
         }
 
         // Called by the out-of-move popup's REVIVE button after a rewarded ad is watched.
@@ -882,9 +920,53 @@ namespace Controllers
             return combinations.ToArray();
         }
 
+        /// <summary>
+        /// Slot numbers for the four power-ups, matching <c>GameSetting.totalPowerup1..4</c> and
+        /// the order of the buttons in the top bar. Named because the mapping is not guessable
+        /// from the numbers: the first button is the package, not the magnifier.
+        /// </summary>
+        public const int PowerupSlotSuckPackage = 1;
+        public const int PowerupSlotMagnifier = 2;
+        public const int PowerupSlotRefresh = 3;
+        public const int PowerupSlotTimer = 4;
+
+        /// <summary>
+        /// True while the board holds three of the same dim sum, which is exactly what the
+        /// magnifier and the package act on. Deliberately routed through the same
+        /// <see cref="GetDimsumReadyOnTop"/> the power-ups themselves use: if the button is lit,
+        /// pressing it does something. Any cheaper re-implementation could drift from it and put
+        /// the player back to burning a power-up on nothing.
+        ///
+        /// The null check is load order, not paranoia: the top bar asks this from its own Start,
+        /// which runs before the controller has built <c>_gameBaskets</c>. No board yet means no
+        /// match yet, so the buttons start greyed and light up on the first poll after the
+        /// baskets are filled.
+        /// </summary>
+        public bool HasReadyMatch => _gameBaskets != null && GetDimsumReadyOnTop().Length > 0;
+
+        /// <summary>
+        /// Spends one power-up, or opens the buy popup when the player has none. Every power-up
+        /// button goes through here, so there is no route that fires an effect without paying
+        /// for it. Returns false when the caller should stop.
+        /// </summary>
+        private bool TryUsePowerup(int slot)
+        {
+            if (_gameSetting != null && _gameSetting.TrySpendPowerup(slot))
+            {
+                // The top bar picks the new count up on its own poll, so there is nothing to
+                // notify here - see PlayTopBar.
+                return true;
+            }
+
+            ShowBuyPowerupPopup(slot);
+            return false;
+        }
+
         //do power up magnifier
         public void PowerUpMagnifier()
         {
+            if (!TryUsePowerup(PowerupSlotMagnifier)) return;
+
             _soundController.PlayPowerUpClip();
             MDimSum[] targetDimsums = GetDimsumReadyOnTop();
             powerUpAnimationEffect.DoAnimateMagnifier(targetDimsums);
@@ -893,6 +975,8 @@ namespace Controllers
         //do power up reload
         public void PowerUpRefeshItems()
         {
+            if (!TryUsePowerup(PowerupSlotRefresh)) return;
+
             _soundController.PlayPowerUpClip();
             
             DimsumCombination[] targetDimsums = GetLeftOverDimsumCombinations();
@@ -929,6 +1013,8 @@ namespace Controllers
         //do power up suck package
         public void PowerUpSuckPackage()
         {
+            if (!TryUsePowerup(PowerupSlotSuckPackage)) return;
+
             _soundController.PlayPowerUpClip();
             MDimSum[] targetDimsums = GetDimsumReadyOnTop();
             
@@ -938,6 +1024,8 @@ namespace Controllers
         //do power up timer
         public void PowerUpTimerDown()
         {
+            if (!TryUsePowerup(PowerupSlotTimer)) return;
+
             _soundController.PlayPowerUpClip();
 
             isTimerPause = true;
