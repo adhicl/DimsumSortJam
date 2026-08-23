@@ -945,12 +945,32 @@ namespace Controllers
         public bool HasReadyMatch => _gameBaskets != null && GetDimsumReadyOnTop().Length > 0;
 
         /// <summary>
+        /// True while a power-up effect is playing. Every effect switches
+        /// <see cref="powerUpAnimationEffect"/> on when it starts and off again at the end of its
+        /// routine, so the object's own activeness already is the answer - there is no second flag
+        /// to keep in step with it, and no way for one to be left set if a routine is cut short by
+        /// the level ending.
+        ///
+        /// The top bar greys every power-up button while this holds: the effects animate the same
+        /// dim sum the next press would act on, and a second power-up fired into a board that is
+        /// mid-rearrange lands on whatever the first one has not finished moving.
+        /// </summary>
+        public bool PowerupRunning => powerUpAnimationEffect != null
+                                      && powerUpAnimationEffect.gameObject.activeInHierarchy;
+
+        /// <summary>
         /// Spends one power-up, or opens the buy popup when the player has none. Every power-up
         /// button goes through here, so there is no route that fires an effect without paying
         /// for it. Returns false when the caller should stop.
         /// </summary>
         private bool TryUsePowerup(int slot)
         {
+            // The top bar greys the row on its own poll, which leaves a fraction of a second in
+            // which a second press still registers. Refused here rather than only in the UI, so
+            // no route can spend a power-up into an effect that is still playing - and refused
+            // before the empty check, so it cannot be mistaken for having run out.
+            if (PowerupRunning) return false;
+
             if (_gameSetting != null && _gameSetting.TrySpendPowerup(slot))
             {
                 // The top bar picks the new count up on its own poll, so there is nothing to

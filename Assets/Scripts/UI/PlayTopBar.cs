@@ -2,6 +2,7 @@ using System;
 using Commons;
 using Controllers;
 using DG.Tweening;
+using Ricimi;
 using TMPro;
 using UnityEngine;
 using UnityEngine.Audio;
@@ -73,15 +74,29 @@ namespace UI
         [Tooltip("How long the pop lasts, in seconds.")]
         [SerializeField] private float punchDuration = 0.45f;
 
-        [Tooltip("Size of the icon that flies down to the button, in canvas units. " +
+        [Tooltip("Size of the icon that flies to the button, in canvas units. " +
                  "Zero or less skips the flight and pops the button on the spot.")]
-        [SerializeField] private Vector2 flyIconSize = new Vector2(90f, 90f);
+        [SerializeField] private Vector2 flyIconSize = new Vector2(140f, 140f);
 
-        [Tooltip("How long the icon takes to reach the button, in seconds.")]
-        [SerializeField] private float flyDuration = 0.55f;
+        [Tooltip("How long the icon takes to swell into view in the middle of the screen.")]
+        [SerializeField] private float flyPopDuration = 0.35f;
 
-        [Tooltip("How far the icon kicks away before homing in, in canvas units.")]
+        [Tooltip("How long it then sits in the middle before setting off, in seconds. " +
+                 "This is the beat that stops the whole thing reading as a flicker.")]
+        [SerializeField] private float flyHoldDuration = 0.45f;
+
+        [Tooltip("How long the arc across to the button takes, in seconds.")]
+        [SerializeField] private float flyDuration = 0.9f;
+
+        [Tooltip("How high the icon arcs on its way to the button, in canvas units. " +
+                 "0 travels in a straight line.")]
+        [SerializeField] private float flyJumpPower = 160f;
+
+        [Tooltip("How far apart a handful of icons start around the middle, in canvas units.")]
         [SerializeField] private float flyScatter = 90f;
+
+        [Tooltip("Gap between one icon setting off and the next, in seconds.")]
+        [SerializeField] private float flyStagger = 0.12f;
 
         [Tooltip("Most icons flown at once, however many were granted. A bundle can credit a lot.")]
         [SerializeField] private int maxFlyIcons = 5;
@@ -104,7 +119,7 @@ namespace UI
         private bool _countsVisible;
         private float _nextRefresh;
 
-        // What each counter read last time, so a count going *up* can be celebrated. Watching the
+        // What each counter read last time, so a count going *up* can be noticed. Watching the
         // number rather than listening to the buy popup means every source is covered - coins, a
         // rewarded ad, an IAP bundle crediting all four at once - and nothing has to remember to
         // tell the top bar. The first read only records the baseline: loading a save with three
@@ -113,28 +128,39 @@ namespace UI
         private bool _countsBaselined;
         private Tween[] _punchTweens;
 
+        // Power-ups already paid for but not yet celebrated. Noticing the count go up is not the
+        // moment to celebrate it: the player is still looking at the buy popup, so icons would fly
+        // behind it and the button would pop where it cannot be seen. The gain waits here, held
+        // back off the counter too, until the screen is clear.
+        private int[] _held;
+
         // Icons still on their way down to each button. The label prints the count *minus* these,
         // so the number ticks up as each icon lands rather than jumping the moment the coins are
         // taken - the same read as coins flying into the coin pill.
         private int[] _inFlight;
         private RectTransform _flyLayer;
 
-        // Where the next gain should fly from. Static because the thing that grants a power-up is
-        // a popup that is about to destroy itself, and it should not have to hold a reference to
-        // the toolbar to say "it came from here". Unset simply means the middle of the screen,
-        // which is where an IAP bundle or an ad reward has no better claim to anyway.
-        private static Vector3 _gainOrigin;
-        private static bool _hasGainOrigin;
+        // Slots asked to celebrate, one bit per slot. Static because the asker is a popup that is
+        // destroying itself as it asks, so it has no toolbar reference to call through.
+        private static int _pendingPunchMask;
+
+        // Statics survive scene loads, and domain reloads too when those are turned off, so a
+        // request left over from a level the player already left would pop a button on entry.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetPendingPunches() => _pendingPunchMask = 0;
 
         /// <summary>
-        /// Tells the toolbar where the next power-up should appear to come from, in world space.
-        /// Call it immediately before crediting one. Consumed by the next gain, so a stale origin
-        /// cannot follow an unrelated reward around.
+        /// Releases the celebration for a slot: the icons swell into view in the middle of the
+        /// screen and arc over to the button, the counter ticks up as they land, and the button
+        /// pops with the success clip. Call it when the player is actually back at the board -
+        /// after the ad, after the payment, after the popup has finished closing - rather than at
+        /// the moment the power-up is credited.
         /// </summary>
-        public static void SetGainOrigin(Vector3 worldPosition)
+        /// <param name="slot">1-based power-up slot, matching <c>GameSetting.GetPowerup</c>.</param>
+        public static void RequestPunch(int slot)
         {
-            _gainOrigin = worldPosition;
-            _hasGainOrigin = true;
+            if (slot < 1 || slot > 4) return;
+            _pendingPunchMask |= 1 << (slot - 1);
         }
 
         public void PlayButtonSound()
@@ -154,6 +180,7 @@ namespace UI
             };
             _lastCounts = new int[_powerUpButtons.Length];
             _punchTweens = new Tween[_powerUpButtons.Length];
+            _held = new int[_powerUpButtons.Length];
             _inFlight = new int[_powerUpButtons.Length];
 
             // Flown icons are parented to the canvas root and pushed to the back of the sibling
@@ -174,6 +201,10 @@ namespace UI
 
         private void Start()
         {
+            // A request outlives the toolbar that should have answered it - quitting a level with
+            // the buy popup still closing leaves one behind - and a fresh board must start quiet.
+            _pendingPunchMask = 0;
+
             for (int i = 0; i < _powerUpButtons.Length; i++)
             {
                 bool unlocked = gameSetting.currentLevel >= _minLevels[i];
@@ -192,6 +223,10 @@ namespace UI
 
         private void Update()
         {
+            // Outside the poll gate: the celebration is the answer to something the player just
+            // did, so it should not wait up to a refresh interval to set off.
+            FlushPendingPunches();
+
             if (Time.unscaledTime < _nextRefresh) return;
             _nextRefresh = Time.unscaledTime + Mathf.Max(0.02f, refreshInterval);
 
@@ -226,12 +261,22 @@ namespace UI
                                 || (game.gameStatus != Settings.GAME_STATUS.win
                                     && game.gameStatus != Settings.GAME_STATUS.lose);
 
+            // One power-up at a time. The effects run for a couple of seconds and animate the very
+            // dim sum a second press would target, so the whole row goes dark until the board has
+            // settled - including the slots the player is not mid-way through using.
+            bool powerUpRunning = game != null && game.PowerupRunning;
+
             for (int i = 0; i < _powerUpButtons.Length; i++)
             {
+                // The "+" badge sits on top of an empty slot and is a button in its own right, so
+                // it would otherwise still be tappable - opening the shop, and pausing the game,
+                // over a power-up that is still playing.
+                if (_addButtons[i] != null) _addButtons[i].interactable = levelRunning && !powerUpRunning;
+
                 if (_powerUpButtons[i] == null) continue;
 
                 bool unlocked = gameSetting.currentLevel >= _minLevels[i];
-                bool usable = unlocked && levelRunning && (!NeedsMatch[i] || hasMatch);
+                bool usable = unlocked && levelRunning && !powerUpRunning && (!NeedsMatch[i] || hasMatch);
 
                 _powerUpButtons[i].interactable = usable;
             }
@@ -240,7 +285,6 @@ namespace UI
         private void SetUpPowerUpButtons()
         {
             _countsVisible = true;
-            bool gained = false;
 
             for (int i = 0; i < _totalTexts.Length; i++)
             {
@@ -248,44 +292,82 @@ namespace UI
                 int gain = _countsBaselined ? total - _lastCounts[i] : 0;
                 _lastCounts[i] = total;
 
-                if (gain > 0)
-                {
-                    StartFlight(i, gain);
-                    gained = true;
-                }
+                if (gain > 0) _held[i] += gain;
 
                 UpdateSlotLabel(i);
             }
 
             _countsBaselined = true;
-
-            // The sound rides with the icons when there are any, so it lands with them rather than
-            // when the coins were taken. One sound however many counters moved: a bundle credits
-            // all four at once, and four overlapping copies of the same clip is a mess.
-            if (gained && !AnyInFlight()) SoundController.Instance.PlaySuccessClip();
-        }
-
-        private bool AnyInFlight()
-        {
-            for (int i = 0; i < _inFlight.Length; i++) if (_inFlight[i] > 0) return true;
-            return false;
         }
 
         /// <summary>
-        /// Prints one counter, holding back whatever is still flying down to it, and shows the
-        /// "+" badge only once there is genuinely nothing left to spend.
+        /// Sets off the celebrations that are due. A slot is due either because whoever granted
+        /// the power-up asked - the buy popup, once it has finished closing - or because the gain
+        /// came from somewhere with no popup in the way at all, such as a level reward, in which
+        /// case there is nothing to wait for.
+        /// </summary>
+        private void FlushPendingPunches()
+        {
+            int mask = _pendingPunchMask;
+            _pendingPunchMask = 0;
+
+            // Popups can stack, so this asks "is the screen clear" rather than "did mine close".
+            bool screenClear = !Popup.AnyOpen;
+
+            for (int i = 0; i < _powerUpButtons.Length; i++)
+            {
+                bool asked = (mask & (1 << i)) != 0;
+                if (!asked && !(screenClear && _held[i] > 0)) continue;
+                ReleaseGain(i);
+            }
+        }
+
+        /// <summary>
+        /// Pays out one slot's held gain: icons fly down, the counter follows them, and the button
+        /// pops when the last one lands. A request with nothing held - the count was already on
+        /// the label - still pops, so an asker is never answered with silence.
+        /// </summary>
+        private void ReleaseGain(int index)
+        {
+            int amount = _held[index];
+            _held[index] = 0;
+
+            if (amount <= 0)
+            {
+                Punch(index);
+                SoundController.Instance.PlaySuccessClip();
+                return;
+            }
+
+            StartFlight(index, amount);
+        }
+
+        /// <summary>
+        /// Prints one counter, holding back both what is waiting to be celebrated and what is
+        /// still flying down to it, and shows the "+" badge only once there is genuinely nothing
+        /// left to spend.
         /// </summary>
         private void UpdateSlotLabel(int index)
         {
-            int shown = Mathf.Max(0, gameSetting.GetPowerup(index + 1) - _inFlight[index]);
+            int pending = _held[index] + _inFlight[index];
+            int shown = Mathf.Max(0, gameSetting.GetPowerup(index + 1) - pending);
             if (_totalTexts[index] != null) _totalTexts[index].text = $"{shown:N0}";
-            if (_addButtons[index] != null) _addButtons[index].gameObject.SetActive(shown <= 0);
+
+            // The counter reads zero for as long as the icon is still on its way, and a "+" badge
+            // over a slot that has already been paid for invites the player to buy it twice. One
+            // that is on its way is not one to be sold again.
+            if (_addButtons[index] != null)
+                _addButtons[index].gameObject.SetActive(shown <= 0 && pending <= 0);
         }
 
         /// <summary>
-        /// Sends one icon per power-up gained down to its button, kicking away from the origin
-        /// first so a handful do not travel as a single blob. The button pops and the sound plays
-        /// when the last one lands.
+        /// Sends one icon per power-up gained to its button: each one swells into view in the
+        /// middle of the screen, holds there long enough to be read, then arcs up and over to the
+        /// button. The button pops and the sound plays when the last one lands.
+        ///
+        /// The middle is where it starts whatever granted it - the buy popup was sitting there,
+        /// and a bundle or an ad reward has no better claim to anywhere else - so the icon appears
+        /// where the player is already looking.
         /// </summary>
         private void StartFlight(int index, int gain)
         {
@@ -298,32 +380,59 @@ namespace UI
             if (button == null || icon == null || _flyLayer == null
                 || flyIconSize.x <= 0f || flyIconSize.y <= 0f)
             {
+                UpdateSlotLabel(index);
                 Punch(index);
                 SoundController.Instance.PlaySuccessClip();
                 return;
             }
 
-            Vector3 origin = _hasGainOrigin ? _gainOrigin : _flyLayer.TransformPoint(Vector3.zero);
-            _hasGainOrigin = false;
-
+            Vector3 origin = _flyLayer.TransformPoint(Vector3.zero);
             Vector3 destination = button.transform.position;
+
+            // Everything below moves the flyer in world space, but the canvas is drawn by a
+            // camera: one of its pixels is a few thousandths of a world unit. Handing DOTween a
+            // arc height or an offset straight out of a pixel-denominated field would throw the
+            // icon clean off the screen and back, which reads as it flying somewhere else
+            // entirely rather than over to the button. Sizes stay in pixels - sizeDelta is a
+            // canvas measurement - so only distances need converting.
+            float pixelToWorld = _flyLayer.lossyScale.x;
+            if (pixelToWorld <= 0f) pixelToWorld = 1f;
+
+            // The whole gain is held off the label, not just the icons flown: a bundle of twenty
+            // sends five icons, and the counter should still arrive at twenty. The last icon
+            // carries whatever it was not worth drawing a sprite for.
+            _inFlight[index] += gain;
+            int lastCarries = 1 + (gain - count);
 
             for (int i = 0; i < count; i++)
             {
-                _inFlight[index]++;
                 bool isLast = i == count - 1;
-                GameObject flyer = CreateFlyer(icon, origin);
-                RectTransform rt = (RectTransform)flyer.transform;
 
-                Vector2 kick = Random.insideUnitCircle * flyScatter;
-                Vector3 scatter = origin + new Vector3(kick.x, kick.y, 0f);
+                // Only a handful ever fly, so they are spread around the middle rather than
+                // stacked on it - a single icon starts dead centre.
+                Vector2 kick = count > 1 ? Random.insideUnitCircle * flyScatter * pixelToWorld : Vector2.zero;
+                Vector3 start = origin + new Vector3(kick.x, kick.y, 0f);
+
+                GameObject flyer = CreateFlyer(icon, start);
+                RectTransform rt = (RectTransform)flyer.transform;
+                rt.localScale = Vector3.zero;
 
                 // Targeted and linked to the flyer: a bare Sequence belongs to nothing, so
                 // DOTween cannot tell that its object has gone and the tween outlives a scene
                 // change still driving a destroyed transform.
                 Sequence seq = DOTween.Sequence().SetUpdate(true).SetTarget(rt).SetLink(flyer);
-                seq.Append(rt.DOMove(scatter, 0.22f).SetEase(Ease.OutQuad));
-                seq.Append(rt.DOMove(destination, flyDuration).SetEase(Ease.InOutQuad));
+
+                // A stagger, so a handful arrive one after another instead of as one blob.
+                if (i > 0) seq.AppendInterval(i * flyStagger);
+
+                // Swell into view in the middle and sit there a moment: the icon has to be seen
+                // before it is worth animating anywhere.
+                seq.Append(rt.DOScale(1f, flyPopDuration).SetEase(Ease.OutBack));
+                seq.AppendInterval(flyHoldDuration);
+
+                // Then arc over to the button, shrinking as it goes.
+                seq.Append(rt.DOJump(destination, flyJumpPower * pixelToWorld, 1, flyDuration)
+                    .SetEase(Ease.InOutQuad));
                 seq.Join(rt.DOScale(0.55f, flyDuration).SetEase(Ease.InQuad));
                 seq.OnComplete(() =>
                 {
@@ -332,7 +441,7 @@ namespace UI
                     if (this == null) { if (flyer != null) Destroy(flyer); return; }
 
                     Destroy(flyer);
-                    _inFlight[index] = Mathf.Max(0, _inFlight[index] - 1);
+                    _inFlight[index] = Mathf.Max(0, _inFlight[index] - (isLast ? lastCarries : 1));
                     UpdateSlotLabel(index);
 
                     if (!isLast) return;

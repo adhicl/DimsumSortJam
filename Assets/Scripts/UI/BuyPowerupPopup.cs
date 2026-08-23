@@ -210,11 +210,6 @@ namespace UI
 
             GameSetting setting = GameController.Instance != null ? GameController.Instance.GameSetting : null;
 
-            // Fly the icon from the art the player is looking at, so the power-up visibly leaves
-            // this popup and lands on the button it belongs to. Set before crediting: the toolbar
-            // notices the count go up and consumes the origin on its next poll.
-            if (iconImage != null) PlayTopBar.SetGainOrigin(iconImage.transform.position);
-
             if (setting != null) setting.AddPowerup(_slot, GameSetting.PowerupPurchaseAmount);
 
             // Dead the buttons on the way out, so the closing animation is not a window in which
@@ -223,13 +218,18 @@ namespace UI
             RefreshAdGate();
             SetOption(coinButton, coinGroup, false);
 
-            Close();
-        }
-
-        private void Close()
-        {
             var popup = GetComponent<Popup>();
-            if (popup != null) popup.Close();
+
+            // Celebrate on the top bar, but only once the popup is out of the way - Popup fires
+            // onClose after the closing animation, not at the tap. Flying the icons at the moment
+            // the power-up is credited would send them behind the popup the player is still
+            // looking at. The slot is copied out because this component is destroyed along with
+            // the popup before the callback runs.
+            int slot = _slot;
+            if (popup == null) return;
+
+            popup.onClose += () => PlayTopBar.RequestPunch(slot);
+            popup.Close();
         }
     }
 }
