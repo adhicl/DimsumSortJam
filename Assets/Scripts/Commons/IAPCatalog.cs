@@ -11,10 +11,12 @@ namespace Commons
     /// list of what to create on the cloud side lives in next_step.md at the project
     /// root — edit both places together if a product is added, renamed, or removed.
     ///
-    /// The shop tab in Home is generated from this catalog by
-    /// <c>Assets/Editor/ShopTabBuilder.cs</c>: reward amounts printed on the cards are read
-    /// from <see cref="Rewards"/>, so the numbers a player sees cannot drift from what they
-    /// are actually granted. Re-run <b>Tools ▸ Shop ▸ Rebuild Shop Tab</b> after editing this file.
+    /// The shop tab in Home was generated from this catalog once and is now maintained by hand,
+    /// so **adding a product here does not add its card** — the row has to be added in
+    /// <c>Home.unity</c> as well. Whatever a card prints must match <see cref="Rewards"/>, or the
+    /// shelf advertises something different from what the purchase actually grants. Prices are
+    /// the exception: never author them, <see cref="UI.IAPBuyButton"/> fills them in from the
+    /// store at runtime in the player's own currency.
     /// </summary>
     public static class IAPCatalog
     {
