@@ -18,8 +18,8 @@
       "hash": "c14de1e6dc01ab42d2bb358730cff954bce0ce6b"
     },
     "com.google.external-dependency-manager": {
-      "version": "1.2.185",
-      "depth": 2,
+      "version": "1.2.188",
+      "depth": 0,
       "source": "registry",
       "dependencies": {},
       "url": "https://package.openupm.com"

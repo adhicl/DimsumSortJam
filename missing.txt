@@ -3,7 +3,7 @@ missing:
 - buy heart -> shop *
 - setup shop tab *
 - setup daily mission + library tab
-- rate us window, show rate the game 
+- rate us window, show rate the game *
 - bundle powerup *
 - bundle booster *
 - heart logic -> daily 15 minutes free *
@@ -15,10 +15,10 @@ missing:
 - setup IAP *
 
 - fix game lose popup, revive, etc *
-- check powerup disable
-- check powerup popup to buy
+- check powerup disable *
+- check powerup popup to buy *
 - fix item in plate not shown *
-- always shown game version number
+- always shown game version number *
 
 
 * = is fixed

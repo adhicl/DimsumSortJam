@@ -44,7 +44,26 @@ namespace Controllers
             set => _timer = value;
         }
 
-        public string Progress => $"{_currentTotal:D2}/{_totalGoal:D2}";
+        // Rebuilt only when the numbers move. This is read every frame by the HUD, and building
+        // the string there handed the collector a dead one per frame for a counter that changes a
+        // handful of times a level.
+        private int _progressShownTotal = -1;
+        private int _progressShownGoal = -1;
+        private string _progressText = string.Empty;
+
+        public string Progress
+        {
+            get
+            {
+                if (_progressShownTotal != _currentTotal || _progressShownGoal != _totalGoal)
+                {
+                    _progressShownTotal = _currentTotal;
+                    _progressShownGoal = _totalGoal;
+                    _progressText = $"{_currentTotal:D2}/{_totalGoal:D2}";
+                }
+                return _progressText;
+            }
+        }
         public float ProgressPercentage => (float)_currentTotal / _totalGoal;
 
         #region singleton
@@ -687,8 +706,7 @@ namespace Controllers
         /// </summary>
         private bool HasAnyMove()
         {
-            MDimSum[] sameDimsumOnTop = GetDimsumsOnTop();
-            if (sameDimsumOnTop.Length > 0) return true;    // a match is available
+            if (HasReadyMatch) return true;    // a match is available
 
             int hasSingleEmptyBasket = 0;
             int hasDoubleEmptyBasket = 0;
@@ -845,62 +863,27 @@ namespace Controllers
             return availableDimsums.Values.ToArray();
         }
 
+        /// <summary>
+        /// The three pieces a magnifier or a package should act on, or an empty array when the
+        /// board has no triple. This one does allocate, but it only runs when a power-up actually
+        /// fires - the caller keeps the array alive across an animation coroutine, so it cannot be
+        /// handed a shared buffer.
+        /// </summary>
         private MDimSum[] GetDimsumReadyOnTop()
         {
-            Dictionary<int, List<MDimSum>> dimsumMap = new Dictionary<int, List<MDimSum>>();
-            foreach (var basket in _gameBaskets)
-            {
-                int[] dimsumTypes = basket.GetDimsumTypes();
-                for (int i = 0; i < dimsumTypes.Length; i++)
-                {
-                    if (dimsumTypes[i] != -1)
-                    {
-                        if (!dimsumMap.ContainsKey(dimsumTypes[i]))
-                        {
-                            dimsumMap[dimsumTypes[i]] = new List<MDimSum>();
-                        }
-                        dimsumMap[dimsumTypes[i]].Add(basket.mDimSums[i]);
-                    }
-                }
-            }
+            int type = FindReadyMatchType();
+            if (type < 0) return Array.Empty<MDimSum>();
 
             MDimSum[] targetDimsums = new MDimSum[3];
-            foreach (var dimsum in dimsumMap.Keys)
+            int found = 0;
+            for (int b = 0; b < _gameBaskets.Count && found < 3; b++)
             {
-                if (dimsumMap[dimsum].Count >= 3)
+                MDimSum[] slots = _gameBaskets[b].mDimSums;
+                for (int s = 0; s < slots.Length && found < 3; s++)
                 {
-                    for (int i = 0; i < 3; i++)
-                    {
-                        targetDimsums[i] = dimsumMap[dimsum][i];
-                    }
-
-                    return targetDimsums;
+                    if (slots[s] != null && slots[s].dimsumType == type) targetDimsums[found++] = slots[s];
                 }
             }
-
-            return Array.Empty<MDimSum>();
-        }
-
-        private MDimSum[] GetDimsumsOnTop()
-        {
-            Dictionary<int, List<MDimSum>> dimsumMap = new Dictionary<int, List<MDimSum>>();
-            foreach (var basket in _gameBaskets)
-            {
-                int[] dimsumTypes = basket.GetDimsumTypes();
-                for (int i = 0; i < dimsumTypes.Length; i++)
-                {
-                    if (dimsumTypes[i] != -1)
-                    {
-                        if (!dimsumMap.ContainsKey(dimsumTypes[i]))
-                        {
-                            dimsumMap[dimsumTypes[i]] = new List<MDimSum>();
-                        }
-                        dimsumMap[dimsumTypes[i]].Add(basket.mDimSums[i]);
-                    }
-                }
-            }
-
-            MDimSum[] targetDimsums = new MDimSum[3];
 
             return targetDimsums;
         }
@@ -942,7 +925,52 @@ namespace Controllers
         /// match yet, so the buttons start greyed and light up on the first poll after the
         /// baskets are filled.
         /// </summary>
-        public bool HasReadyMatch => _gameBaskets != null && GetDimsumReadyOnTop().Length > 0;
+        public bool HasReadyMatch => FindReadyMatchType() >= 0;
+
+        /// <summary>
+        /// The dim sum type with three or more of it on the board, or -1 when there is none.
+        ///
+        /// Allocation-free on purpose: the top bar polls this several times a second to decide
+        /// whether two of the buttons light up, and the answer is usually "no". Building a
+        /// dictionary of lists for that - which is what this used to do - handed the collector a
+        /// few dozen dead objects a second on a phone. The board is at most a few dozen slots, so
+        /// the plain nested scan costs less than the bookkeeping it replaces.
+        ///
+        /// <see cref="GetDimsumReadyOnTop"/> is built on this rather than the other way round, so
+        /// the lit button and the power-up can never disagree about whether a match exists.
+        /// </summary>
+        private int FindReadyMatchType()
+        {
+            if (_gameBaskets == null) return -1;
+
+            for (int b = 0; b < _gameBaskets.Count; b++)
+            {
+                MDimSum[] slots = _gameBaskets[b].mDimSums;
+                for (int s = 0; s < slots.Length; s++)
+                {
+                    if (slots[s] == null) continue;
+                    int type = slots[s].dimsumType;
+                    if (type == -1) continue;
+                    if (CountOnBoard(type) >= 3) return type;
+                }
+            }
+
+            return -1;
+        }
+
+        private int CountOnBoard(int dimsumType)
+        {
+            int total = 0;
+            for (int b = 0; b < _gameBaskets.Count; b++)
+            {
+                MDimSum[] slots = _gameBaskets[b].mDimSums;
+                for (int s = 0; s < slots.Length; s++)
+                {
+                    if (slots[s] != null && slots[s].dimsumType == dimsumType) total++;
+                }
+            }
+            return total;
+        }
 
         /// <summary>
         /// True while a power-up effect is playing. Every effect switches

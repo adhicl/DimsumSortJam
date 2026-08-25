@@ -1036,6 +1036,131 @@ from the store on every launch, so `remove_ads` survives a reinstall.
 
 ---
 
+## Android build & performance
+
+Settled and version-controlled unless noted. The build is already IL2CPP / ARM64 / app bundle with
+engine-code stripping on; what follows is what changed on top of that.
+
+| Setting | Was | Now | Why |
+|---|---|---|---|
+| `Android.textureCompressionFormats` | **ETC** | **ASTC** | ETC1 has *no alpha channel*, so every transparent sprite — which is nearly all of them — was shipping uncompressed. The single biggest size win available here. |
+| Accelerometer frequency | 60Hz | **0** | Nothing reads it. Polling a sensor 60x a second is pure battery. |
+| Optimize Mesh Data | off | **on** | Drops mesh channels no material reads. Safe: everything here is sprites. |
+| Quality *Medium* (Android's level) shadows | HardOnly | **Disable** | Nothing casts a shadow in a 2D game. |
+| Quality *Medium* anisotropic | Enable | **Disable** | Only matters on surfaces viewed at a slant. |
+| Frame rate | uncapped | **60** (`AppPerformance.cs`) | Left alone the game renders at the panel rate — 90/120Hz on many phones — for a board that is usually still. Up to half the GPU work and battery for nothing visible. |
+
+**ASTC is safe here** because `minSdkVersion` is 26: every GPU shipping on Android 8+ supports it.
+
+**Watch out:** the Build Settings *Texture Compression* dropdown (`EditorUserBuildSettings.androidBuildSubtarget`)
+lives in `Library/`, which is **not** version-controlled — setting it there fixes nothing for anyone
+else or for CI. `PlayerSettings.Android.textureCompressionFormats`, in the table above, is the one
+that persists and the one the bundle actually uses.
+
+`AppPerformance` applies the cap from a `[RuntimeInitializeOnLoadMethod]`, so there is no scene to
+wire and no scene that can be forgotten. `targetFrameRate` is only honoured while VSync is off,
+which is why it sets `vSyncCount = 0`; the Android compositor still presents on its own cadence, so
+this does not tear the way it would on a desktop. It is `#if UNITY_ANDROID && !UNITY_EDITOR` — the
+Editor's own pacing is more useful while working.
+
+### Garbage, and why it mattered here
+
+Three hot paths were rebuilding objects every frame or every poll. None of it was visible as a
+frame-rate number; it shows up as periodic GC hitches on a mid-range phone.
+
+| Path | Was | Now |
+|---|---|---|
+| `GameController.HasReadyMatch` | a `Dictionary` of `List`s plus an `int[]` per basket — **539 B per call**, polled ~7x/sec by the top bar | **0 B**, a nested scan over a board of a few dozen slots |
+| `GameController.Progress` | a fresh string on every read, read **every frame** by the HUD | rebuilt only when the counter moves |
+| HUD clock | a fresh string every frame for a clock that ticks once a second | rewritten only when the displayed second changes |
+| Power-up counters | `$"{n:N0}"` per slot per poll | skipped while the number is unchanged |
+
+Measured in play mode: **~105 B/frame → 0** for the HUD (~6 KB/s at 60fps) and **539 B → 0** per
+match check.
+
+`GetDimsumReadyOnTop` is now built on the same `FindReadyMatchType` the polled check uses, so the
+lit button and the power-up cannot disagree about whether a match exists — verified over 600
+randomised boards (217 with a match, 383 without, zero disagreements with the old algorithm). It
+still allocates its three-item result, deliberately: the animation coroutine keeps that array alive
+across frames, so it cannot be handed a shared buffer.
+
+### The no-moves check was dead
+
+Worth calling out separately, because it was not a performance problem — it was a correctness one
+hiding inside the same code.
+
+`GetDimsumsOnTop()` built a dictionary of every piece on the board, **threw it away**, and returned
+`new MDimSum[3]` — an array of three nulls, always length 3. `HasAnyMove()` opened with
+`if (GetDimsumsOnTop().Length > 0) return true;`, so it **always returned true on its first line**.
+Everything after it — the empty-basket arithmetic that is the actual "can anything still move"
+test — was unreachable.
+
+Two consequences, both silent:
+
+- `CheckIsGameNoMove()` is `if (HasAnyMove()) return;`, so **`HandleNoMoves()` could never run**:
+  no unlock-basket offer, no reshuffle, no out-of-move popup, however stuck the board was.
+- `ReshuffleUntilPlayable` re-checks `HasAnyMove()` between attempts, so it always concluded the
+  first shuffle had worked.
+
+`HasAnyMove()` now opens with `HasReadyMatch`, which is what the comment beside it always claimed
+it did, and `GetDimsumsOnTop` is gone. Verified in play mode: a full board of all-distinct types
+now reports `HasAnyMove=False`, and adding one triple flips it back to true. **This turns the
+whole out-of-moves flow on for the first time** — worth playing a stuck board once to see it fire.
+
+### External Dependency Manager — installed once, via UPM
+
+Unity used to warn on every reload that `Google.IOSResolver.dll` "will not be loaded". Harmless in
+itself — it is the CocoaPods half of EDM4U, and **iOS Build Support is not installed** (the editor
+has `AndroidPlayer`, `WebGLSupport`, `windowsstandalonesupport` only), so the reference could not
+resolve. But it was the symptom of something real: **EDM4U was installed twice.**
+
+| Copy | Version | Source |
+|---|---|---|
+| `Assets/ExternalDependencyManager/` | 1.2.188 | a `.unitypackage` (AdMob / Play Games bundle it) |
+| `Library/PackageCache/…` | 1.2.185 | OpenUPM, transitive dep of `com.google.play.core` |
+
+Only the older one warned, and the reason is the fix: **1.2.188 ships `validateReferences: 0` in
+its `.meta`; 1.2.185 does not.** Google had already solved it upstream. The message's own advice —
+"disable reference validation in the Plugin Inspector" — is impossible to follow for that copy,
+because it lives in `Library/PackageCache/`, which is immutable: the Inspector is read-only there
+and anything forced in is wiped on the next resolve.
+
+Now: `com.google.external-dependency-manager` is pinned to **1.2.188** in `Packages/manifest.json`
+(it was only a depth-2 transitive dependency, which is why UPM had settled on the older one), and
+`Assets/ExternalDependencyManager/` is deleted. One install, no warning.
+
+**If you ever delete a duplicate plugin folder, force-reimport the survivor.** Both copies shared
+the same GUIDs. After the delete, Unity still had those GUIDs registered to the *deleted* `Assets/`
+paths, so the package DLLs had **no importer at all** — they were being rejected as duplicates.
+`Google.JarResolver` therefore never reached `Assembly-CSharp-Editor`, and two GoogleMobileAds
+editor scripts failed with `CS0246: GooglePlayServices could not be found`. An
+`AssetDatabase.ImportAsset(..., ForceUpdate | ImportRecursive)` on the package folder released the
+GUIDs and everything linked up. A clean console is not proof on its own here — check that
+`GooglePlayServices.PlayServicesResolver` actually resolves.
+
+Verified after the change: 0 console errors, `Google.IOSResolver` **loads** (it did not before), all
+EDM4U assemblies present exactly once, and **Android Resolver ▸ Force Resolve** leaves
+`ProjectSettings/AndroidResolverDependencies.xml` and `Assets/Plugins/Android/` byte-identical —
+same 9 packages, `play-services-ads`, `play-services-games-v2`, `play:review` and the rest.
+
+### Still on the table
+
+- **R8 / minification is off.** Worth turning on for a smaller DEX, but it needs a real device
+  smoke test — Play Games, AdMob, IAP and Play Review all rely on reflection, and a missing
+  keep-rule shows up as a crash in the release build only.
+- **Managed stripping is `Minimal`.** `Low` is Unity's default and would strip more, but Zenject
+  resolves by reflection, so anything above `Minimal` wants a `link.xml` and a device test.
+- ~~`Assets/Feel/`~~ **deleted** — 4,913 files, 365MB of demo content (a 34MB and a 30MB `.wav`
+  among them). Nothing in `Assets/Scripts`, any build scene, any prefab or any asmdef referenced
+  it, and every GUID in it was checked against the rest of the project before it went. It never
+  shipped in the bundle — unreferenced assets outside `Resources/` are not built — so this buys
+  import time and repo size rather than APK size. `NiceVibrations` (haptics) went with it; nothing
+  called it. Recover with `git checkout HEAD -- Assets/Feel` while the deletion is uncommitted.
+- **The HUD timer colours are wrong on purpose-looking numbers.** `new Color(219f, 219f, 219f, 1f)`
+  and `new Color(0f, 219f, 59f, 1f)` are 0-255 values in a constructor that wants 0-1, so they
+  saturate: the paused clock draws white and the running one cyan, not grey and green. Left exactly
+  as authored — dividing by 255 changes how the game looks, which is an art call.
+
 ## Known gaps
 
 - **Receipt validation is not enforced.** Purchases are granted on trust; there is a `TODO` at

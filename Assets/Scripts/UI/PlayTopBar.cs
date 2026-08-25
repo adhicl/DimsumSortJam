@@ -140,6 +140,11 @@ namespace UI
         private int[] _inFlight;
         private RectTransform _flyLayer;
 
+        // What each label currently reads. Formatting a number allocates a string, and the labels
+        // are rewritten on every poll for every slot while the value almost never changes, so the
+        // work is skipped unless it would actually say something different.
+        private int[] _shownCounts;
+
         // Slots asked to celebrate, one bit per slot. Static because the asker is a popup that is
         // destroying itself as it asks, so it has no toolbar reference to call through.
         private static int _pendingPunchMask;
@@ -182,6 +187,8 @@ namespace UI
             _punchTweens = new Tween[_powerUpButtons.Length];
             _held = new int[_powerUpButtons.Length];
             _inFlight = new int[_powerUpButtons.Length];
+            _shownCounts = new int[_powerUpButtons.Length];
+            for (int i = 0; i < _shownCounts.Length; i++) _shownCounts[i] = -1;   // force the first write
 
             // Flown icons are parented to the canvas root and pushed to the back of the sibling
             // list, so they pass over the popup that granted them instead of under it.
@@ -351,7 +358,11 @@ namespace UI
         {
             int pending = _held[index] + _inFlight[index];
             int shown = Mathf.Max(0, gameSetting.GetPowerup(index + 1) - pending);
-            if (_totalTexts[index] != null) _totalTexts[index].text = $"{shown:N0}";
+            if (_shownCounts[index] != shown)
+            {
+                _shownCounts[index] = shown;
+                if (_totalTexts[index] != null) _totalTexts[index].text = shown.ToString("N0");
+            }
 
             // The counter reads zero for as long as the icon is still on its way, and a "+" badge
             // over a slot that has already been paid for invites the player to buy it twice. One
