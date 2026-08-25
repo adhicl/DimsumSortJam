@@ -54,6 +54,26 @@ namespace Commons
         public string lastFreeUnlimitedDay = string.Empty;
 
         /// <summary>
+        /// True once the player has been through the rating flow. The prompt never returns after
+        /// this, and it is deliberately not cleared by anything: being asked again after you have
+        /// already rated is the part players resent.
+        /// </summary>
+        public bool hasRatedGame;
+
+        /// <summary>
+        /// Unix ms before which the rating prompt must not appear; 0 means "any time now". Set to
+        /// a week ahead every time the prompt is shown and declined. Wall-clock, like the life
+        /// timers, so the wait runs while the app is closed.
+        /// </summary>
+        public long nextRatePromptAt;
+
+        /// <summary>How long a declined rating prompt stays away.</summary>
+        public const int RatePromptSnoozeDays = 7;
+
+        /// <summary>The level the player has to reach before the prompt is allowed at all.</summary>
+        public const int RatePromptMinLevel = 5;
+
+        /// <summary>
         /// Unix ms at which the next regenerated life lands; 0 when the bar is full and no
         /// clock is running. Wall-clock like the unlimited window, so lives keep coming back
         /// while the app is closed.
@@ -292,6 +312,30 @@ namespace Commons
         /// <summary>Coins charged to revive with extra time after running out.</summary>
         public const int ReviveCost = 600;
 
+        /// <summary>
+        /// Whether the rating prompt may appear right now: the player has come far enough to have
+        /// an opinion, has not already rated, and is not inside a snooze. The caller still decides
+        /// *when* — this only says it is allowed.
+        /// </summary>
+        public bool CanShowRatePrompt =>
+            !hasRatedGame
+            && currentLevel >= RatePromptMinLevel
+            && NowMs() >= nextRatePromptAt;
+
+        /// <summary>Pushes the prompt a week out. Called every time it is shown.</summary>
+        public void SnoozeRatePrompt()
+        {
+            nextRatePromptAt = NowMs() + RatePromptSnoozeDays * 24L * 60L * 60L * 1000L;
+            SaveData();
+        }
+
+        /// <summary>Retires the prompt for good. Called when the player goes through the flow.</summary>
+        public void MarkRated()
+        {
+            hasRatedGame = true;
+            SaveData();
+        }
+
         /// <summary>Coins charged for one power-up, whichever of the four it is.</summary>
         public const int PowerupCost = 500;
 
@@ -449,6 +493,9 @@ namespace Commons
             PlayerPrefs.SetString("unlimitedLivesUntil",
                 unlimitedLivesUntil.ToString(CultureInfo.InvariantCulture));
             PlayerPrefs.SetString("lastFreeUnlimitedDay", lastFreeUnlimitedDay ?? string.Empty);
+            PlayerPrefs.SetInt("hasRatedGame", hasRatedGame ? 1 : 0);
+            PlayerPrefs.SetString("nextRatePromptAt",
+                nextRatePromptAt.ToString(CultureInfo.InvariantCulture));
             PlayerPrefs.SetString("nextLifeAt", nextLifeAt.ToString(CultureInfo.InvariantCulture));
             PlayerPrefs.SetString("playerName", playerName ?? string.Empty);
             PlayerPrefs.SetString("avatarId", avatarId ?? string.Empty);
@@ -480,6 +527,9 @@ namespace Commons
             unlimitedLivesUntil = long.TryParse(PlayerPrefs.GetString("unlimitedLivesUntil", "0"),
                 NumberStyles.Integer, CultureInfo.InvariantCulture, out var until) ? until : 0L;
             lastFreeUnlimitedDay = PlayerPrefs.GetString("lastFreeUnlimitedDay", string.Empty);
+            hasRatedGame = PlayerPrefs.GetInt("hasRatedGame", 0) == 1;
+            nextRatePromptAt = long.TryParse(PlayerPrefs.GetString("nextRatePromptAt", "0"),
+                NumberStyles.Integer, CultureInfo.InvariantCulture, out long ratePromptAt) ? ratePromptAt : 0L;
             nextLifeAt = long.TryParse(PlayerPrefs.GetString("nextLifeAt", "0"),
                 NumberStyles.Integer, CultureInfo.InvariantCulture, out var nextLife) ? nextLife : 0L;
             playerName = PlayerPrefs.GetString("playerName", string.Empty);
@@ -508,6 +558,8 @@ namespace Commons
                 totalLife = totalLife,
                 unlimitedLivesUntil = unlimitedLivesUntil,
                 lastFreeUnlimitedDay = lastFreeUnlimitedDay,
+                hasRatedGame = hasRatedGame,
+                nextRatePromptAt = nextRatePromptAt,
                 nextLifeAt = nextLifeAt,
                 playerName = playerName,
                 avatarId = avatarId,
@@ -565,6 +617,11 @@ namespace Commons
             totalLife = Math.Min(totalLife, MaxLife);
             nextLifeAt = snapshot.nextLifeAt;
 
+            // Rating on one device settles it for the account, and the longer wait wins so
+            // switching devices cannot shake a fresh prompt out of a week already served.
+            hasRatedGame |= snapshot.hasRatedGame;
+            nextRatePromptAt = Math.Max(nextRatePromptAt, snapshot.nextRatePromptAt);
+
             // ISO dates sort lexically, so the later claim wins — otherwise hopping devices
             // would hand out a second free window on a day already claimed.
             if (string.CompareOrdinal(snapshot.lastFreeUnlimitedDay ?? string.Empty,
@@ -597,6 +654,8 @@ namespace Commons
             public int totalLife;
             public long unlimitedLivesUntil;
             public string lastFreeUnlimitedDay;
+            public bool hasRatedGame;
+            public long nextRatePromptAt;
             public long nextLifeAt;
             public string playerName;
             public string avatarId;

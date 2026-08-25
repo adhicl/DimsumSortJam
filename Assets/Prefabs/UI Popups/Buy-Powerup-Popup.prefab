@@ -303,6 +303,22 @@ PrefabInstance:
       propertyPath: m_text
       value: Packs away three matching dim sum at once.
       objectReference: {fileID: 0}
+    - target: {fileID: 3302665507433768233, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
+      propertyPath: m_fontSize
+      value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: 3302665507433768233, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
+      propertyPath: m_fontSizeMax
+      value: 45
+      objectReference: {fileID: 0}
+    - target: {fileID: 3302665507433768233, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
+      propertyPath: m_TextWrappingMode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 3302665507433768233, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
+      propertyPath: m_enableAutoSizing
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 3615800103232446819, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
       propertyPath: m_SizeDelta.x
       value: 0
@@ -314,6 +330,22 @@ PrefabInstance:
     - target: {fileID: 3835720700287394721, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
       propertyPath: m_SizeDelta.y
       value: 276.57
+      objectReference: {fileID: 0}
+    - target: {fileID: 4114959647064670922, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
+      propertyPath: m_SizeDelta.x
+      value: 728.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4114959647064670922, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
+      propertyPath: m_SizeDelta.y
+      value: 158.6
+      objectReference: {fileID: 0}
+    - target: {fileID: 4114959647064670922, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
+      propertyPath: m_AnchoredPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4114959647064670922, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
+      propertyPath: m_AnchoredPosition.y
+      value: -172.1
       objectReference: {fileID: 0}
     - target: {fileID: 4723776707167377855, guid: 66866ee2a47401448ba3fb102f2e3580, type: 3}
       propertyPath: m_AnchorMax.y
@@ -587,15 +619,15 @@ MonoBehaviour:
   entries:
   - slot: 1
     title: PACKAGE
-    description: Packs away three matching dim sum at once.
+    description: Pack 3 identical food
     icon: {fileID: 21300000, guid: ca018e0e2028d492ea3e6ea140e0c9a7, type: 3}
   - slot: 2
     title: MAGNIFIER
-    description: Reveals three matching dim sum and clears them.
+    description: Reveals three matching food
     icon: {fileID: 21300000, guid: 3876a35b18faa46a8adfb952eeda8a74, type: 3}
   - slot: 3
     title: SHUFFLE
-    description: Shuffles every dim sum still on the plates.
+    description: Shuffles every food left
     icon: {fileID: 21300000, guid: 08b7bc7d4c8c544f0954166a4b75d526, type: 3}
   - slot: 4
     title: EXTRA TIME

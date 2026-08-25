@@ -78,6 +78,10 @@ namespace UI
                 newScene = Settings.GetNextLevelScene(_gameSetting.currentLevel, "Home");
             }
             
+            // Only when the run actually ends on Home. Levels below 5 hand off to another
+            // tutorial scene, where there is nothing to raise the prompt on.
+            if (newScene == "Home") RateUsPopup.ArmAfterLevelWin();
+
             _gameSetting.SaveData();
             Transition.LoadLevel(newScene, Settings.TransitionTime, Settings.TransitionColor);
             

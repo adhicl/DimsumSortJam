@@ -3085,6 +3085,50 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: -7.9999695
       objectReference: {fileID: 0}
+    - target: {fileID: 2417535688780283279, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.size
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2417535688780283279, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2417535688780283279, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Mode
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 2417535688780283279, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 8007801678273573725}
+    - target: {fileID: 2417535688780283279, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_Target
+      value: 
+      objectReference: {fileID: 361767524103731852}
+    - target: {fileID: 2417535688780283279, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2417535688780283279, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_CallState
+      value: 2
+      objectReference: {fileID: 0}
+    - target: {fileID: 2417535688780283279, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: PlaySoundButton
+      objectReference: {fileID: 0}
+    - target: {fileID: 2417535688780283279, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_MethodName
+      value: OpenPopup
+      objectReference: {fileID: 0}
+    - target: {fileID: 2417535688780283279, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: UI.SettingPopupHome, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 2417535688780283279, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[1].m_TargetAssemblyTypeName
+      value: Ricimi.PopupOpener, Assembly-CSharp
+      objectReference: {fileID: 0}
     - target: {fileID: 2451783501609665847, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
@@ -3145,13 +3189,34 @@ PrefabInstance:
     m_RemovedGameObjects:
     - {fileID: 159871665373080804, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 2745507538511672987, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 361767524103731852}
   m_SourcePrefab: {fileID: 100100000, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
 --- !u!224 &4975614379258554082 stripped
 RectTransform:
   m_CorrespondingSourceObject: {fileID: 808684554639869470, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
   m_PrefabInstance: {fileID: 5635666399145730300}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &7507474415908197991 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 2745507538511672987, guid: 53a9043e1d2174642af34c1c73b74485, type: 3}
+  m_PrefabInstance: {fileID: 5635666399145730300}
+  m_PrefabAsset: {fileID: 0}
+--- !u!114 &361767524103731852
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7507474415908197991}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bdc9dc369ee2a427d82cbd5d7894c8c9, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::Ricimi.PopupOpener
+  popupPrefab: {fileID: 2875766372118975236, guid: 49772ad152be9fb49b474fa1139b80ec, type: 3}
 --- !u!1001 &8153727503319128917
 PrefabInstance:
   m_ObjectHideFlags: 0

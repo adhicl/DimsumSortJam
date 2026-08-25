@@ -122,6 +122,8 @@ MonoBehaviour:
   avatarId: 
   unlimitedLivesUntil: 0
   lastFreeUnlimitedDay: 2026-08-17
+  hasRatedGame: 0
+  nextRatePromptAt: 0
   nextLifeAt: 1787379192175
   totalPowerup1: 3
   totalPowerup2: 3

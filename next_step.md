@@ -879,8 +879,8 @@ button and read its On Click list in the Inspector: a dead entry shows the objec
 - A button with **no listeners at all** is often correct here. `UnlockBasketPopup` binds its two
   option buttons in `Awake` from serialized fields, and `RestorePurchasesButton` /
   `PrivacyOptionsButton` / `OpenUrlButton` bind themselves.
-- **'Rate Us'** in `Settings-Popup Food Sort Home` really is dead, by omission — it is the
-  unimplemented `rate us window` item from `missing.txt`.
+- **'Rate Us'** in `Settings-Popup Food Sort Home` used to be dead by omission. It now carries a
+  `PopupOpener` and opens `Rate-Us-Popup` (see "Rate Us" below).
 
 It happened again, and not in a popup: all four **power-up buttons** in `Panel-Game.prefab` had a
 dangling `PlayButtonClickClip` call, so they never played a click sound. They now point at
@@ -906,6 +906,86 @@ Two more things that make this confusing:
 > appears to do nothing — its `WaitForSeconds` destroy coroutine never advances and `Time.frameCount`
 > stays frozen. Set `Application.runInBackground = true` first, or you will chase a bug that is not
 > there.
+
+## Rate Us
+
+Settings ▸ **Rate Us** (`Settings-Popup Food Sort Home`, the Home one — the in-game Settings popup
+has no such button) opens `Rate-Us-Popup` through a stock Ricimi `PopupOpener`, the same mechanism
+the other popup buttons in that prefab use.
+
+Five tappable stars, a line of copy that answers the tap, and **RATE** / **LATER**. RATE stays
+greyed until a star is picked, so the player can see where the flow ends before committing.
+
+**The stars submit nothing.** They are how the ask is framed, not a submission — which is also why
+a low score goes to the same place rather than being quietly swallowed. RATE hands off to Google's
+In-App Review flow (`com.google.play.review`, wrapped in `Controllers/InAppReview.cs`), and falls
+back to the store listing when that cannot run.
+
+Two properties of that API drive the design:
+
+- **It can decide to show nothing.** Google quotas how often a player sees the card, and when it
+  declines, the flow still reports success. A rating is indistinguishable from a no-op, so
+  **nothing may ever be paid out for rating** and the copy must not promise a result.
+- **The Editor build is a stub** that returns success immediately with no UI. `InAppReview.IsSupported`
+  therefore reports false outside an Android device, so the Editor exercises the store-URL
+  fallback instead of a button that silently appears to work.
+
+`hasRatedGame` is set when RATE is pressed, *before* the flow runs, precisely because the outcome
+is unknowable — someone who asked to rate should not be asked again either way.
+
+### The automatic prompt
+
+Beyond the Settings button, the game asks once on its own. `WinPopup` calls
+`RateUsPopup.ArmAfterLevelWin()` on its way out, but only when the run actually ends on Home
+(levels below 5 hand off to another tutorial scene), and `HomeScene` raises the popup ~1.5s later.
+Asking on Home rather than over the win screen keeps it off the reward the player is still
+collecting.
+
+`GameSetting.CanShowRatePrompt` owns the whole rule: level **5+**, never rated, and past
+`nextRatePromptAt`. Showing it calls `SnoozeRatePrompt()`, which pushes that a week out —
+scheduled on *show*, not on dismissal, so Later, the X, and backing out of Play's own card all buy
+the same quiet week. Both fields are saved to PlayerPrefs and carried in the cloud snapshot, where
+`hasRatedGame` ORs and `nextRatePromptAt` takes the later value: rating on one device settles it
+for the account, and hopping devices cannot shake a fresh prompt out of a week already served.
+
+The arm is consumed even when the prompt is suppressed, so one win can only ever raise one ask. If
+another popup is already up when the delay elapses it simply stands down and waits for the next
+level.
+
+Note `HomeScene` lives on **`SceneContext`**, outside the UI tree, so it cannot walk up to a
+Canvas — it resolves the scene's canvas by name and skips the screen-space overlays other SDKs
+inject, which is exactly the trap that put an earlier test popup on the wrong canvas.
+
+The URL is built from `Application.identifier`, so it follows the app id with nothing to keep in
+sync: `market://details?id=…` on device (straight into the Play app, no browser bounce) and the
+`https://play.google.com/…` form in the Editor and everywhere else. `storeUrlOverride` on the
+prefab points it somewhere else if needed.
+
+### Fitting content into a kit popup
+
+Worth knowing before restructuring any of these, because it cost a rebuild here. The kit's popups
+leave **`Content` with a rect that is never really sized** — in the Game canvas its height computes
+to *negative*. That is harmless while children are pinned by hand (which is how the kit authored
+them) but leaves a layout group nothing to work in, and the first attempt here laid the stars out
+inside a collapsed box.
+
+Two things make the fix non-obvious:
+
+- **The card is not the popup.** `Background`, the header and the button tray are each pinned to
+  the popup root with fixed sizes, so their heights are the *same number of canvas units on every
+  canvas* while the card itself grows. The clear band is 563 units down from the top and 780 up
+  from the bottom, and those numbers hold everywhere.
+- **The title pill hangs ~100 units below the header's rect.** Clearing the header rect is not
+  enough — the pill's tail draws over anything placed there, which is exactly how the stars came
+  out invisible while every rect measurement said they fitted.
+
+The same prefab renders at very different sizes depending on the canvas it is opened on (Home's
+canvas is 991x2092, the Game scene's 682x1440), so check a popup in the scene that actually opens
+it. Rendering the canvas camera to a `RenderTexture` works when the Game view will not draw
+(the Editor does not tick frames while unfocused) — that is how the invisible stars were caught.
+
+All the copy uses TMP **auto-sizing** (message 24–46, buttons 24–42), so a longer line shrinks to
+fit rather than overflowing the card.
 
 ## Reference — what is already wired in Unity
 
@@ -935,6 +1015,10 @@ Two more things that make this confusing:
 | `Assets/Scripts/UI/PlayTopBar.cs` | The four power-up buttons: level / match / level-running gates, counts, and the "+" badge. |
 | `Assets/Scripts/UI/BuyPowerupPopup.cs` | Sells one power-up for coins or a rewarded ad; dressed per slot from the prefab's `entries`. |
 | `Assets/Prefabs/UI Popups/Buy-Powerup-Popup.prefab` | That popup. Wired on the `GameController` in all eight play scenes. |
+| `Assets/Scripts/UI/RateUsPopup.cs` | Star picker; in-app review with store fallback. Settings ▸ Rate Us, and the automatic prompt. |
+| `Assets/Scripts/Controllers/InAppReview.cs` | Wraps `com.google.play.review`; false on anything but an Android device. |
+| `Assets/Prefabs/UI Popups/Rate-Us-Popup.prefab` | That popup. |
+| `Assets/Scripts/UI/VersionLabel.cs` | Prints `v1.2 (4)`; version code read from the installed package. |
 | `Assets/Scripts/UI/RestorePurchasesButton.cs` | Wires the previously dead "Restore Purchases" button. |
 | `Assets/Scripts/UI/PrivacyOptionsButton.cs` | "Ad Privacy" entry; self-hides where not legally required. |
 | `Assets/Scripts/UI/OpenUrlButton.cs` | Opens the privacy/terms URLs. |
@@ -971,8 +1055,9 @@ from the store on every launch, so `remove_ads` survives a reinstall.
   a server timestamp.
 - **No timed / limited offers.** The reference shop's "Limited Pack" has a countdown; the
   SPECIAL PACK section here is a plain one-time `starter_pack` with no timer.
-- **"Rate Us" is still unwired.** Add `OpenUrlButton` with
-  `market://details?id=com.yourfavoritegamestudio.Jajanan` once the app is live.
+- **A rating can never be confirmed.** Play's In-App Review card is quota-limited and reports
+  success whether or not it appeared, so the game cannot know a review was left — never reward it.
+  See "Rate Us" below.
 - **The in-game Settings popup** (`Settings-Popup Food Sort.prefab`, shown during a level) has no
   Restore / Ad Privacy / legal links — only the Home one does.
 - **`Splash` has a hidden `Button-Login`** opening a demo email/password popup. It was already
