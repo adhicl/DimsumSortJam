@@ -37,6 +37,11 @@ namespace Controllers
         private float _timer = 0f;
         private int _totalGoal = 0;
         private int _currentTotal = 0;
+
+        // What the player has actually earned, counted the instant it is earned. _currentTotal is
+        // the number the HUD counts up to and lags it by half a second, which is exactly the window
+        // the no-move check runs in - reading the tweened value there judges a won level unfinished.
+        private int _awardedTotal = 0;
         
         public float Timer
         {
@@ -95,6 +100,7 @@ namespace Controllers
         {
             gameStatus = Settings.GAME_STATUS.pause;
             _currentTotal = 0;
+            _awardedTotal = 0;
             
             _gameSetting.currentLevelData = _gameSetting.allLevelData[_gameSetting.currentLevel];
             _totalGoal = _gameSetting.currentLevelData.TotalGoal;
@@ -198,7 +204,7 @@ namespace Controllers
                 }
             }
             
-            CheckIsGameNoMove();
+            CheckInitialDealPlayable();
             CheckShowRequest();
         }
 
@@ -338,6 +344,8 @@ namespace Controllers
 
         public void DoAddProgress(int progress)
         {
+            _awardedTotal += progress;
+
             DOTween.To(() => _currentTotal, x => _currentTotal = x, _currentTotal + progress, .5f).OnComplete(OnFinishUpdateProgress);
         }
 
@@ -668,7 +676,41 @@ namespace Controllers
             if (popup != null) popup.Open();
         }
 
-        // Called by the out-of-move popup's REVIVE button after a rewarded ad is watched.
+        /// <summary>
+        /// The player has paid for a revive - coins or a rewarded ad. What that buys depends on
+        /// what went wrong, which is why this reads <see cref="_loseReason"/> rather than letting
+        /// the popup decide: more time when the clock ran out, a reshuffled board when the board
+        /// was stuck. Selling time to a player whose board has no moves left sells them nothing.
+        ///
+        /// Both revive popups share one script, so this is the single place that mapping lives.
+        /// </summary>
+        public void GrantRevive()
+        {
+            if (_loseReason == LoseReason.OutOfMoves)
+            {
+                ReviveWithReshuffle();
+                return;
+            }
+
+            ReviveWithTime();
+        }
+
+        /// <summary>
+        /// Paid rescue for a stuck board: rearrange what is left until there is a move again. Play
+        /// resumes at once; the reshuffle itself animates over the next couple of seconds.
+        /// </summary>
+        public void ReviveWithReshuffle()
+        {
+            isTimerPause = false;
+            gameStatus = Settings.GAME_STATUS.play;
+
+            if (_reshuffleRoutine == null)
+            {
+                _reshuffleRoutine = StartCoroutine(ReshuffleUntilPlayable(true));
+            }
+        }
+
+        // Paid rescue for a timeout: more seconds on the clock.
         public void ReviveWithTime()
         {
             _timer += reviveTimeBonus;
@@ -694,10 +736,94 @@ namespace Controllers
             GameObject vfx = Instantiate(successVFXPrefab, position, Quaternion.identity);
         }
 
+        /// <summary>
+        /// True once the level is over, whether or not the animations have caught up. The win is
+        /// only declared in <see cref="OnFinishUpdateProgress"/> when the progress tween lands, so
+        /// for half a second after the winning match <c>gameStatus</c> still reads <c>play</c> -
+        /// which is precisely when the board looks emptiest and the rescue would fire on it.
+        /// </summary>
+        private bool LevelDecided =>
+            gameStatus == Settings.GAME_STATUS.win
+            || gameStatus == Settings.GAME_STATUS.lose
+            || (_totalGoal > 0 && _awardedTotal >= _totalGoal);
+
+        /// <summary>
+        /// Nothing on the board and nothing left to deal. That is a finished level, not a stuck
+        /// one: there is nothing for a rescue to rearrange, and reshuffling it hands every basket
+        /// an empty deal.
+        /// </summary>
+        private bool BoardIsEmpty()
+        {
+            if (_gameBaskets == null) return true;
+
+            foreach (var basket in _gameBaskets)
+            {
+                if (basket == null) continue;
+                if (basket.TotalFilledDimsums() > 0) return false;
+                if (basket.HasStillTrayLeft()) return false;
+            }
+            return true;
+        }
+
+        /// <summary>True while a basket is mid-rebuild or mid-clear, so the board is not final.</summary>
+        private bool BoardIsBusy()
+        {
+            if (_gameBaskets == null) return false;
+
+            foreach (var basket in _gameBaskets)
+            {
+                if (basket == null) continue;
+                if (basket.IsRebuilding || basket.IsClearing) return true;
+            }
+            return false;
+        }
+
         public void CheckIsGameNoMove()
         {
+            if (LevelDecided || BoardIsEmpty()) return;
             if (HasAnyMove()) return;
             HandleNoMoves();
+        }
+
+        /// <summary>
+        /// Asks for a stuck-board check once the board has settled. Everything in play should use
+        /// this rather than <see cref="CheckIsGameNoMove"/> directly.
+        ///
+        /// The board cannot be judged at the moment a basket empties, because that is not a state
+        /// the board is ever really in: <c>OnEndDrag</c> takes the piece out of its old basket and
+        /// only puts it into the new one on the next line, so a check running in between sees a
+        /// board with the dragged piece nowhere on it. On the move that finishes a level the rest
+        /// of the board is already cleared, so the answer came back "no moves left" for a board one
+        /// frame from winning - and the player got an unlock-basket offer or an automatic reshuffle
+        /// dropped on top of their win.
+        /// </summary>
+        public void RequestNoMoveCheck()
+        {
+            if (LevelDecided) return;
+
+            // Several baskets can empty on one move; they all want the same single check.
+            if (_noMoveCheckRoutine == null)
+            {
+                _noMoveCheckRoutine = StartCoroutine(CheckNoMoveWhenSettled());
+            }
+        }
+
+        private Coroutine _noMoveCheckRoutine;
+
+        private IEnumerator CheckNoMoveWhenSettled()
+        {
+            // Let the drop that triggered this actually land.
+            yield return null;
+
+            // Then let any clear or rebuild animation finish. A basket mid-clear has already nulled
+            // its slots, so judging the board through one reads it as emptier than it is.
+            while (BoardIsBusy())
+            {
+                yield return null;
+            }
+
+            _noMoveCheckRoutine = null;
+            CheckIsGameNoMove();
         }
 
         /// <summary>
@@ -741,9 +867,12 @@ namespace Controllers
         }
 
         /// <summary>
-        /// The board is stuck. Three rescues in order of preference: sell the player an extra
-        /// basket, reshuffle what is left into something playable, or — only if neither works —
-        /// offer a revive.
+        /// The board is stuck mid-level. Two rescues, and the player pays for both: buy a closed
+        /// basket open, or - when there is no basket left to sell - buy a reshuffle from the
+        /// out-of-move popup, with coins or a rewarded ad.
+        ///
+        /// Nothing here reshuffles on its own. A free reshuffle undercuts both offers, and it also
+        /// rearranged the board under the player with no explanation of why.
         /// </summary>
         private void HandleNoMoves()
         {
@@ -755,12 +884,27 @@ namespace Controllers
                 return;
             }
 
-            // No basket left to sell. Reshuffling is free, so try it before charging the player
-            // for anything — but a shuffle is random and can land on another dead board, so
-            // check the result and try again rather than handing back the same problem.
+            // No basket left to sell, so a reshuffle is the only thing that can rescue the board -
+            // and it is sold, not given. Paying on this popup lands in GrantRevive, which routes an
+            // out-of-moves revive to ReviveWithReshuffle.
+            ShowOutOfMove();
+        }
+
+        /// <summary>
+        /// The board the level was dealt has no move in it. The player has not touched anything
+        /// yet, so this is the game correcting its own deal - not a rescue it can charge for, and
+        /// not something to open "GAME OVER" over. Reshuffles quietly, and if even that cannot
+        /// produce a move it leaves the board alone rather than ending a level nobody has played.
+        /// </summary>
+        private void CheckInitialDealPlayable()
+        {
+            if (LevelDecided || BoardIsEmpty()) return;
+            if (HasAnyMove()) return;
+
+            Debug.LogWarning("[Game] Initial deal has no move; reshuffling before play starts.");
             if (_reshuffleRoutine == null)
             {
-                _reshuffleRoutine = StartCoroutine(ReshuffleUntilPlayable());
+                _reshuffleRoutine = StartCoroutine(ReshuffleUntilPlayable(false));
             }
         }
 
@@ -769,24 +913,37 @@ namespace Controllers
         /// <summary>
         /// Reshuffles until the board has a move again, waiting for each attempt to actually land.
         ///
-        /// <see cref="PowerUpRefeshItems"/> looks synchronous but is not: every basket rebuilds
+        /// <see cref="ReshuffleBoard"/> looks synchronous but is not: every basket rebuilds
         /// itself from a coroutine that only completes a couple of seconds later. Re-checking
         /// immediately therefore re-read the *old*, stuck board every time — which burnt all the
         /// attempts inside a single frame, stacked one pending rebuild per attempt onto every
         /// basket, and then showed out-of-moves even though a perfectly playable board was about
         /// to appear.
+        ///
+        /// <paramref name="loseIfImpossible"/> separates the two callers: a paid revive has to end
+        /// the level if the board genuinely cannot be saved, while a bad opening deal must not.
         /// </summary>
-        private IEnumerator ReshuffleUntilPlayable()
+        private IEnumerator ReshuffleUntilPlayable(bool loseIfImpossible)
         {
             for (int attempt = 0; attempt < maxReshuffleAttempts; attempt++)
             {
-                PowerUpRefeshItems();
+                // ReshuffleBoard, not PowerUpRefeshItems: this rescue is the game's own doing, so
+                // it must not spend the player's refresh power-up - nor, once they have none left,
+                // open the buy popup and shuffle nothing at all.
+                ReshuffleBoard();
 
                 // Let the rebuild coroutines start, then let them finish before judging the board.
                 yield return null;
-                while (AnyBasketRebuilding())
+                while (BoardIsBusy())
                 {
                     yield return null;
+                }
+
+                // The level can be won or lost while this is still running.
+                if (LevelDecided)
+                {
+                    _reshuffleRoutine = null;
+                    yield break;
                 }
 
                 if (HasAnyMove())
@@ -796,18 +953,19 @@ namespace Controllers
                 }
             }
 
-            Debug.LogWarning($"[Game] No move after {maxReshuffleAttempts} reshuffles; offering a revive.");
             _reshuffleRoutine = null;
-            ShowOutOfMove();
-        }
 
-        private bool AnyBasketRebuilding()
-        {
-            foreach (var basket in _gameBaskets)
+            // Deliberately not ShowOutOfMove(): the player already paid for this reshuffle, and
+            // re-opening the popup that sold it would charge them a second time for the same
+            // rescue. Nothing can rearrange these pieces into a move, so the level really is over.
+            if (loseIfImpossible)
             {
-                if (basket.IsRebuilding) return true;
+                Debug.LogWarning($"[Game] No move after {maxReshuffleAttempts} reshuffles; the board cannot be rescued.");
+                ShowLoseConfirm();
+                yield break;
             }
-            return false;
+
+            Debug.LogWarning($"[Game] No move after {maxReshuffleAttempts} reshuffles on the opening deal; leaving the board as dealt.");
         }
 
         /// <summary>
@@ -836,10 +994,23 @@ namespace Controllers
             }
         }
 
+        /// <summary>
+        /// A dim sum type to print on a Locked basket's unlock paper, preferring one the player can
+        /// already match. The fallbacks are not decoration: the only caller runs from
+        /// <c>MDropArea.SetOpen</c> while <see cref="CreateLevel"/> is still filling the baskets, so
+        /// on the earlier baskets of a level there is genuinely no triple on the board yet, and
+        /// indexing the empty result threw.
+        /// </summary>
         public int GetDimsumTypeOnTop()
         {
             MDimSum[] onTopDimsums = GetDimsumReadyOnTop();
-            return onTopDimsums[0].dimsumType;
+            if (onTopDimsums.Length > 0 && onTopDimsums[0] != null) return onTopDimsums[0].dimsumType;
+
+            // No triple yet - any type already on the board is still a reachable target.
+            MDimSum[] available = GetAvailableDimsums();
+            if (available.Length > 0) return available[Random.Range(0, available.Length)].dimsumType;
+
+            return Random.Range(0, Mathf.Max(1, _gameSetting.currentLevelData.TotalVariation));
         }
 
         private MDimSum[] GetAvailableDimsums()
@@ -889,13 +1060,20 @@ namespace Controllers
         }
 
         private int[] leftOverBasketLength;
-        private DimsumCombination[] GetLeftOverDimsumCombinations()
+
+        /// <summary>
+        /// Everything still held by the baskets that are about to be rebuilt, plus how much each
+        /// one held, so the reshuffle can deal the same number back into it. Both are indexed
+        /// against <paramref name="fromBaskets"/> - the caller's Skip/Take arithmetic depends on the
+        /// two staying in step, which is why this takes the list rather than finding its own.
+        /// </summary>
+        private DimsumCombination[] GetLeftOverDimsumCombinations(List<MDropArea> fromBaskets)
         {
-            leftOverBasketLength = new int[baskets.Length];
+            leftOverBasketLength = new int[fromBaskets.Count];
             List<DimsumCombination> combinations = new List<DimsumCombination>();
-            for (int i = 0; i < baskets.Length; i++)
+            for (int i = 0; i < fromBaskets.Count; i++)
             {
-                DimsumCombination[] leftDimsums = baskets[i].GetLeftDimsums();
+                DimsumCombination[] leftDimsums = fromBaskets[i].GetLeftDimsums();
                 combinations.AddRange(leftDimsums);
                 leftOverBasketLength[i] = leftDimsums.Length;
             }
@@ -1026,36 +1204,71 @@ namespace Controllers
             if (!TryUsePowerup(PowerupSlotRefresh)) return;
 
             _soundController.PlayPowerUpClip();
-            
-            DimsumCombination[] targetDimsums = GetLeftOverDimsumCombinations();
+            ReshuffleBoard();
+        }
+
+        /// <summary>
+        /// Rearranges what is left on the board into a fresh deal. The mechanic on its own, with no
+        /// price attached - which is not the same as free to the player. Both routes in charge for
+        /// it: the refresh power-up in <see cref="PowerUpRefeshItems"/>, and the out-of-move popup,
+        /// which sells the rescue before <see cref="ReshuffleUntilPlayable"/> calls this.
+        ///
+        /// Keeping the mechanic apart from the price is the point. While the stuck-board rescue
+        /// went through the power-up it spent the player's refresh without asking - and once they
+        /// had none left, TryUsePowerup opened the buy popup instead, so the rescue shuffled
+        /// nothing and burnt every attempt against an untouched board.
+        /// </summary>
+        private void ReshuffleBoard()
+        {
+            // Every step has to walk the same baskets. This used to gather from all of `baskets`,
+            // reset `_gameBaskets`, then redistribute across all of `baskets` again - and a level
+            // using fewer baskets than the scene holds leaves the spares deactivated without
+            // clearing their Displayed flag, so that last loop called BackToBottom on an inactive
+            // object and StartCoroutine threw. Gathering from baskets that are not rebuilt also
+            // copied their pieces into the ones that are, while they kept their own.
+            List<MDropArea> rebuilding = GetBasketsToRebuild();
+            if (rebuilding.Count == 0) return;
+
+            DimsumCombination[] targetDimsums = GetLeftOverDimsumCombinations(rebuilding);
             targetDimsums = ShuffleLevelData(targetDimsums);
 
-            int totalBasketLeft = 0;
             foreach (var basket in _gameBaskets)
             {
-                if (basket.GetOpenBasket() == DisplayedBasket.Displayed)
-                {
-                    totalBasketLeft++;
-                }
-                basket.DrawToTop();
+                if (basket != null) basket.DrawToTop();
             }
-            
-            int dividedBasketLeft = Mathf.FloorToInt((float) targetDimsums.Length /(float) totalBasketLeft);
+
             int skipIndex = 0;
-            for (int i = 0; i < baskets.Length; i++)
+            for (int i = 0; i < rebuilding.Count; i++)
             {
-                MDropArea basket = baskets[i];
-                if (basket.GetOpenBasket() == DisplayedBasket.Displayed)
-                {
-                    //Debug.Log($"Basket {i}/{totalBasketLeft} Skip {skipIndex} Take {leftOverBasketLength[i]}");
-                    basket.BackToBottom(targetDimsums.Skip(skipIndex).Take(leftOverBasketLength[i]).ToArray());
-                    
-                    skipIndex += leftOverBasketLength[i];
-                }
+                rebuilding[i].BackToBottom(targetDimsums.Skip(skipIndex).Take(leftOverBasketLength[i]).ToArray());
+                skipIndex += leftOverBasketLength[i];
             }
-            
-            //Debug.Log(targetDimsums.Length);
+
             powerUpAnimationEffect.DoAnimateRefresh();
+        }
+
+        // Reused rather than rebuilt: a stuck board can ask for this five times in a row.
+        private readonly List<MDropArea> _rebuildBaskets = new();
+
+        /// <summary>
+        /// The baskets a reshuffle may touch - open, and actually part of this level.
+        /// <see cref="SetUpBaskets"/> deactivates the spares a smaller level does not need but never
+        /// clears their open flag, so the active check is the part that keeps a leftover out.
+        /// </summary>
+        private List<MDropArea> GetBasketsToRebuild()
+        {
+            _rebuildBaskets.Clear();
+            if (_gameBaskets == null) return _rebuildBaskets;
+
+            foreach (var basket in _gameBaskets)
+            {
+                if (basket == null) continue;
+                if (!basket.gameObject.activeInHierarchy) continue;
+                if (basket.GetOpenBasket() != DisplayedBasket.Displayed) continue;
+                _rebuildBaskets.Add(basket);
+            }
+
+            return _rebuildBaskets;
         }
 
         //do power up suck package

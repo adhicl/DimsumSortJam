@@ -8,9 +8,13 @@ using UnityEngine.UI;
 namespace UI
 {
     /// <summary>
-    /// Shown when the clock runs out, before the loss is committed. Two ways to keep playing —
-    /// watch a rewarded ad, or pay <see cref="GameSetting.ReviveCost"/> coins — plus Leave,
-    /// which gives up.
+    /// Shown before a loss is committed, by both revive popups — Out-Of-Move-Popup when the board
+    /// is stuck, Out-Of-Time-Popup when the clock runs out. Two ways to keep playing: watch a
+    /// rewarded ad, or pay <see cref="GameSetting.ReviveCost"/> coins — plus Leave, which gives up.
+    ///
+    /// What the revive actually grants is not decided here. One script serves both popups, so it
+    /// hands over to <see cref="GameController.GrantRevive"/>, which gives back time after a
+    /// timeout and a reshuffled board after a stuck one.
     ///
     /// Each option greys out rather than going dead when it cannot be used, matching
     /// <see cref="UnlockBasketPopup"/>.
@@ -123,7 +127,9 @@ namespace UI
             if (coinButton != null) coinButton.interactable = false;
             if (coinGroup != null) coinGroup.alpha = disabledAlpha;
 
-            GameController.Instance.ReviveWithTime();
+            // Not ReviveWithTime: more seconds do nothing for a board with no moves left. The
+            // controller knows which of the two failures this is and grants the matching rescue.
+            GameController.Instance.GrantRevive();
             GetComponent<Popup>().Close();
         }
 

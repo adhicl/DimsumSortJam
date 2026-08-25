@@ -1107,6 +1107,115 @@ it did, and `GetDimsumsOnTop` is gone. Verified in play mode: a full board of al
 now reports `HasAnyMove=False`, and adding one triple flips it back to true. **This turns the
 whole out-of-moves flow on for the first time** — worth playing a stuck board once to see it fire.
 
+### ...and turning it on broke finishing a level
+
+Switching the rescue on for the first time exposed four defects that had never been able to run.
+The symptom was that **finishing a level** popped the unlock-basket offer or silently ran the
+shuffle power-up, with errors in the console. All four are fixed; they are recorded because each
+one is a trap that could be walked back into.
+
+**1. The check ran mid-drop, at a moment the board is never really in.** `OnEndDrag` removes the
+piece from its old basket and only places it in the new one on the *next line*:
+
+```csharp
+_prevDropAt.RemoveDimsum(_prevDropAtIndex, _dropAt);   // fired the no-move check
+DoDropPlaceAt(_dropAt, indexPos, true);                // the piece finally lands
+```
+
+`RemoveDimsum` called the check the instant a basket emptied, so the board was judged with the
+dragged piece on **no basket at all**. On the move that finishes a level the rest of the board is
+already cleared, so it correctly answered "no moves left" about a board one frame from winning.
+
+The fix is `GameController.RequestNoMoveCheck()` — everything in play calls that now, never
+`CheckIsGameNoMove()` directly. It defers a frame so the drop lands, then waits out any animation
+(`BoardIsBusy()`), then re-checks. Guarding alone would not have worked: at the moment the request
+is made the level is *not yet* decided — `DoAddProgress` has not run. Only the deferral gets the
+ordering right.
+
+**2. `_awardedTotal`, because `_currentTotal` lies for half a second.** The win is declared by the
+`DoAddProgress` tween landing, so for 0.5s after the winning match `gameStatus` still reads `play`.
+`_awardedTotal` is incremented synchronously, and `LevelDecided` reads it. Anything asking "is this
+level over" must use `LevelDecided`, not `gameStatus`.
+
+**3. The rescue was spending the player's power-up behind their back.** `HandleNoMoves()`
+reshuffled by calling `PowerUpRefeshItems()` — which spends a refresh power-up. So the game's own
+rescue **took the player's power-up without asking**, and once they had none it opened the *buy
+popup* instead, shuffled nothing, and burnt all five attempts against an untouched board.
+
+The mechanic is now split from the price: `ReshuffleBoard()` is the rearrangement on its own, and
+`PowerUpRefeshItems()` is `TryUsePowerup` + sound + `ReshuffleBoard()`. **Never call a
+`PowerUpXxx()` method from game logic** — those are button handlers and they charge.
+
+**4. The reshuffle walked three different basket lists.** It gathered leftovers from all of
+`baskets`, reset `_gameBaskets`, then redistributed across all of `baskets` again. `SetUpBaskets`
+deactivates the spares a smaller level does not need **but never clears their open flag** — verified
+live: `PlaceDrop (10)` and `(11)` sit there `active=False, open=Displayed`. The redistribute loop
+therefore called `BackToBottom` on an inactive object and `StartCoroutine` threw. Gathering from
+baskets that are never rebuilt also duplicated their pieces into the ones that are.
+
+All three steps now walk `GetBasketsToRebuild()` — `_gameBaskets` filtered to `Displayed` **and**
+`activeInHierarchy`. A basket's open flag is not proof it is in play; check `activeInHierarchy` too.
+
+#### A throw inside a coroutine is worse than it looks
+
+Two of these produced `ArgumentOutOfRangeException` — `CreateDimsum` indexing `arrayDimsums[0]` on
+an empty deal, and `CreateDimsumFromTray` indexing `trayList[^1]` after `DrawToTop` emptied it
+(the rebuild only refills it 2s later, so a basket completing a match inside that window has rows
+waiting and no plate to deal them from).
+
+The throw is the real damage, not the error line. It unwinds the coroutine **before the flag at
+the bottom is cleared**, so `_rebuildRoutine` / `IsClearing` stay set forever — and
+`ReshuffleUntilPlayable` and `CheckNoMoveWhenSettled` both *wait on those flags in a loop*. One
+exception permanently wedged the rescue for the rest of the level. Both routines now clear their
+flag in a `finally`, and both indexers are guarded.
+
+**Any coroutine that raises a "busy" flag must lower it in a `finally`.**
+
+### A stuck board is sold a rescue, never given one
+
+There is **no free reshuffle**. When the board runs out of moves mid-level, `HandleNoMoves()` offers
+exactly one of two things to buy, in this order:
+
+1. **A closed basket**, if any is left — `ShowUnlockBasketPopup`, paid with coins or a rewarded ad.
+   Space is the real problem, so opening a basket is the fix that fits.
+2. **A reshuffle**, when there is no basket left to sell — `ShowOutOfMove()` opens
+   `Out-Of-Move-Popup`, and paying there is what rearranges the board.
+
+`HandleNoMoves()` never reshuffles by itself. It only opens a popup.
+
+Note that "locked basket" in the code means `DisplayedBasket.Closed` — the kind bought open.
+`DisplayedBasket.Locked` is the other kind, which opens by matching its printed dim sum and is
+never sold, so `HasLockedBasketLeft()` deliberately ignores it.
+
+#### What a revive grants depends on how the level was failing
+
+Both revive popups (`Out-Of-Move-Popup`, `Out-Of-Time-Popup Variant`) share one script,
+`OutOfMovePopup.cs`. It does not decide what the player gets — it calls
+`GameController.GrantRevive()`, which reads `_loseReason`:
+
+| Failure | Granted |
+|---|---|
+| `OutOfTime` | `ReviveWithTime()` — +45s on the clock |
+| `OutOfMoves` | `ReviveWithReshuffle()` — the board is rearranged until it has a move |
+
+That split is the whole point: **adding seconds to a board with no legal move sells the player
+nothing**, which is exactly what the shared popup used to do. Keep new revive routes going through
+`GrantRevive()` rather than calling `ReviveWithTime()` directly.
+
+The out-of-move popup needed no art change — it already reads "GAME OVER / No more move available /
+REVIVE", and the coin cost is `GameSetting.ReviveCost` (600), written into the label on open.
+
+#### Two edges worth keeping
+
+- **A bad opening deal is not a sale.** `CreateLevel` calls `CheckInitialDealPlayable()`, not the
+  in-play check. The player has not touched anything yet, so a dead deal is the game correcting
+  itself: it reshuffles quietly and, if even that fails, leaves the board rather than opening
+  "GAME OVER" over a level nobody has played.
+- **Paying once is paying once.** `ReshuffleUntilPlayable(loseIfImpossible)` takes a flag for this.
+  After a paid revive it retries up to `maxReshuffleAttempts`, and if the pieces genuinely cannot
+  form a move it goes to the lose confirmation — deliberately **not** back to `ShowOutOfMove()`,
+  which would charge a second time for the same rescue.
+
 ### External Dependency Manager — installed once, via UPM
 
 Unity used to warn on every reload that `Google.IOSResolver.dll` "will not be loaded". Harmless in

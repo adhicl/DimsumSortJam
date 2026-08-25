@@ -49,21 +49,20 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 28b93a627dd6d8246928cb447c4996cf, type: 3}
   - {fileID: 21300000, guid: c908349af031e134faa562745c4e2350, type: 3}
   - {fileID: 21300000, guid: e493849d6c0345e4b9fd3304f6dd9255, type: 3}
-  currentLevel: 5
+  currentLevel: 3
   maximumLevel: 50
-  currentLevelData: {fileID: 11400000, guid: 50b2b008943bb4549ad8c7d111ab6a81, type: 2}
+  currentLevelData: {fileID: 11400000, guid: adcf3a1b7737d7e469ae378664c2c72e, type: 2}
   currentDimsumSprites:
-  - {fileID: 21300000, guid: 359d001e08e4d1648a880d47159bf6b1, type: 3}
-  - {fileID: 21300000, guid: ec4991944ceba5141a2607e69c338d0f, type: 3}
-  - {fileID: 21300000, guid: 822f0cb2c971178478fe48680268bd51, type: 3}
-  - {fileID: 21300000, guid: 4920a144dd65bf447bdaaf057df4b090, type: 3}
-  - {fileID: 21300000, guid: df398dcb70e97034f841669c58c6f53e, type: 3}
-  - {fileID: 21300000, guid: 3d49f2d049069f2479fe340b9adaeef3, type: 3}
-  - {fileID: 21300000, guid: b73785b457437b44c87c52698aa73fa7, type: 3}
-  - {fileID: 21300000, guid: c908349af031e134faa562745c4e2350, type: 3}
   - {fileID: 21300000, guid: 01b89b10e13da6544bd71820bd402fac, type: 3}
-  - {fileID: 21300000, guid: 1e81c59d44a3d8448933898d708b5c08, type: 3}
+  - {fileID: 21300000, guid: 359d001e08e4d1648a880d47159bf6b1, type: 3}
+  - {fileID: 21300000, guid: c908349af031e134faa562745c4e2350, type: 3}
+  - {fileID: 21300000, guid: 822f0cb2c971178478fe48680268bd51, type: 3}
+  - {fileID: 21300000, guid: df398dcb70e97034f841669c58c6f53e, type: 3}
   - {fileID: 21300000, guid: f15a121a1cf1e2041891a6be88c10266, type: 3}
+  - {fileID: 21300000, guid: 3d49f2d049069f2479fe340b9adaeef3, type: 3}
+  - {fileID: 21300000, guid: 1e81c59d44a3d8448933898d708b5c08, type: 3}
+  - {fileID: 21300000, guid: 4920a144dd65bf447bdaaf057df4b090, type: 3}
+  - {fileID: 21300000, guid: b73785b457437b44c87c52698aa73fa7, type: 3}
   allLevelData:
   - {fileID: 11400000, guid: 652393e91ddf9ed47994f22e7824c512, type: 2}
   - {fileID: 11400000, guid: 87f5a7992d0ba5d4a97c2641f34cddfb, type: 2}
@@ -116,18 +115,18 @@ MonoBehaviour:
   - {fileID: 11400000, guid: 13edb9733a491424b8362e27ddcf186b, type: 2}
   - {fileID: 11400000, guid: db164f40893db2449af1f61cc226e491, type: 2}
   lifeTimer: 1
-  totalLife: 4
-  totalGold: 400
+  totalLife: 5
+  totalGold: 5000
   playerName: 
   avatarId: 
-  unlimitedLivesUntil: 0
-  lastFreeUnlimitedDay: 2026-08-17
+  unlimitedLivesUntil: 1787654007074
+  lastFreeUnlimitedDay: 2026-08-25
   hasRatedGame: 0
   nextRatePromptAt: 0
-  nextLifeAt: 1787379192175
+  nextLifeAt: 0
   totalPowerup1: 3
   totalPowerup2: 3
-  totalPowerup3: 3
+  totalPowerup3: 0
   totalPowerup4: 3
   totalBooster1: 3
   totalBooster2: 3

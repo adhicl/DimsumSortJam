@@ -151,7 +151,12 @@ namespace Models
                 if (totalItems <= 0 && (MDropArea) previous != this)
                 {
                     CreateDimsumFromTray();
-                    _gameController.CheckIsGameNoMove();
+
+                    // Deferred, not immediate. OnEndDrag calls this before it places the piece in
+                    // its new basket, so right now the dragged piece is on no basket at all and the
+                    // board reads emptier than it is - which on the move that finishes a level
+                    // looked exactly like a stuck board.
+                    _gameController.RequestNoMoveCheck();
                 }
             }
         }
@@ -260,8 +265,16 @@ namespace Models
             }
         }
 
+        /// <summary>
+        /// True while the three-in-a-row clear animation is playing. The slots are emptied at the
+        /// top of it and only refilled a second later, so a board read taken partway through sees
+        /// this basket as empty when it is simply mid-animation.
+        /// </summary>
+        public bool IsClearing { get; private set; }
+
         private IEnumerator HideAndShowFinishAnimation(int checkDimsum)
         {
+            IsClearing = true;
             gFrontBasket.SetActive(false);
             gShadowBasket.SetActive(false);
             spriteRenderer.enabled = false;
@@ -278,10 +291,20 @@ namespace Models
             completeSprite.SetDimsumSprites(checkDimsum, this.transform.position);
             yield return new WaitForSeconds(1f);
             
-            gFrontBasket.SetActive(true);
-            gShadowBasket.SetActive(true);
-            spriteRenderer.enabled = true;
-            CreateDimsumFromTray();
+            // Wrapped so the flag always comes back down. A throw in here left the basket
+            // claiming to be mid-clear for the rest of the level, and anything waiting on that -
+            // the deferred no-move check waits on it in a loop - would have waited forever.
+            try
+            {
+                gFrontBasket.SetActive(true);
+                gShadowBasket.SetActive(true);
+                spriteRenderer.enabled = true;
+                CreateDimsumFromTray();
+            }
+            finally
+            {
+                IsClearing = false;
+            }
         }
 
         private List<DimsumCombination> arrayDimsums = new();
@@ -318,6 +341,12 @@ namespace Models
 
         private void CreateDimsum()
         {
+            // A basket can be handed an empty deal: a reshuffle on a nearly finished board gives
+            // one to every basket that has nothing left in it. Indexing [0] threw here, and because
+            // that throw unwound RecreateDropArea before it could clear _rebuildRoutine, the basket
+            // stayed "rebuilding" for good and the reshuffle waiting on it never finished.
+            if (arrayDimsums.Count == 0) return;
+
             DimsumCombination firstCombination = arrayDimsums[0];
             arrayDimsums.RemoveAt(0);
             int[] row = firstCombination.ToArray();
@@ -338,6 +367,13 @@ namespace Models
         private void CreateDimsumFromTray()
         {
             if (arrayDimsums.Count <= 0) return;
+
+            // No plate to deal from. DrawToTop empties trayList the instant a reshuffle is asked
+            // for, but RecreateDropArea only refills it two seconds later - so a basket that
+            // completes a match inside that window has rows waiting and nothing to animate them out
+            // of, and trayList[^1] threw. The pending rebuild replaces arrayDimsums wholesale, so
+            // nothing is lost by leaving these rows alone until it lands.
+            if (trayList.Count == 0) return;
 
             // The front of the stack — the plate the player can actually see, and the only one
             // carrying sprites. The new pieces animate out of it, so its slots are the start
@@ -516,6 +552,12 @@ namespace Models
 
         public void BackToBottom(DimsumCombination[] dimsumArray)
         {
+            // A basket this level does not use is deactivated but keeps whatever open flag it was
+            // serialised with, so it can still look like a rebuild target to a caller. Starting a
+            // coroutine on an inactive object throws, and that throw took the whole reshuffle with
+            // it. The callers now filter these out; this is the backstop.
+            if (!gameObject.activeInHierarchy) return;
+
             // The rebuild only lands two seconds later, so a second reshuffle arriving before then
             // used to stack another one on top: both fired together, each despawning the pieces the
             // other had just created and each appending a whole new stack to trayList. The visible
@@ -528,34 +570,40 @@ namespace Models
         {
             yield return new WaitForSeconds(2f);
 
-            for (int i = 0; i < mDimSums.Length; i++)
+            // Everything below is wrapped so the basket can never be left claiming to be
+            // rebuilding. Anything waiting on IsRebuilding - the automatic reshuffle does, in a
+            // loop - would otherwise wait for a rebuild that already died, forever.
+            try
             {
-                if (mDimSums[i] != null)
+                for (int i = 0; i < mDimSums.Length; i++)
                 {
-                    dimsumSpawner.Remove(mDimSums[i]);
+                    if (mDimSums[i] != null)
+                    {
+                        dimsumSpawner.Remove(mDimSums[i]);
+                    }
+
+                    mDimSums[i] = null;
+                }
+                totalItems = 0;
+
+                arrayDimsums = new List<DimsumCombination>();
+                foreach (var combination in dimsumArray)
+                {
+                    arrayDimsums.Add(combination);
                 }
 
-                mDimSums[i] = null;
+                CreateDimsum();
+                CreateTray();
+
+                gLockedBasket.SetActive(true);
+                gUnlockPaper.SetActive(false);
+                animator.SetTrigger(OpenBasket);
+                this.transform.localEulerAngles = Vector3.zero;
             }
-            totalItems = 0;
-            
-            arrayDimsums = new List<DimsumCombination>();
-            foreach (var combination in dimsumArray)
+            finally
             {
-                arrayDimsums.Add(combination);
+                _rebuildRoutine = null;
             }
-
-            CreateDimsum();
-            CreateTray();
-            
-            gLockedBasket.SetActive(true);
-            gUnlockPaper.SetActive(false);
-            animator.SetTrigger(OpenBasket);
-            // gLockedBasket.SetActive(false);
-            // gUnlockPaper.SetActive(true);
-            this.transform.localEulerAngles = Vector3.zero;
-
-            _rebuildRoutine = null;
         }
         
         #endregion
