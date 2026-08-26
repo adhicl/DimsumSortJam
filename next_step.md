@@ -499,12 +499,16 @@ out of moves ─┘   "lose your heart" └─ Cancel → ReopenRevivePopup(): b
                                                whichever popup you came from
 ```
 
-**`GameController._loseReason` is what Cancel reads**, and it is recorded at each point a loss
-begins — not just when a revive popup opens. That distinction is the whole fix: a stuck board can
-reach the confirmation *without any revive popup*, by declining the offer to open a basket
-(`GiveUpStuckBoard`). Remembering the popup instead of the reason meant that route came back to
-whatever was last on screen — after any earlier timeout, the out-of-time popup — or to nothing at
-all on the first loss, dropping the player onto a dead board with the clock running.
+**`GameController._loseReason` is what Cancel reads**, and it is stamped where the loss begins:
+`ShowOutOfTime()` and `ShowOutOfMove()` each record it before opening their popup. Remembering the
+popup instead of the reason meant Cancel came back to whatever was last on screen — after any
+earlier timeout, the out-of-time popup — or to nothing at all on the first loss, dropping the
+player onto a dead board with the clock running.
+
+Every stuck-board loss now reaches the confirmation *through* the out-of-move popup, so no route
+arrives with no reason recorded. There used to be one — declining the offer to open a basket went
+straight to the confirmation — which is exactly what made recording the reason at the popup
+unreliable.
 
 **The life is spent in `CommitLose` and nowhere else**, so backing out is always free. Neither
 revive popup's Leave button nor its corner X charges anything; both call `LeaveGiveUp()`, which
@@ -1173,19 +1177,53 @@ flag in a `finally`, and both indexers are guarded.
 
 ### A stuck board is sold a rescue, never given one
 
-There is **no free reshuffle**. When the board runs out of moves mid-level, `HandleNoMoves()` offers
-exactly one of two things to buy, in this order:
+There is **no free reshuffle**. When the board runs out of moves mid-level, `HandleNoMoves()` puts
+two things up for sale, and offers them in this order:
 
 1. **A closed basket**, if any is left — `ShowUnlockBasketPopup`, paid with coins or a rewarded ad.
    Space is the real problem, so opening a basket is the fix that fits.
-2. **A reshuffle**, when there is no basket left to sell — `ShowOutOfMove()` opens
-   `Out-Of-Move-Popup`, and paying there is what rearranges the board.
+2. **A reshuffle** — `ShowOutOfMove()` opens `Out-Of-Move-Popup`, and paying there is what
+   rearranges the board. Reached either because no basket is left to sell, or because the player
+   turned the basket down: the decline handler passed to `ShowUnlockBasketPopup` **is**
+   `ShowOutOfMove`.
+
+Turning down the basket is therefore not giving up — it is turning down one of two offers. Only the
+out-of-move popup's own Leave button ends the level, which keeps every way of losing a stuck board
+on a single route (and is why `_loseReason` is always set by the time the confirmation opens).
 
 `HandleNoMoves()` never reshuffles by itself. It only opens a popup.
 
-Note that "locked basket" in the code means `DisplayedBasket.Closed` — the kind bought open.
-`DisplayedBasket.Locked` is the other kind, which opens by matching its printed dim sum and is
-never sold, so `HasLockedBasketLeft()` deliberately ignores it.
+Note that the basket for sale is `DisplayedBasket.Closed`. `DisplayedBasket.Locked` is the other
+kind, which opens by matching the dim sum printed on it and is never sold, so
+`HasClosedBasketLeft()` deliberately ignores it.
+
+#### What counts as a move
+
+`HasAnyMove()` answers one question: **can the player still clear a basket that has plates under
+it?** A basket only gives up the plate it is standing on — and deals the next one — once its last
+dim sum has been dragged off it, so that is the move the game is made of. Three in a row is one way
+to get there, not the definition.
+
+Two rules do all the work:
+
+- **Only `Displayed` baskets are space.** A `Closed` basket has to be bought open, a `Locked` one
+  opens by matching its printed dim sum, and `CheckDropPosition` refuses a drop on either. Neither
+  is ever dealt any dim sums, so both used to read as **three free slots apiece** — two closed
+  baskets were enough to convince the game the board always had a move, and the stuck-board offer
+  never appeared at all. `IsPlayableBasket` also checks `activeInHierarchy`, because `SetUpBaskets`
+  deactivates the spares a smaller level does not need without touching their open flag.
+- **Space adds up across baskets.** Emptying a basket holding two pieces needs two free slots
+  *somewhere*, not one basket with exactly two holes — which is what the old check demanded, and
+  why it called perfectly playable boards dead. The basket's own holes are excluded: they are no
+  help in emptying it.
+
+The match route is kept, but it is space-aware. `HasReadyMatch` answers "three of these exist
+somewhere", which is the right question for lighting the magnifier button and the wrong one here:
+on a board with no hole left in it those three can never be gathered. `CanGatherThree` adds the
+missing half. Gathering onto the basket that already holds the most of a type is always the
+cheapest route — it needs room for the ones it is missing, and evicting its other pieces frees
+exactly that much room, so the only thing that can block the match is having nowhere to evict to.
+Write that out and the host's own holes cancel, leaving `free + held >= 3`.
 
 #### What a revive grants depends on how the level was failing
 

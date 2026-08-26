@@ -827,60 +827,159 @@ namespace Controllers
         }
 
         /// <summary>
-        /// True while the player still has something to do: either a match is available on top,
-        /// or some basket's contents can be moved into space that exists somewhere else.
+        /// True while the player still has something to do.
+        ///
+        /// Sorting is the game, so the move that matters is emptying a basket: a basket only
+        /// gives up the plate it is standing on - and deals the next one - once its last dim sum
+        /// has been dragged off it. The question is therefore whether any basket that still has
+        /// plates under it can be emptied into the space left elsewhere on the board. A match
+        /// counts too, because completing one clears a basket the same way, but it is not
+        /// required: a board with no match in it is still perfectly playable.
+        ///
+        /// Only Displayed baskets are space. A Closed basket has to be bought open and a Locked
+        /// one opens by matching its printed dim sum; <c>CheckDropPosition</c> refuses a drop on
+        /// either, and neither is ever dealt anything - so both used to read as three free slots
+        /// apiece. Two closed baskets were enough to convince this that the board always had a
+        /// move, and the stuck-board offer never appeared at all.
         /// </summary>
         private bool HasAnyMove()
         {
-            if (HasReadyMatch) return true;    // a match is available
+            if (_gameBaskets == null) return false;
 
-            int hasSingleEmptyBasket = 0;
-            int hasDoubleEmptyBasket = 0;
-            int hasTripleEmptyBasket = 0;
+            int freeSlots = 0;
             foreach (var basket in _gameBaskets)
             {
-                int totalEmpty = 3 - basket.TotalFilledDimsums();
-                if (totalEmpty == 1) hasSingleEmptyBasket++;
-                else if (totalEmpty == 2) hasDoubleEmptyBasket++;
-                else if (totalEmpty == 3) hasTripleEmptyBasket++;
+                if (!IsPlayableBasket(basket)) continue;
+                freeSlots += 3 - basket.TotalFilledDimsums();
             }
 
             foreach (var basket in _gameBaskets)
             {
+                if (!IsPlayableBasket(basket)) continue;
+
+                // Nothing under it means nothing to win by clearing it - emptying it just moves
+                // the same pieces around.
                 if (!basket.HasStillTrayLeft()) continue;
-                if (hasSingleEmptyBasket > 0 && basket.TotalFilledDimsums() == 1) return true;
-                if (hasDoubleEmptyBasket > 0 && basket.TotalFilledDimsums() == 2) return true;
-                if (hasTripleEmptyBasket > 0 && basket.TotalFilledDimsums() == 3) return true;
+
+                // Its own holes are no help in emptying it, and the pieces coming off it can be
+                // split across as many baskets as it takes. One basket happening to have exactly
+                // the right number of holes was never the requirement.
+                int filled = basket.TotalFilledDimsums();
+                if (freeSlots - (3 - filled) >= filled) return true;
             }
 
-            return false;
+            return HasReachableMatch(freeSlots);
         }
 
-        /// <summary>True when at least one basket is still closed and could be bought open.</summary>
-        private bool HasLockedBasketLeft()
+        /// <summary>
+        /// A basket the player can actually drop into: open, and in use by this level.
+        /// <see cref="SetUpBaskets"/> deactivates the spares a smaller level does not need without
+        /// touching their open flag, so being Displayed is not on its own enough.
+        /// </summary>
+        private static bool IsPlayableBasket(MDropArea basket)
         {
-            foreach (var basket in _gameBaskets)
+            return basket != null
+                   && basket.gameObject.activeInHierarchy
+                   && basket.GetOpenBasket() == DisplayedBasket.Displayed;
+        }
+
+        /// <summary>
+        /// True when three of one dim sum can still be brought together on a single basket.
+        ///
+        /// <see cref="HasReadyMatch"/> is not enough on its own. It answers "three of these exist
+        /// somewhere", which is the right question for lighting the magnifier button but not for
+        /// deciding whether the player can act: on a board with no hole left in it those three
+        /// can never be gathered, and calling that a move strands the player with no offer.
+        /// </summary>
+        private bool HasReachableMatch(int freeSlots)
+        {
+            for (int b = 0; b < _gameBaskets.Count; b++)
             {
-                if (basket.GetOpenBasket() == DisplayedBasket.Closed) return true;
+                if (!IsPlayableBasket(_gameBaskets[b])) continue;
+
+                MDimSum[] slots = _gameBaskets[b].mDimSums;
+                for (int s = 0; s < slots.Length; s++)
+                {
+                    if (slots[s] == null) continue;
+                    if (slots[s].dimsumType == -1) continue;
+                    if (CanGatherThree(slots[s].dimsumType, freeSlots)) return true;
+                }
             }
+
             return false;
         }
 
         /// <summary>
-        /// The board is stuck mid-level. Two rescues, and the player pays for both: buy a closed
-        /// basket open, or - when there is no basket left to sell - buy a reshuffle from the
-        /// out-of-move popup, with coins or a rewarded ad.
+        /// Whether three of <paramref name="dimsumType"/> can be gathered onto one basket.
+        ///
+        /// Gathering onto the basket that already holds the most of the type is always the
+        /// cheapest route. That basket needs room for the ones it is missing, and evicting its
+        /// other pieces frees exactly that much room - so the only thing that can block the match
+        /// is having nowhere to evict them to. Written out, "free slots away from the host at
+        /// least covers the host's other pieces" cancels down to <c>free + held &gt;= 3</c>,
+        /// which is why what the host holds besides the match never appears below.
+        /// </summary>
+        private bool CanGatherThree(int dimsumType, int freeSlots)
+        {
+            int total = 0;
+            int bestHeld = 0;
+
+            foreach (var basket in _gameBaskets)
+            {
+                if (!IsPlayableBasket(basket)) continue;
+
+                int held = 0;
+                foreach (var dimsum in basket.mDimSums)
+                {
+                    if (dimsum != null && dimsum.dimsumType == dimsumType) held++;
+                }
+
+                total += held;
+                if (held > bestHeld) bestHeld = held;
+            }
+
+            return total >= 3 && freeSlots + bestHeld >= 3;
+        }
+
+        /// <summary>
+        /// True when a basket this level uses is still closed, so it can be bought open. Closed,
+        /// not Locked: a Locked basket opens by matching the dim sum printed on it and is never
+        /// sold, so it is not something the player can be offered here.
+        /// </summary>
+        private bool HasClosedBasketLeft()
+        {
+            foreach (var basket in _gameBaskets)
+            {
+                if (IsClosedBasket(basket)) return true;
+            }
+            return false;
+        }
+
+        private static bool IsClosedBasket(MDropArea basket)
+        {
+            return basket != null
+                   && basket.gameObject.activeInHierarchy
+                   && basket.GetOpenBasket() == DisplayedBasket.Closed;
+        }
+
+        /// <summary>
+        /// The board is stuck mid-level. Two rescues, the player pays for both, and they are
+        /// offered in order: a closed basket first, because space is what a stuck board is short
+        /// of, then a reshuffle from the out-of-move popup. Either is bought with coins or a
+        /// rewarded ad.
+        ///
+        /// Turning the basket down is not giving up - it is turning down one of two offers, so
+        /// the other one follows. Only the out-of-move popup's own Leave button ends the level,
+        /// which keeps every way of losing a stuck board on a single route.
         ///
         /// Nothing here reshuffles on its own. A free reshuffle undercuts both offers, and it also
         /// rearranged the board under the player with no explanation of why.
         /// </summary>
         private void HandleNoMoves()
         {
-            if (HasLockedBasketLeft())
+            if (HasClosedBasketLeft())
             {
-                // Space is the actual problem, so opening a basket is the fix that fits.
-                // Declining is a decision to give up, and routes to the same confirmation.
-                ShowUnlockBasketPopup(UnlockStuckBasket, GiveUpStuckBoard);
+                ShowUnlockBasketPopup(UnlockStuckBasket, ShowOutOfMove);
                 return;
             }
 
@@ -968,25 +1067,14 @@ namespace Controllers
             Debug.LogWarning($"[Game] No move after {maxReshuffleAttempts} reshuffles on the opening deal; leaving the board as dealt.");
         }
 
-        /// <summary>
-        /// Walked away from the offer to open a basket on a stuck board. This route reaches the
-        /// confirmation without any revive popup having opened, so it has to record the reason
-        /// itself — otherwise cancelling would come back to whatever popup was last shown, which
-        /// after an earlier timeout is the out-of-time one.
-        /// </summary>
-        private void GiveUpStuckBoard()
-        {
-            _loseReason = LoseReason.OutOfMoves;
-            ShowLoseConfirm();
-        }
-
         // Opens the first still-closed basket. Used when the unlock popup is reached because the
-        // board is stuck rather than because the player tapped a particular basket.
+        // board is stuck rather than because the player tapped a particular basket. The test has
+        // to be the one HasClosedBasketLeft uses, or the offer appears and opens nothing.
         private void UnlockStuckBasket()
         {
             foreach (var basket in _gameBaskets)
             {
-                if (basket.GetOpenBasket() != DisplayedBasket.Closed) continue;
+                if (!IsClosedBasket(basket)) continue;
 
                 _soundController.PlayBasketOpenClip();
                 basket.SetOpen(DisplayedBasket.Displayed);
