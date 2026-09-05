@@ -26,6 +26,8 @@ namespace UI
         [Tooltip("Used only for the default avatar a brand new player starts with.")]
         [SerializeField] private AvatarCatalog avatarCatalog;
 
+        [Tooltip("Assets/Sounds/GameAudioMixer.mixer. Muting is applied here, at boot, because " +
+                 "a build starts every run with the mixer at its authored volumes.")]
         public AudioMixer mixer;
 
         private float _elapsed;
@@ -90,9 +92,8 @@ namespace UI
 
         private IEnumerator DoLoading()
         {
-            mixer.SetFloat("SfxVolume", _gameSetting.soundMute ? -80f : 0f);
-            mixer.SetFloat("MusicVolume", _gameSetting.musicMute ? -80f : 0f);
-        
+            AudioMix.Apply(mixer, _gameSetting, this);
+
             while (true)
             {
                 loadingText.text = $"Loading {_gameSetting.currentLevel}";

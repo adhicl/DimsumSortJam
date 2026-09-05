@@ -10,6 +10,8 @@ namespace UI
 {
     public class SettingPopupHome : MonoBehaviour
     {
+        [Tooltip("Assets/Sounds/GameAudioMixer.mixer. The only thing that actually silences the " +
+                 "game - soundMute/musicMute are saved, but nothing else reads them.")]
         public AudioMixer mixer;
         private GameSetting _setting;
         
@@ -28,7 +30,7 @@ namespace UI
         {
             _setting.soundMute = !_setting.soundMute;
             soundSlider.value = _setting.soundMute ? 0 : 1;
-            mixer.SetFloat("SfxVolume", _setting.soundMute ? -80f : 0f);
+            AudioMix.ApplySound(mixer, _setting.soundMute, this);
             _setting.SaveData();
         }
         
@@ -36,7 +38,7 @@ namespace UI
         {
             _setting.musicMute = !_setting.musicMute;
             musicSlider.value = _setting.musicMute ? 0 : 1;
-            mixer.SetFloat("MusicVolume", _setting.musicMute ? -80f : 0f);
+            AudioMix.ApplyMusic(mixer, _setting.musicMute, this);
             _setting.SaveData();
         }
         

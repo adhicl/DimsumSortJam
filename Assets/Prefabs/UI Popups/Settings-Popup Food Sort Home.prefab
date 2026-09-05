@@ -1304,7 +1304,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8feabec993e84fb2abab3718e7c8a295, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UI.SettingPopupHome
-  mixer: {fileID: 24100000, guid: 7e984f512e89b60468e829489e8883e3, type: 2}
+  mixer: {fileID: 24100000, guid: 2c3106f8b8ab4bb7a62278e767c46966, type: 2}
   soundSlider: {fileID: 2754561067598187682}
   musicSlider: {fileID: 6748891014926007844}
 --- !u!1001 &366778221687999653

@@ -1254,6 +1254,53 @@ REVIVE", and the coin cost is `GameSetting.ReviveCost` (600), written into the l
   form a move it goes to the lose confirmation — deliberately **not** back to `ShowOutOfMove()`,
   which would charge a second time for the same rescue.
 
+### The audio mixer is the game's own asset now, not Feel's
+
+Muting runs entirely through an `AudioMixer`. `GameSetting.soundMute` / `musicMute` are saved and
+reloaded, but **nothing else in the game reads them** — no `AudioSource.mute`, no volume field — so
+the mixer is not one way of silencing the game, it is the only one.
+
+The mixer the game had always used was **Feel's** `MMSoundManagerAudioMixer.mixer`, and the
+"clean up Feel" commit (`80fc7fee`) deleted it along with the rest of the package. Nothing failed at
+build time, because a missing asset reference is a serialized GUID that no longer resolves. It
+failed at runtime instead:
+
+```
+MissingReferenceException: The variable mixer of LoadingScene doesn't exist anymore.
+MissingReferenceException: The variable mixer of SettingPopupHome doesn't exist anymore.
+  at UnityEngine.Audio.AudioMixer.SetFloat
+```
+
+It is restored as **`Assets/Sounds/GameAudioMixer.mixer`** — the same asset, byte for byte, apart
+from its name. Putting it back under `Assets/Feel` would only queue the same deletion up again.
+
+The YAML was copied from the commit before the deletion, so every internal fileID (the Master,
+Music, Sfx and UI groups, the snapshot, the effects) and every exposed-parameter GUID is unchanged.
+Only the *asset* GUID differs, which made repointing the 12 referencing files a plain GUID
+substitution with no fileID remapping: 8 scenes carry an AudioSource on the Music group, `Sound.prefab`
+carries one on Sfx, and the three `mixer` fields point at the asset itself.
+
+**A third-party package folder is not a home for something the game depends on.** If an asset from
+one is load-bearing, copy it into the project's own folders and reference the copy.
+
+#### The failure was silent for exactly as long as the contract was anonymous
+
+The parameter names and the decibel convention were string literals written out six times across
+three scripts. Nothing was named, so nothing noticed when the thing behind the names disappeared.
+`Commons.AudioMix` now holds the contract — `SfxVolumeParam`, `MusicVolumeParam`, and what "muted"
+means in dB — and the three call sites go through it.
+
+It also reports a missing mixer instead of throwing, which is worth more than the audio:
+
+| Caller | What the exception used to cost |
+|---|---|
+| `LoadingScene.DoLoading` | aborted the coroutine, so the animated "Loading..." text never ran |
+| `SettingPopup` / `SettingPopupHome` | unwound past `SaveData()`, so the toggle neither applied nor persisted |
+
+Note `mixer == null` rather than `is null` in `AudioMix.SetVolume`. A reference to a deleted asset
+is not a real null, and only Unity's overloaded comparison recognises it — which is precisely the
+case that has to be caught here.
+
 ### External Dependency Manager — installed once, via UPM
 
 Unity used to warn on every reload that `Google.IOSResolver.dll` "will not be loaded". Harmless in
