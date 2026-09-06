@@ -25,6 +25,8 @@ missing:
 
 claude --resume 72142d36-bd3e-4f7c-bd6e-894d972f7aae
 
+claude --resume 5c1b4e7f-b84b-41c0-b4f8-ae53916200e1
+
 Hi, I am also in the middle of close testing. Let us help each other.
 Please join google group: https://groups.google.com/g/yourfavoritegamestudiotester
 Web Link: https://play.google.com/apps/testing/com.yourfavoritegamestudio.Jajanan
