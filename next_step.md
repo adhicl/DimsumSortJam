@@ -44,11 +44,17 @@ any of it functions on a real device.
       rewarded ad on live units.
 - [x] ~~**Publish the two legal pages**~~ — **both live, fetched 2026-08-17** (§5). `app-ads.txt`
       is up too, carrying the correct publisher line for `pub-8590881680208951`.
+- [ ] **Register the nine Analytics event schemas** (§3a). Version code 5 reported nothing
+      because the client never started data collection; that is fixed for version code 6, which
+      also sends nine custom events. The standard events will flow on the fix alone, but the
+      custom ones stay invisible until their schemas exist in Event Manager.
 - [ ] **Extend the privacy policy** (§5). The published page covers Google AdMob / advertising ID
       and Google Play Games, but **does not mention Unity Gaming Services (pseudonymous player id,
-      Cloud Save) or Google Play Billing (purchase records)** — both of which the app uses. Play's
-      Data safety review compares the form against the policy, and this gap is exactly the kind of
-      mismatch that gets a submission rejected.
+      Cloud Save), Unity Analytics (gameplay events), or Google Play Billing (purchase records)** —
+      all of which the app uses. Play's Data safety review compares the form against the policy,
+      and this gap is exactly the kind of mismatch that gets a submission rejected. The analytics
+      line matters twice over now: the consent dialog tells the player their data is anonymous and
+      points them at the policy, so the policy has to actually describe what is collected.
 
 ---
 
@@ -218,6 +224,107 @@ services answer. What that run proved, and what it could not:
       **Not verifiable from the Editor**: `[IAP] 15 products ready` there is the built-in fake
       store answering, not Google Play. This one only proves itself on a real device.
 - Economy is still unused; balances live in the Cloud Save snapshot instead.
+- [ ] **Analytics** — enable the service, then register the nine custom event schemas. Full
+      procedure in §3a below. **This is the remaining blocker on analytics data**: the client
+      sends all nine as of version code 6, but an event with no matching schema is rejected by
+      validation and never reaches a report, which looks identical to the SDK being broken.
+
+---
+
+## 3a. Unity Cloud Dashboard — Analytics Event Manager
+
+**Why this exists:** version code 5 sent nothing at all, because
+`AnalyticsService.Instance.StartDataCollection()` was never called — since Analytics SDK 5.0 the
+service ships inactive and collects nothing, not even the automatic standard events, until that
+call is made. It is called now (`GameServicesController.StartAnalytics`). That fix alone gets the
+**standard** events flowing. The **custom** events below additionally need schemas registered here
+before they will chart.
+
+Dashboard is at **https://cloud.unity.com** ▸ project *DimsumSortJam* ▸ **Analytics**. Exact menu
+wording drifts between dashboard revisions — go by the names below, not by pixel position.
+
+### Step 1 — turn the service on
+
+Analytics ▸ **enable** for the project, if it is not already. Nothing needs pasting; the project is
+already linked by `cloudProjectId 968e9456-…`, which is why Authentication and Cloud Save work.
+
+### Step 2 — create the nine custom events
+
+**Analytics ▸ Event Manager ▸ Custom Events ▸ create a new event.** Do this nine times, once per
+row. For each one, enter the event name, then add every parameter listed with its type.
+
+> **Names and parameter keys are case-sensitive and must match character for character.** They
+> come from `Assets/Scripts/Commons/GameAnalytics.cs`, which is the only file in the game that
+> spells them. A typo here does not error anywhere — the event simply never appears.
+
+| # | Event name | Parameter | Type |
+|---|---|---|---|
+| 1 | `levelStarted` | `levelIndex` | Integer |
+| 2 | `levelCompleted` | `levelIndex` | Integer |
+| | | `durationSeconds` | Integer |
+| | | `reviveCount` | Integer |
+| 3 | `levelFailed` | `levelIndex` | Integer |
+| | | `failReason` | String |
+| | | `durationSeconds` | Integer |
+| | | `reviveCount` | Integer |
+| 4 | `levelRevived` | `levelIndex` | Integer |
+| | | `reviveReason` | String |
+| 5 | `boardReshuffled` | `levelIndex` | Integer |
+| | | `attempts` | Integer |
+| | | `rescued` | Boolean |
+| 6 | `reviveOfferShown` | `levelIndex` | Integer |
+| | | `offerReason` | String |
+| 7 | `rewardedAdCompleted` | `placement` | String |
+| 8 | `rewardedAdUnavailable` | `placement` | String |
+| 9 | `iapPurchased` | `productID` | String |
+
+> **`productID` ends in a capital `ID`** — it is the one key that does not follow the `levelIndex`
+> lower-camel shape, so it is the easiest of the nine to mistype as `productId`. The client sends
+> `productID`; the schema must say `productID`.
+
+If the type dropdown uses different words than the table (`INT` / `STRING` / `BOOL` rather than
+Integer / String / Boolean), pick the equivalent — the SDK sends C# `int`, `string` and `bool`.
+
+**Values the string parameters can take**, so you can build segments without waiting to see them
+arrive:
+
+| Parameter | Possible values |
+|---|---|
+| `failReason`, `reviveReason`, `offerReason` | `outOfTime`, `outOfMoves` |
+| `placement` | `continueGame`, `reviveOutOfMove`, `unlockBasket`, `buyPowerUp`, `doubleReward` |
+| `productID` | the 15 IDs in §1 |
+
+`levelIndex` is **0-based** — it is `GameSetting.currentLevel` as stored, so level 1 on screen
+arrives as `levelIndex 0`. Add 1 in the dashboard if you chart it for anyone non-technical.
+
+### Step 3 — publish the schemas, if your dashboard asks
+
+Some dashboard revisions keep newly created events in a draft state until you explicitly save or
+publish the set. If there is such a control, use it — a draft schema does not validate incoming
+events.
+
+### Step 4 — verify
+
+In order of how fast they answer:
+
+1. **Editor, immediately** — *Window ▸ Analytics ▸ Debug Panel* in Unity lists events the moment
+   they are recorded, before any upload. This proves the **call site fires**. It says nothing
+   about whether the schema is right, because it never leaves the machine.
+2. **Device, within a minute** — logcat must show
+   `[GameServices] Analytics data collection started.` If that line is missing, UGS init failed
+   and nothing will ever be sent; no amount of dashboard work will help.
+3. **Dashboard, hours later** — Analytics ▸ **Data Explorer** / event browser. Check the
+   **Production** environment: the game never calls `SetEnvironmentName`, so everything lands in
+   `production`, including Editor Play mode sessions (see the note under *Analytics events*).
+
+> **Do not judge a build in the first hour.** UGS Analytics is not real-time and routinely takes
+> several hours to surface events even when the whole pipeline is healthy. This is the single
+> most common reason to conclude "it is still broken" while it is in fact working. Confirm with
+> logcat first, then wait.
+
+If an event never appears but logcat shows collection started, the schema is the suspect: check
+the Event Manager entry for a name or parameter-key mismatch against `GameAnalytics.cs` before
+touching any code.
 
 ---
 
@@ -990,6 +1097,149 @@ it. Rendering the canvas camera to a `RenderTexture` works when the Game view wi
 
 All the copy uses TMP **auto-sizing** (message 24–46, buttons 24–42), so a longer line shrinks to
 fit rather than overflowing the card.
+
+## Analytics events
+
+This is the **code** side. The console work — enabling the service and registering the schemas —
+is **§3a**, and is still outstanding.
+
+Version code 5 sent **nothing at all**, not even the automatic standard events, because
+`StartDataCollection()` was never called; since Analytics SDK 5.0 the service ships inactive until
+it is. `GameServicesController.StartAnalytics` now calls it right after UGS init and opens the gate
+on `GameAnalytics`.
+
+All custom events go through `Commons/GameAnalytics.cs`, the only file that names them. Two things
+must both be true for an event to reach a chart:
+
+1. The client calls it — **done**, call sites below.
+2. A schema with the exact name and parameter keys exists in Event Manager — **not done**, §3a.
+
+| Event | Parameters | Fired from |
+|---|---|---|
+| `levelStarted` | `levelIndex` int | `GameController.ResetGame` |
+| `levelCompleted` | `levelIndex` int, `durationSeconds` int, `reviveCount` int | `OnFinishUpdateProgress`, when the win is decided |
+| `levelFailed` | `levelIndex` int, `failReason` string, `durationSeconds` int, `reviveCount` int | `CommitLose` — the confirmed give-up only |
+| `levelRevived` | `levelIndex` int, `reviveReason` string | `GrantRevive` |
+| `boardReshuffled` | `levelIndex` int, `attempts` int, `rescued` bool | `ReshuffleUntilPlayable`, both outcomes |
+| `reviveOfferShown` | `levelIndex` int, `offerReason` string | `ShowRevivePopup`, new offers only |
+| `rewardedAdCompleted` | `placement` string | `RewardedAdController.ShowAd` reward callback |
+| `rewardedAdUnavailable` | `placement` string | `ShowAd` when there is no fill (device only) |
+| `iapPurchased` | `productID` string | `IAPController.OnPurchasePending`, inside the already-granted guard |
+
+`levelIndex` is 0-based; the reason and placement strings are listed in §3a. All of them are
+constants on `GameAnalytics`, so change them there rather than at a call site — and update the
+Event Manager schema to match if you do.
+
+Two deliberate choices worth keeping:
+
+- **`levelFailed` is not the revive popup.** Opening the popup is `reviveOfferShown`; the level is
+  only *failed* once the player confirms giving up. Pairing the two gives the offer's take rate,
+  and counting the popup as a failure would have double-counted every rescued level.
+- **`rewardedAdCompleted` fires in the reward callback, not next to `Show`.** A user who backs out
+  of an ad never earns the reward, and counting the presentation would overstate it.
+
+Verification steps are in §3a, step 4.
+
+Note that **Editor Play mode sessions report into the same production environment as real
+players** wherever consent resolves to granted — which, in the Editor, it always does (see
+*Analytics consent*). If that starts skewing the numbers, gate `StartAnalytics` behind
+`!Application.isEditor`. It is left on because the Debug Panel is the only practical way to verify
+a new event.
+
+---
+
+## Analytics consent
+
+**Nothing is collected until the player's answer says so.** `AnalyticsConsent` stores that answer
+(PlayerPrefs `analytics_consent`), `GameServicesController` acts on it, and
+`AnalyticsConsentPrompt` decides whether to ask. Three states, defaulting to Unknown — an
+unanswered prompt collects nothing, so "we are collecting" is always a recorded decision rather
+than the absence of one.
+
+### Who gets asked
+
+Only players in a region that requires a privacy prompt. Everyone else is opted in silently, which
+is what the game did before consent existed and what `PrivacyOptionsButton` already does for the ad
+form — it shows itself only where a form was required. The region comes from UMP
+(`ConsentController.IsConsentRequiredRegion`), which reports `Required` or `Obtained` for the EEA,
+UK, Switzerland and the regulated US states, and `NotRequired` for most of the world. Google makes
+that determination, which is why it is read back off UMP rather than guessed from a locale.
+
+> **This is Google's determination for *ad* consent.** It is the best regional signal in the
+> project and the prompt is genuinely separate from the ad form, but pointing an ad-consent region
+> check at an analytics question is a judgement call, not a legal opinion. If a lawyer reviews
+> this, that is the line to show them. The stricter alternative is to ask everybody.
+
+### The flow
+
+1. UGS finishes initializing. If consent is already Granted, collection starts immediately — a
+   returning player does not wait on UMP.
+2. `AnalyticsConsentPrompt.AskIfNeeded()` waits for the UMP flow to resolve.
+3. Answer already stored → nothing happens. Region not regulated → opted in, no dialog. Otherwise
+   the prompt is shown.
+4. The answer is stored and `AnalyticsConsent.OnChanged` fires, which starts collection or purges.
+
+**Timing.** On the *first* launch, collection does not begin until step 3 — it waits on the UMP
+round-trip, typically a second or two. Nothing is lost by that: the standard startup events
+(`gameStarted`, `sessionStart`, `clientDevice`) are generated *by* `StartDataCollection`, not
+before it, so they are simply timestamped a moment later. Custom events fired before that point
+would be dropped, but reaching a level takes several seconds of navigation, so none are realistically
+at risk. On *every later* launch the stored answer is read before UMP is consulted and collection
+starts immediately after UGS init, with no wait at all.
+
+**If the region cannot be determined** — the UMP update failed because the device is offline, or
+because no consent message is published yet (§4a) — no answer is stored and nothing is collected
+that session. The question stays open and is retried on the next launch. This is deliberate:
+`ConsentController` resolves even when the update fails, leaving `ConsentStatus` at `Unknown`, and
+`Unknown` must not be read as "not in the EEA". Treating the two alike would permanently opt in an
+EEA player whose first launch happened to be offline, and they would never be asked again. The cost
+is that a genuinely offline first session reports nothing.
+
+### Withdrawing
+
+**Settings ▸ Privacy options** reopens the ad consent form and then the analytics prompt behind it,
+sequentially. Both privacy choices sit behind that one existing entry rather than getting a row
+each — it is already visible in exactly the regions where a prompt is owed, and a player looking
+for "Privacy options" is looking for all of it. The `alsoAskAnalyticsConsent` checkbox on
+`PrivacyOptionsButton` controls this; **turning it off removes the only route to withdrawing
+analytics consent** unless you wire a dedicated button.
+
+Withdrawal calls `RequestDataDeletion()`, not `StopDataCollection()`. It disables collection *and*
+erases what the backend already holds, is safe to call in any SDK state, and retries across
+sessions if the player is offline. `StopDataCollection` would only stop the future, which is the
+weaker reading of withdrawing consent. Re-granting works afterwards — the SDK resets its deletion
+status on the next `StartDataCollection`.
+
+### The prompt itself
+
+A **native Android dialog** (`NativeDialog`), not a Unity prefab: it has to appear during Splash
+before any game canvas exists, and a system dialog is what players expect a privacy question to
+look like. To replace it with a styled popup, reimplement `NativeDialog.ShowConfirm` — nothing else
+changes.
+
+Android hands dialog callbacks back on its own UI thread, where PlayerPrefs and the Analytics SDK
+are not safe to touch, so `MainThreadDispatcher` marshals the answer back to Unity's main thread.
+It spawns itself on first use; there is nothing to place in a scene.
+
+Where no native dialog exists the call returns a fallback answer instead of hanging: **false on
+device** (no dialog means no informed answer, so never opt in), but **true in the Editor**, since
+otherwise every event would be a silent no-op and the Debug Panel would be useless for verifying
+call sites.
+
+### Testing it
+
+`AnalyticsConsent.Reset()` forgets the answer so the prompt appears again on the next launch. To
+see the real dialog, you need a regulated region: set `debugGeography` to `EEA` on the
+ConsentController in Splash and add your device's hashed id to `testDeviceHashedIds` (the Ads SDK
+prints it in logcat). In the Editor the UMP bridge is a placeholder that always answers
+`NotRequired`, so the dialog never appears there.
+
+Verified in the Editor on 2026-09-11: grant → `[GameServices] Analytics data collection started.`,
+deny → `[GameServices] Analytics stopped and data deletion requested.` and `GameAnalytics.IsReady`
+false, re-grant → collection back on. Events recorded while denied are dropped without throwing.
+**The native dialog itself is only exercisable on device** — the Editor never shows it.
+
+---
 
 ## Reference — what is already wired in Unity
 

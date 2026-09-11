@@ -23,7 +23,7 @@ missing:
 
 * = is fixed
 
-claude --resume 72142d36-bd3e-4f7c-bd6e-894d972f7aae
+claude --resume 05153f4e-14d4-44ec-b90e-76adb65c4de6
 
 Hi, I am also in the middle of close testing. Let us help each other.
 Please join google group: https://groups.google.com/g/yourfavoritegamestudiotester

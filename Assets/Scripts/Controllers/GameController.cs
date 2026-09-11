@@ -42,7 +42,15 @@ namespace Controllers
         // the number the HUD counts up to and lags it by half a second, which is exactly the window
         // the no-move check runs in - reading the tweened value there judges a won level unfinished.
         private int _awardedTotal = 0;
-        
+
+        // Analytics bookkeeping for the current attempt, reset in ResetGame. Wall-clock rather
+        // than the countdown: _timer is spent, paused by popups and topped up by revives, so
+        // 300 - _timer is not how long the player was on the level.
+        private float _levelStartTime;
+        private int _reviveCount;
+
+        private int LevelDurationSeconds => Mathf.RoundToInt(Time.time - _levelStartTime);
+
         public float Timer
         {
             get => _timer;
@@ -113,7 +121,11 @@ namespace Controllers
             
             _timer = 5f * 60f;
             isTimerPause = false;
-            
+
+            _levelStartTime = Time.time;
+            _reviveCount = 0;
+            GameAnalytics.LevelStarted(_gameSetting.currentLevel);
+
             CreateLevel();
         }
 
@@ -355,6 +367,11 @@ namespace Controllers
             if (_currentTotal >= _totalGoal)
             {
                 gameStatus = Settings.GAME_STATUS.win;
+
+                // Recorded here rather than in ShowWin: the win is decided at this line, and
+                // ShowWin yields for two tenths of a second before it does anything visible.
+                GameAnalytics.LevelCompleted(_gameSetting.currentLevel, LevelDurationSeconds, _reviveCount);
+
                 StartCoroutine(ShowWin());
             }
         }
@@ -422,6 +439,11 @@ namespace Controllers
             OutOfTime,
             OutOfMoves
         }
+
+        // The enum's own ToString would work, but its names are free to change with the code and
+        // the dashboard's saved segments are not. Mapping here pins the wire format.
+        private static string ReasonOf(LoseReason reason) =>
+            reason == LoseReason.OutOfTime ? GameAnalytics.ReasonOutOfTime : GameAnalytics.ReasonOutOfMoves;
 
         // Why the level is being lost, so cancelling the confirmation comes back to the popup the
         // player actually came from. The reason is recorded rather than the popup instance or its
@@ -525,7 +547,12 @@ namespace Controllers
         // Opens the revive popup that matches the current reason. Also the way back in when the
         // player cancels the confirmation, which is why it reads _loseReason rather than taking
         // a prefab: the caller cancelling has no idea which popup started this.
-        private void ShowRevivePopup()
+        /// <param name="isNewOffer">
+        /// False when the player is coming back from cancelling the give-up confirmation. The same
+        /// popup reopens, but it is not a new offer — counting it would inflate the impressions the
+        /// revive take rate is measured against.
+        /// </param>
+        private void ShowRevivePopup(bool isNewOffer = true)
         {
             gameStatus = Settings.GAME_STATUS.pause;
 
@@ -544,6 +571,8 @@ namespace Controllers
                 ShowLoseConfirm();
                 return;
             }
+
+            if (isNewOffer) GameAnalytics.ReviveOfferShown(_gameSetting.currentLevel, ReasonOf(_loseReason));
 
             m_popup = Instantiate(prefab, m_canvas.transform, false);
             m_popup.SetActive(true);
@@ -578,7 +607,7 @@ namespace Controllers
         /// </summary>
         public void ReopenRevivePopup()
         {
-            ShowRevivePopup();
+            ShowRevivePopup(isNewOffer: false);
         }
 
         /// <summary>
@@ -587,6 +616,9 @@ namespace Controllers
         public void CommitLose()
         {
             gameStatus = Settings.GAME_STATUS.lose;
+
+            GameAnalytics.LevelFailed(
+                _gameSetting.currentLevel, ReasonOf(_loseReason), LevelDurationSeconds, _reviveCount);
 
             // The one place a life is spent. A running unlimited-lives window makes it free.
             _gameSetting.TrySpendLife();
@@ -686,6 +718,9 @@ namespace Controllers
         /// </summary>
         public void GrantRevive()
         {
+            _reviveCount++;
+            GameAnalytics.LevelRevived(_gameSetting.currentLevel, ReasonOf(_loseReason));
+
             if (_loseReason == LoseReason.OutOfMoves)
             {
                 ReviveWithReshuffle();
@@ -1047,12 +1082,16 @@ namespace Controllers
 
                 if (HasAnyMove())
                 {
+                    // attempt is zero-based; report how many reshuffles it actually took.
+                    GameAnalytics.BoardReshuffled(_gameSetting.currentLevel, attempt + 1, rescued: true);
                     _reshuffleRoutine = null;
                     yield break;
                 }
             }
 
             _reshuffleRoutine = null;
+
+            GameAnalytics.BoardReshuffled(_gameSetting.currentLevel, maxReshuffleAttempts, rescued: false);
 
             // Deliberately not ShowOutOfMove(): the player already paid for this reshuffle, and
             // re-opening the popup that sold it would charge them a second time for the same

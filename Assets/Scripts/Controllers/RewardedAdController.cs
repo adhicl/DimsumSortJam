@@ -1,4 +1,5 @@
 using System;
+using Commons;
 using GoogleMobileAds.Api;
 using UnityEngine;
 
@@ -136,13 +137,25 @@ namespace Controllers
         /// earned the reward. <paramref name="onUnavailable"/> fires when no ad is ready
         /// (device only) so the caller can decide how to fall back.
         /// </summary>
-        public void ShowAd(Action onReward, Action onUnavailable = null)
+        /// <param name="placement">
+        /// Which button this ad was offered from, for analytics — one of the
+        /// <c>GameAnalytics.Placement*</c> constants. Optional so the existing two-argument call
+        /// sites keep compiling; they just report as "unknown".
+        /// </param>
+        public void ShowAd(Action onReward, Action onUnavailable = null, string placement = null)
         {
             if (IsReady)
             {
                 // Cleared by the closed/failed handlers registered in RegisterReloadHandlers.
                 IsShowingAd = true;
-                _rewardedAd.Show(_ => onReward?.Invoke());
+                _rewardedAd.Show(_ =>
+                {
+                    // Inside the reward callback, not next to Show: this fires when the user has
+                    // actually earned the reward, which is the number worth having. Show only
+                    // means the ad was put on screen, and a user who backs out never rewards.
+                    GameAnalytics.RewardedAdCompleted(placement);
+                    onReward?.Invoke();
+                });
                 return;
             }
 
@@ -153,6 +166,7 @@ namespace Controllers
             onReward?.Invoke();
 #else
             Debug.LogWarning("[RewardedAd] No ad ready; invoking unavailable fallback.");
+            GameAnalytics.RewardedAdUnavailable(placement);
             onUnavailable?.Invoke();
             LoadAd();
 #endif

@@ -156,6 +156,83 @@ namespace Controllers
         }
 
         /// <summary>
+        /// Runs <paramref name="action"/> once the UMP flow has finished, regardless of what the
+        /// player answered. Unlike <see cref="WhenAdsAllowed"/> this does not gate on the answer —
+        /// it exists so the analytics prompt can wait for UMP to establish which region the player
+        /// is in before deciding whether to ask anything at all.
+        ///
+        /// Runs immediately when there is no ConsentController (entering a gameplay scene directly
+        /// in the Editor), which leaves the region reading at its Unknown default.
+        /// </summary>
+        public static void WhenResolved(Action action)
+        {
+            if (action == null) return;
+
+            if (Instance == null)
+            {
+                action();
+                return;
+            }
+
+            if (Instance.IsResolved) action();
+            else Instance.OnResolved += action;
+        }
+
+        /// <summary>
+        /// True when the player is somewhere a privacy prompt is legally expected — the EEA, UK,
+        /// Switzerland, and the regulated US states. Google decides this, which is why it is read
+        /// back off UMP rather than guessed from a locale or a timezone.
+        ///
+        /// <c>Required</c> means a form is owed and unanswered; <c>Obtained</c> means one was owed
+        /// and has been answered. Both mean "this player is in a regulated region".
+        /// <c>NotRequired</c> is most of the world.
+        ///
+        /// Only meaningful after the flow has resolved — see <see cref="WhenResolved"/>. Before
+        /// that it reads Unknown and this returns false.
+        ///
+        /// Note this is Google's determination for *ad* consent. It is the best regional signal
+        /// available in the project, but it is not a legal opinion about analytics — see
+        /// next_step.md, "Analytics consent".
+        /// </summary>
+        public static bool IsConsentRequiredRegion()
+        {
+            try
+            {
+                var status = ConsentInformation.ConsentStatus;
+                return status == ConsentStatus.Required || status == ConsentStatus.Obtained;
+            }
+            catch (Exception)
+            {
+                // No UMP native bridge in the Editor.
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// True when UMP has actually established where the player is. False means the question is
+        /// still open — the update failed (offline, or a missing published consent message) and
+        /// <see cref="ConsentStatus"/> is sitting at its <c>Unknown</c> default.
+        ///
+        /// The distinction matters because <see cref="IsConsentRequiredRegion"/> answers false for
+        /// both "definitely outside the EEA" and "no idea", and those must not be treated alike:
+        /// silently opting in a player whose region could not be determined is exactly the case
+        /// GDPR is about. Callers that are deciding whether to collect data must check this first
+        /// and defer rather than guess — the flow resolves anyway so the game is never stuck, and
+        /// the next launch gets another chance to determine it.
+        /// </summary>
+        public static bool IsRegionKnown()
+        {
+            try
+            {
+                return ConsentInformation.ConsentStatus != ConsentStatus.Unknown;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
+        }
+
+        /// <summary>
         /// True when the player must be offered a way to change their choice. Show a
         /// "Privacy options" entry in Settings whenever this is true — it is a GDPR
         /// requirement, not a nicety.

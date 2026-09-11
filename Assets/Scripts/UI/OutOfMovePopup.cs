@@ -1,4 +1,4 @@
-using Commons;
+﻿using Commons;
 using Controllers;
 using Ricimi;
 using TMPro;
@@ -90,7 +90,7 @@ namespace UI
             {
                 // If the loaded ad expired since the gate last polled, re-greying the button
                 // is better feedback than nothing happening.
-                RewardedAdController.Instance.ShowAd(GrantRevive, RefreshAdGate);
+                RewardedAdController.Instance.ShowAd(GrantRevive, RefreshAdGate, GameAnalytics.PlacementReviveOutOfMove);
             }
             else
             {

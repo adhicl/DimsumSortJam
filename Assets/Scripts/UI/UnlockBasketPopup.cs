@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using Commons;
 using Controllers;
 using Ricimi;
@@ -107,7 +107,7 @@ namespace UI
             {
                 // onUnavailable matters here: if the loaded ad expired since the gate last
                 // polled, re-greying the button is better feedback than nothing happening.
-                RewardedAdController.Instance.ShowAd(Grant, RefreshAdGate);
+                RewardedAdController.Instance.ShowAd(Grant, RefreshAdGate, GameAnalytics.PlacementUnlockBasket);
             }
             else
             {

@@ -18,6 +18,11 @@ namespace UI
         [Tooltip("Object to hide/show — defaults to this GameObject. Set to a parent row if the button sits in a layout group.")]
         [SerializeField] private GameObject visibilityTarget;
 
+        [Tooltip("After the ad consent form closes, also re-ask about analytics. This is the " +
+                 "player's route to withdrawing analytics consent, so turning it off removes " +
+                 "the only way back unless you wire a dedicated button.")]
+        [SerializeField] private bool alsoAskAnalyticsConsent = true;
+
         private Button _button;
 
         private void Awake()
@@ -41,9 +46,21 @@ namespace UI
             target.SetActive(required);
         }
 
+        /// <summary>
+        /// Opens the ad consent form, then the analytics prompt behind it.
+        ///
+        /// Both privacy choices sit behind this one entry rather than getting a Settings row each:
+        /// the button is already visible in exactly the regions where a prompt is owed, and a
+        /// player looking for "Privacy options" is looking for all of it. The forms are sequential,
+        /// not stacked — the analytics prompt is raised from the UMP form's dismissal callback.
+        /// </summary>
         private void Show()
         {
-            ConsentController.ShowPrivacyOptions(Refresh);
+            ConsentController.ShowPrivacyOptions(() =>
+            {
+                Refresh();
+                if (alsoAskAnalyticsConsent) AnalyticsConsentPrompt.Ask();
+            });
         }
     }
 }
