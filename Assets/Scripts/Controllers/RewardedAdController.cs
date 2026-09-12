@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using Commons;
 using GoogleMobileAds.Api;
 using UnityEngine;
@@ -6,9 +7,10 @@ using UnityEngine;
 namespace Controllers
 {
     /// <summary>
-    /// Loads and shows AdMob rewarded ads. Lives as a singleton GameObject in the Game
-    /// scene (mirrors GameController.Instance / SoundController.Instance) so popups and
-    /// baskets can reach it without Zenject injection.
+    /// Loads and shows AdMob rewarded ads. Lives as a singleton GameObject in the Splash scene
+    /// and survives scene loads, so one preloaded ad follows the player from the first tutorial
+    /// through Home and every level instead of being requested afresh each time the Game scene
+    /// opens - which is why the win screen used to offer a double reward with no video ready.
     ///
     /// Used for three placements: reviving on out-of-moves, unlocking a closed basket,
     /// and doubling the coin bonus on the win screen.
@@ -17,8 +19,13 @@ namespace Controllers
     {
         public static RewardedAdController Instance { get; private set; }
 
-        // Google's official sample rewarded id — safe for testing (no real impressions).
+        // Google's official sample rewarded id - safe for testing (no real impressions).
         private const string AndroidTestAdUnitId = "ca-app-pub-3940256099942544/5224354917";
+
+        // A failed request is retried with a doubling delay, otherwise one no-fill would leave
+        // every "watch an ad" button greyed out until the player happened to press one.
+        private const float FirstRetrySeconds = 10f;
+        private const float MaxRetrySeconds = 60f;
 
         [Tooltip("Use Google's sample rewarded id instead of the live one (recommended while testing).")]
         [SerializeField] private bool useTestAd = true;
@@ -26,9 +33,13 @@ namespace Controllers
         [Tooltip("Real rewarded ad unit id for release, e.g. ca-app-pub-8590881680208951/XXXXXXXXXX.")]
         [SerializeField] private string androidLiveAdUnitId = "";
 
-        private static bool _sdkInitialized;
+        private const float StaleCheckSeconds = 5f;
+
         private RewardedAd _rewardedAd;
         private bool _isLoading;
+        private float _staleCheckIn = StaleCheckSeconds;
+        private float _retryDelay = FirstRetrySeconds;
+        private Coroutine _retry;
 
         /// <summary>
         /// True from the moment a rewarded ad is handed to the SDK until it closes or fails.
@@ -46,36 +57,42 @@ namespace Controllers
         {
             if (Instance != null && Instance != this)
             {
-                Destroy(this);
+                Destroy(gameObject);
                 return;
             }
+
             Instance = this;
+            DontDestroyOnLoad(gameObject);
         }
 
         private void Start()
         {
-            MobileAds.RaiseAdEventsOnUnityMainThread = true;
+            MobileAdsSdk.WhenInitialized(LoadAd);
+        }
 
-            if (_sdkInitialized)
+        private void Update()
+        {
+            // A loaded ad is only good for about an hour. Now that this controller outlives
+            // every scene, a player who idles on Home can outlast it, and CanShowAd() would then
+            // grey out the buttons with nothing asking for a fresh one. Checked every few
+            // seconds rather than per frame: CanShowAd is a JNI hop on Android.
+            _staleCheckIn -= Time.unscaledDeltaTime;
+            if (_staleCheckIn > 0f) return;
+            _staleCheckIn = StaleCheckSeconds;
+
+            if (_rewardedAd != null && !_isLoading && !IsShowingAd && !_rewardedAd.CanShowAd())
             {
+                Debug.Log("[RewardedAd] Loaded ad expired; requesting another.");
                 LoadAd();
-                return;
             }
-
-            // The Ads SDK must not start until UMP has an answer, or we risk serving a
-            // personalized ad to a player who has not consented.
-            ConsentController.WhenAdsAllowed(() =>
-                MobileAds.Initialize(_ =>
-                {
-                    _sdkInitialized = true;
-                    LoadAd();
-                }));
         }
 
         /// <summary>Preloads a rewarded ad so it is ready when the player asks for it.</summary>
         private void LoadAd()
         {
             if (_isLoading) return;
+
+            CancelRetry();
 
             if (_rewardedAd != null)
             {
@@ -91,12 +108,37 @@ namespace Controllers
                 if (error != null || ad == null)
                 {
                     Debug.LogWarning($"[RewardedAd] Failed to load: {error}");
+                    ScheduleRetry();
                     return;
                 }
 
+                _retryDelay = FirstRetrySeconds;
                 _rewardedAd = ad;
                 RegisterReloadHandlers(ad);
             });
+        }
+
+        private void ScheduleRetry()
+        {
+            CancelRetry();
+            _retry = StartCoroutine(RetryAfter(_retryDelay));
+            _retryDelay = Mathf.Min(_retryDelay * 2f, MaxRetrySeconds);
+        }
+
+        private IEnumerator RetryAfter(float seconds)
+        {
+            // Realtime: the game pauses Time.timeScale behind popups, and those popups are
+            // exactly where the player is waiting for this ad.
+            yield return new WaitForSecondsRealtime(seconds);
+            _retry = null;
+            if (!IsReady) LoadAd();
+        }
+
+        private void CancelRetry()
+        {
+            if (_retry == null) return;
+            StopCoroutine(_retry);
+            _retry = null;
         }
 
         private void RegisterReloadHandlers(RewardedAd ad)
@@ -138,7 +180,7 @@ namespace Controllers
         /// (device only) so the caller can decide how to fall back.
         /// </summary>
         /// <param name="placement">
-        /// Which button this ad was offered from, for analytics — one of the
+        /// Which button this ad was offered from, for analytics - one of the
         /// <c>GameAnalytics.Placement*</c> constants. Optional so the existing two-argument call
         /// sites keep compiling; they just report as "unknown".
         /// </param>
@@ -174,6 +216,8 @@ namespace Controllers
 
         private void OnDestroy()
         {
+            if (Instance != this) return;
+
             // Never leave the timer frozen because the controller died mid-ad.
             IsShowingAd = false;
 
@@ -182,7 +226,7 @@ namespace Controllers
                 _rewardedAd.Destroy();
                 _rewardedAd = null;
             }
-            if (Instance == this) Instance = null;
+            Instance = null;
         }
     }
 }

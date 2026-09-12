@@ -58,8 +58,9 @@ namespace UI
 
         public void Refresh()
         {
-            // A null controller means the scene has no ad object (the tutorial scenes), where
-            // ShowAd's own fallback grants the reward — so the button must stay live there.
+            // The controller lives in Splash and follows the player everywhere, so it is only
+            // null when a scene was played directly in the Editor. ShowAd's callers grant the
+            // reward without an ad in that case, so the button must stay live there.
             bool available = !Locked
                              && (RewardedAdController.Instance == null
                                  || RewardedAdController.Instance.IsAvailable);
