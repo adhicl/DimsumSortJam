@@ -102,49 +102,4 @@ namespace Commons
         }
 #endif
     }
-
-    /// <summary>
-    /// Runs queued work on Unity's main thread. Spawns itself on first use, so nothing has to be
-    /// placed in a scene. Only needed because Android hands dialog callbacks back on its own UI
-    /// thread, where PlayerPrefs and the Analytics SDK are not safe to touch.
-    /// </summary>
-    internal class MainThreadDispatcher : MonoBehaviour
-    {
-        private static MainThreadDispatcher _instance;
-        private static readonly Queue<Action> Pending = new Queue<Action>();
-
-        /// <summary>Creates the dispatcher if it does not exist. Main thread only.</summary>
-        internal static void Ensure()
-        {
-            if (_instance != null) return;
-
-            var go = new GameObject("MainThreadDispatcher") { hideFlags = HideFlags.HideAndDontSave };
-            DontDestroyOnLoad(go);
-            _instance = go.AddComponent<MainThreadDispatcher>();
-        }
-
-        /// <summary>Queues work for the next frame. Safe to call from any thread.</summary>
-        internal static void Enqueue(Action action)
-        {
-            if (action == null) return;
-            lock (Pending) { Pending.Enqueue(action); }
-        }
-
-        private void Update()
-        {
-            while (true)
-            {
-                Action action;
-                lock (Pending)
-                {
-                    if (Pending.Count == 0) return;
-                    action = Pending.Dequeue();
-                }
-
-                // One failing callback must not stall everything queued behind it.
-                try { action(); }
-                catch (Exception e) { Debug.LogException(e); }
-            }
-        }
-    }
 }

@@ -28,6 +28,18 @@ namespace Controllers
         private const string Allow = "Allow";
         private const string Decline = "No thanks";
 
+        private static bool _waitingForUpdate;
+
+        private static void OnConsentUpdatedWhileWaiting()
+        {
+            // Only act once the region is actually known; a failed retry fires this too.
+            if (!ConsentController.IsRegionKnown()) return;
+
+            ConsentController.OnConsentUpdated -= OnConsentUpdatedWhileWaiting;
+            _waitingForUpdate = false;
+            AskIfNeeded();
+        }
+
         /// <summary>
         /// Asks if the player has not answered and their region requires it. Waits for UMP first.
         /// Safe to call more than once — an answered player is never re-prompted.
@@ -49,8 +61,16 @@ namespace Controllers
                 // again. Collect nothing and try again next launch instead.
                 if (!ConsentController.IsRegionKnown())
                 {
-                    Debug.Log("[Consent] Region undetermined; not collecting analytics this " +
-                              "session and leaving the question open.");
+                    Debug.Log("[Consent] Region undetermined; not collecting analytics until " +
+                              "the consent lookup succeeds.");
+
+                    // ConsentController keeps retrying the lookup. When one lands, come back and
+                    // decide then, rather than writing this session off. Subscribed once.
+                    if (!_waitingForUpdate)
+                    {
+                        _waitingForUpdate = true;
+                        ConsentController.OnConsentUpdated += OnConsentUpdatedWhileWaiting;
+                    }
                     return;
                 }
 

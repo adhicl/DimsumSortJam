@@ -31,6 +31,11 @@ namespace Controllers
         private const float FirstRetrySeconds = 10f;
         private const float MaxRetrySeconds = 60f;
 
+        // A request that has neither loaded nor failed by then is treated as failed. The SDK
+        // does not promise a callback for every request, and a banner with no callback is a
+        // banner with no retry.
+        private const float LoadTimeoutSeconds = 30f;
+
         [Tooltip("Use Google's sample banner id instead of the live one (recommended while testing).")]
         [SerializeField] private bool useTestAd = true;
 
@@ -62,6 +67,7 @@ namespace Controllers
         private bool _sceneWantsBanner;
         private float _retryDelay = FirstRetrySeconds;
         private Coroutine _retry;
+        private Coroutine _loadWatchdog;
 
         private static string AdUnitId
         {
@@ -141,11 +147,15 @@ namespace Controllers
             BannerView view = new BannerView(unitId, adaptiveSize, AdPosition.Bottom);
             _bannerView = view;
 
-            // Handlers run on the main thread (see MobileAdsSdk). Each checks it still belongs to
-            // the live view: a newer request may have replaced this one while the ad was in flight.
-            view.OnBannerAdLoaded += () =>
+            // Handlers are marshalled to the main thread explicitly: ApplyVisibility ends in
+            // SafeAreaPanel moving a RectTransform, and an exception thrown off-thread inside an
+            // SDK callback is swallowed, not logged. Each also checks it still belongs to the live
+            // view: a newer request may have replaced this one while the ad was in flight.
+            view.OnBannerAdLoaded += () => MainThreadDispatcher.Run(() =>
             {
                 if (_bannerView != view) return;
+
+                CancelLoadWatchdog();
 
                 // An adaptive banner does not know its height until the ad is back, so the UI
                 // can only be inset from here.
@@ -153,21 +163,73 @@ namespace Controllers
                 _loadedHeight = view.GetHeightInPixels();
                 _retryDelay = FirstRetrySeconds;
                 ApplyVisibility();
-            };
-            view.OnBannerAdLoadFailed += (LoadAdError error) =>
+            });
+            view.OnBannerAdLoadFailed += (LoadAdError error) => MainThreadDispatcher.Run(() =>
             {
                 if (_bannerView != view) return;
 
+                CancelLoadWatchdog();
                 Debug.LogWarning($"[BannerAd] Failed to load: {error}");
 
                 // Once a banner is up, the SDK's own refresh keeps the last creative on screen
                 // when a later request fails, so only a banner that never arrived needs chasing.
                 if (!_loaded) ScheduleRetry();
-            };
+            });
 
             // Start hidden; ApplyVisibility shows it once it has loaded in a scene that wants it.
             view.Hide();
+            LoadInto(view);
+        }
+
+        /// <summary>Issues the request and arms the no-callback watchdog for it.</summary>
+        private void LoadInto(BannerView view)
+        {
+            StartLoadWatchdog();
             view.LoadAd(new AdRequest());
+        }
+
+        private void StartLoadWatchdog()
+        {
+            CancelLoadWatchdog();
+            _loadWatchdog = StartCoroutine(LoadWatchdog());
+        }
+
+        private void CancelLoadWatchdog()
+        {
+            if (_loadWatchdog == null) return;
+            StopCoroutine(_loadWatchdog);
+            _loadWatchdog = null;
+        }
+
+        private IEnumerator LoadWatchdog()
+        {
+            yield return new WaitForSecondsRealtime(LoadTimeoutSeconds);
+            _loadWatchdog = null;
+
+            if (_loaded || _bannerView == null) yield break;
+
+            Debug.LogWarning("[BannerAd] No response to load request; retrying.");
+            ScheduleRetry();
+        }
+
+        /// <summary>
+        /// Coming back from the background is when connectivity most often changes. A banner
+        /// still waiting is asked for again now rather than after whatever is left of its backoff,
+        /// and a banner already up is re-shown because some devices drop the ad's window on resume.
+        /// </summary>
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused || _bannerView == null || AdsRemoved) return;
+
+            if (!_loaded)
+            {
+                CancelRetry();
+                _retryDelay = FirstRetrySeconds;
+                LoadInto(_bannerView);
+                return;
+            }
+
+            ApplyVisibility();
         }
 
         private void ScheduleRetry()
@@ -181,7 +243,7 @@ namespace Controllers
         {
             yield return new WaitForSecondsRealtime(seconds);
             _retry = null;
-            if (_bannerView != null && !_loaded) _bannerView.LoadAd(new AdRequest());
+            if (_bannerView != null && !_loaded) LoadInto(_bannerView);
         }
 
         private void CancelRetry()
@@ -212,6 +274,7 @@ namespace Controllers
         private void DestroyBanner()
         {
             CancelRetry();
+            CancelLoadWatchdog();
 
             if (_bannerView != null)
             {

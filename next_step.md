@@ -338,7 +338,14 @@ touching any code.
       strip sits above the ad instead of under it.
 - [ ] **Confirm in the AdMob console** that this app's status is *Ready* and not
       "Requires attention" — a newly created app can sit in review, and units return no fill
-      until it clears.
+      until it clears. **This is the first thing to check when the banner "rarely shows".**
+      The client now self-heals from every failure it can see (below), but it cannot conjure
+      fill: a new app under AdMob's *limited ad serving* period, or one not yet linked to its
+      Play listing, gets a trickle of impressions no matter how correct the code is. Look for
+      the *Ad serving limited* / *Getting ready* banners on the app's page, and link the app to
+      the store listing once it is live. Until then, judge the code by logcat, not by whether an
+      ad is on screen: `[BannerAd] Failed to load: … No fill` means the pipeline reached Google
+      and Google said no — that is AdMob-side, not a bug.
 - [ ] **Privacy & messaging ▸ GDPR** — create and **publish** a consent message (§4a below).
       *Without a published message the UMP form never appears, `CanRequestAds()` stays false in
       the EEA, and ads silently stop serving there — with no error to explain why.*
@@ -1238,6 +1245,46 @@ Verified in the Editor on 2026-09-11: grant → `[GameServices] Analytics data c
 deny → `[GameServices] Analytics stopped and data deletion requested.` and `GameAnalytics.IsReady`
 false, re-grant → collection back on. Events recorded while denied are dropped without throwing.
 **The native dialog itself is only exercisable on device** — the Editor never shows it.
+
+---
+
+## Ads — how the pipeline stays alive
+
+Both ad controllers are `DontDestroyOnLoad` singletons in `Splash`, so structurally they were
+already following the player through every scene. What made the banner *rarely* appear was
+everything upstream of it being fragile: one bad network moment at launch and the session had no
+ads, with nothing in logcat to say why. Four causes, all fixed on 2026-09-12:
+
+| What went wrong | Where | What it did | Fix |
+|---|---|---|---|
+| **UMP lookup failed once → no ads all session.** `ConsentInformation.Update` was called exactly once; on failure `CanRequestAds()` read false and `WhenAdsAllowed` **dropped** the SDK-init action. `MobileAdsSdk._initializing` stayed true forever. | `ConsentController` | Every retry the banner and rewarded controllers have never ran, because the SDK they wait on never started. First launch on a flaky connection is exactly when this bit. | Failed lookups retry with backoff (10s → 60s cap). Init waiters are **held**, not dropped, and released the moment a later update says ads are allowed — including the player changing their answer in Privacy options. |
+| **Threading rested on an obsolete flag.** `MobileAds.RaiseAdEventsOnUnityMainThread` is `[Obsolete]` in plugin 11.3.0. | `MobileAdsSdk`, both controllers | If a callback landed off-thread, `OnBannerAdLoaded → SafeAreaPanel` moved a RectTransform from a JNI thread, threw, and the exception was swallowed inside the callback. Timing-dependent, so it looked random. | Every ad and consent callback is marshalled explicitly through `MainThreadDispatcher.Run` — inline when already on the main thread, next frame otherwise. The flag is still set (harmless, `#pragma`-silenced) but nothing depends on it. |
+| **No load watchdog.** A `LoadAd` that never called back — the SDK does not promise one — left the banner with no retry scheduled, and the rewarded `_isLoading` stuck true, which gates every future request. | Both controllers | Dead for the session, every "watch an ad" button greyed out. | 30s watchdog per request; no callback is treated as failure and enters the normal backoff. A late callback from a timed-out request keeps the ad if it is good and is otherwise ignored. |
+| **No resume handling.** | Both controllers, `MobileAdsSdk` | Backgrounding the app mid-backoff meant waiting out the rest of it (up to 60s) after coming back — and coming back is precisely when connectivity changes. | `OnApplicationPause(false)` cancels the backoff and requests immediately. A loaded banner is re-shown, because some devices drop the ad's window on resume. `MobileAds.Initialize` gets its own 20s watchdog. |
+
+### Verified
+
+In the Editor on 2026-09-12, across every enabled build scene: Splash (hidden) → Home (shown) →
+Game (shown) → Tutorial3 (shown) → Profile (hidden — not in `bannerScenes`) → Home (shown again).
+The rewarded ad stayed ready throughout, and all three controllers survived every load. No ad
+warnings, no exceptions.
+
+**What the Editor cannot prove:** it runs the plugin's placeholder clients, which always fill,
+always call back, and always deliver on the main thread. The retry, watchdog, and threading paths
+only exercise on a device. The proof there is logcat:
+
+- `[Consent] Update failed: …` followed later by `[Consent] Retrying consent lookup.` — the retry
+  is alive.
+- `[BannerAd] No response to load request; retrying.` / `[RewardedAd] No response …` — a watchdog
+  caught a silent request.
+- `[MobileAds] Initialize did not call back; retrying.` — the init watchdog fired.
+- `[BannerAd] Failed to load: … No fill` — the code did its job; see §4 for the AdMob side.
+
+### Where the banner shows
+
+`BannerAdController.bannerScenes` on the Splash object: Home, Game, Tutorial1–7. It is hidden,
+not destroyed, everywhere else, so it is back the instant one of those loads with no new request.
+Add a scene name there to show it somewhere new. `Profile` is deliberately not in the list.
 
 ---
 

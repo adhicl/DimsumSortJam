@@ -35,11 +35,17 @@ namespace Controllers
 
         private const float StaleCheckSeconds = 5f;
 
+        // A load that has not called back by then is treated as failed. _isLoading gates every
+        // new request, so a callback that never comes would otherwise leave the rewarded ad
+        // dead for the whole session with every "watch an ad" button greyed out.
+        private const float LoadTimeoutSeconds = 30f;
+
         private RewardedAd _rewardedAd;
         private bool _isLoading;
         private float _staleCheckIn = StaleCheckSeconds;
         private float _retryDelay = FirstRetrySeconds;
         private Coroutine _retry;
+        private Coroutine _loadWatchdog;
 
         /// <summary>
         /// True from the moment a rewarded ad is handed to the SDK until it closes or fails.
@@ -101,9 +107,28 @@ namespace Controllers
             }
 
             _isLoading = true;
-            RewardedAd.Load(AdUnitId, new AdRequest(), (ad, error) =>
+            StartLoadWatchdog();
+
+            // Marshalled explicitly: the plugin does not promise a thread, and ScheduleRetry
+            // starts a coroutine. Also guards against a late callback from a request the
+            // watchdog already gave up on — _isLoading is false again by then.
+            RewardedAd.Load(AdUnitId, new AdRequest(), (ad, error) => MainThreadDispatcher.Run(() =>
             {
+                if (!_isLoading)
+                {
+                    // The watchdog timed this request out and a newer one is in flight (or
+                    // queued). Keep the ad if it is good rather than throw it away, but do not
+                    // let a stale failure schedule anything.
+                    if (ad != null && error == null && _rewardedAd == null)
+                    {
+                        _rewardedAd = ad;
+                        RegisterReloadHandlers(ad);
+                    }
+                    return;
+                }
+
                 _isLoading = false;
+                CancelLoadWatchdog();
 
                 if (error != null || ad == null)
                 {
@@ -115,7 +140,45 @@ namespace Controllers
                 _retryDelay = FirstRetrySeconds;
                 _rewardedAd = ad;
                 RegisterReloadHandlers(ad);
-            });
+            }));
+        }
+
+        private void StartLoadWatchdog()
+        {
+            CancelLoadWatchdog();
+            _loadWatchdog = StartCoroutine(LoadWatchdog());
+        }
+
+        private void CancelLoadWatchdog()
+        {
+            if (_loadWatchdog == null) return;
+            StopCoroutine(_loadWatchdog);
+            _loadWatchdog = null;
+        }
+
+        private IEnumerator LoadWatchdog()
+        {
+            yield return new WaitForSecondsRealtime(LoadTimeoutSeconds);
+            _loadWatchdog = null;
+
+            if (!_isLoading) yield break;
+
+            Debug.LogWarning("[RewardedAd] No response to load request; retrying.");
+            _isLoading = false;
+            ScheduleRetry();
+        }
+
+        /// <summary>
+        /// Coming back from the background is when connectivity most often changes. An ad still
+        /// waiting is asked for again now rather than after whatever is left of its backoff.
+        /// </summary>
+        private void OnApplicationPause(bool paused)
+        {
+            if (paused || !MobileAdsSdk.IsInitialized || IsReady || _isLoading || IsShowingAd) return;
+
+            CancelRetry();
+            _retryDelay = FirstRetrySeconds;
+            LoadAd();
         }
 
         private void ScheduleRetry()
@@ -144,17 +207,18 @@ namespace Controllers
         private void RegisterReloadHandlers(RewardedAd ad)
         {
             // Rewarded ads are single-use: reload as soon as the current one goes away.
-            ad.OnAdFullScreenContentClosed += () =>
+            // Marshalled — LoadAd starts coroutines, and IsShowingAd is read by the game timer.
+            ad.OnAdFullScreenContentClosed += () => MainThreadDispatcher.Run(() =>
             {
                 IsShowingAd = false;
                 LoadAd();
-            };
-            ad.OnAdFullScreenContentFailed += (AdError err) =>
+            });
+            ad.OnAdFullScreenContentFailed += (AdError err) => MainThreadDispatcher.Run(() =>
             {
                 IsShowingAd = false;
                 Debug.LogWarning($"[RewardedAd] Failed to present: {err}");
                 LoadAd();
-            };
+            });
         }
 
         public bool IsReady => _rewardedAd != null && _rewardedAd.CanShowAd();
@@ -190,14 +254,14 @@ namespace Controllers
             {
                 // Cleared by the closed/failed handlers registered in RegisterReloadHandlers.
                 IsShowingAd = true;
-                _rewardedAd.Show(_ =>
+                _rewardedAd.Show(_ => MainThreadDispatcher.Run(() =>
                 {
                     // Inside the reward callback, not next to Show: this fires when the user has
                     // actually earned the reward, which is the number worth having. Show only
                     // means the ad was put on screen, and a user who backs out never rewards.
                     GameAnalytics.RewardedAdCompleted(placement);
                     onReward?.Invoke();
-                });
+                }));
                 return;
             }
 
@@ -220,6 +284,8 @@ namespace Controllers
 
             // Never leave the timer frozen because the controller died mid-ad.
             IsShowingAd = false;
+            CancelRetry();
+            CancelLoadWatchdog();
 
             if (_rewardedAd != null)
             {
