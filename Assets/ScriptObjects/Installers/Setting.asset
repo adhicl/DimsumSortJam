@@ -49,6 +49,44 @@ MonoBehaviour:
   - {fileID: 21300000, guid: 28b93a627dd6d8246928cb447c4996cf, type: 3}
   - {fileID: 21300000, guid: c908349af031e134faa562745c4e2350, type: 3}
   - {fileID: 21300000, guid: e493849d6c0345e4b9fd3304f6dd9255, type: 3}
+  dimsumFrozenSprite:
+  - {fileID: 21300000, guid: e112e04b7de624c4c96163117e8407d2, type: 3}
+  - {fileID: 21300000, guid: 2be04fe84ff26754ebb4f6d66918bd93, type: 3}
+  - {fileID: 21300000, guid: 2a7250f7f43194c409eca7495b7612f3, type: 3}
+  - {fileID: 21300000, guid: 02fa33667c584f4449c5ee7e7f8eae0f, type: 3}
+  - {fileID: 21300000, guid: a2aa53a6ff9302747853d041a3562302, type: 3}
+  - {fileID: 21300000, guid: 847d4366fb7ced348a907009640580a0, type: 3}
+  - {fileID: 21300000, guid: 6649c81c415558747bdb2fb0bb17f3e2, type: 3}
+  - {fileID: 21300000, guid: bdf29a369515cd54cabfe8890e04bc95, type: 3}
+  - {fileID: 21300000, guid: 49cf1030e39584b44aba6b38db5e4597, type: 3}
+  - {fileID: 21300000, guid: e3eb74177999b4842bbdde77518675e3, type: 3}
+  - {fileID: 21300000, guid: 951a046422bbe7a4ea19f21aba6ae538, type: 3}
+  - {fileID: 21300000, guid: be4d2bf00e472b548bb7721567fbf275, type: 3}
+  - {fileID: 21300000, guid: 179862c2aa5555345ab6618a95d8353a, type: 3}
+  - {fileID: 21300000, guid: a282c55450fd069478d1aa7a1d461526, type: 3}
+  - {fileID: 21300000, guid: fe782436a744b1f4780124b3b8e87c61, type: 3}
+  - {fileID: 21300000, guid: 0f8b102883afec74baebd437add25e72, type: 3}
+  - {fileID: 21300000, guid: 70b67cd94255c5d4590931693d11adb6, type: 3}
+  - {fileID: 21300000, guid: 40c0b23f43d712e448dfa92a1c20df95, type: 3}
+  - {fileID: 21300000, guid: c3712374325499642b73c47fabb15b06, type: 3}
+  - {fileID: 0}
+  - {fileID: 21300000, guid: 77a34b839d794a04a8a7b3a901e9ec1c, type: 3}
+  - {fileID: 21300000, guid: c3712374325499642b73c47fabb15b06, type: 3}
+  - {fileID: 21300000, guid: 0ede7cc9c11e42141bcdd3460f79ffd0, type: 3}
+  - {fileID: 21300000, guid: 99458ba4bd2399e4d8a5f743a56c3e0e, type: 3}
+  - {fileID: 21300000, guid: fca017e78c45db444a747cd99aab910e, type: 3}
+  - {fileID: 0}
+  - {fileID: 21300000, guid: fbb071054f204154a8b9b6d1ca744338, type: 3}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 21300000, guid: be4d2bf00e472b548bb7721567fbf275, type: 3}
+  - {fileID: 21300000, guid: aca60327082c9714d8a5bf550a2f866e, type: 3}
+  - {fileID: 21300000, guid: 38ba329d3c3dc754693e4971f2801f6f, type: 3}
+  - {fileID: 21300000, guid: 9446e8c7e6539db4aa8d9e10ffab03ed, type: 3}
+  - {fileID: 21300000, guid: 94f5969b3bddb034aabec4f1f08df929, type: 3}
+  - {fileID: 21300000, guid: 6649c81c415558747bdb2fb0bb17f3e2, type: 3}
+  - {fileID: 0}
+  hiddenDimsumSprite: {fileID: 21300000, guid: 1874446e1ffe41942b2c6a32762d9777, type: 3}
   currentLevel: 3
   maximumLevel: 50
   currentLevelData: {fileID: 11400000, guid: adcf3a1b7737d7e469ae378664c2c72e, type: 2}

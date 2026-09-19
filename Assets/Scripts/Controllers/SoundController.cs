@@ -21,6 +21,10 @@ namespace Controllers
         public AudioClip[] bubbleSoundClips;
         public AudioClip[] whooshSoundClips;
 
+        [Tooltip("Ice cracking as a match frees the frozen jajanan. Optional - a bubble clip is " +
+                 "used until one is assigned, so the thaw is never silent.")]
+        public AudioClip unfreezeClip;
+
         #region singleton
         public static SoundController Instance { get; private set; }
 
@@ -88,6 +92,22 @@ namespace Controllers
         public void PlayWhooshSoundClips()
         {
             audioSource.PlayOneShot(whooshSoundClips[Random.Range(0, whooshSoundClips.Length)]);
+        }
+
+        /// <summary>
+        /// The ice breaking when a match frees the frozen pieces. Falls back to a bubble rather
+        /// than going quiet, because the thaw hands the player back pieces they could not move -
+        /// that has to be heard, and an unassigned clip should not be the reason it is not.
+        /// </summary>
+        public void PlayUnfreezeClip()
+        {
+            if (unfreezeClip != null)
+            {
+                audioSource.PlayOneShot(unfreezeClip);
+                return;
+            }
+
+            if (bubbleSoundClips != null && bubbleSoundClips.Length > 0) PlayBubbleSoundClips();
         }
 
         public void PlayBasketOpenClip()

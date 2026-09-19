@@ -12,9 +12,15 @@ namespace Spawners
         
         readonly List<MDimSum> _dimsums = new();
         
-        public MDimSum Create(int dimsumType)
+        /// <summary>
+        /// Deals a piece of <paramref name="dimsumType"/>, iced over when <paramref name="frozen"/>.
+        /// The flag has to come in through the pool: a pooled piece is reused rather than built,
+        /// so setting it afterwards would leave one frame in which the piece is drawn as food and
+        /// can be grabbed.
+        /// </summary>
+        public MDimSum Create(int dimsumType, bool frozen = false)
         {
-            MDimSum newDimsum = _pool.Spawn(dimsumType);
+            MDimSum newDimsum = _pool.Spawn(dimsumType, frozen);
             _dimsums.Add(newDimsum);
             
             return newDimsum;

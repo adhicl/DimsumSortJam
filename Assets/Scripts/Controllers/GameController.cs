@@ -169,58 +169,253 @@ namespace Controllers
             
             DimsumCombination[] currentLevelData = _gameSetting.currentLevelData.currentLevel;
             DisplayedBasket[] displayedBaskets = _gameSetting.currentLevelData.firstDisplayed;
-            _gameSetting.currentDimsumSprites = GetRandomUniqueSprites();
+            BuildLevelSprites();
             
-            int index = 0;
-
-            if (_gameSetting.currentLevel == 0 || _gameSetting.currentLevel == 1)
-            {
-                for (int b = 0; b < totalBasket; b++)
-                {
-                    baskets[b].SetOpen(displayedBaskets[b]);
-                    
-                    if (displayedBaskets[b] == DisplayedBasket.Displayed)
-                    {
-                        int totalTray = _gameSetting.currentLevelData.currentDropArea[b];
-                        var randomPick = currentLevelData.Skip(index).Take(totalTray).ToArray();
-                        index += totalTray;
-                        baskets[b].SetDimsums(randomPick);
-                    }
-                }
-            }
-            else
+            // The first two levels are dealt exactly as authored, so the tutorial can talk about
+            // specific pieces. Everything else is shuffled. That was the only difference between
+            // two otherwise identical copies of the loop below.
+            if (_gameSetting.currentLevel != 0 && _gameSetting.currentLevel != 1)
             {
                 currentLevelData = ShuffleLevelData(currentLevelData);
-                for (int b = 0; b < totalBasket; b++)
+            }
+
+            // Cut the deal into one array per basket before anything is filled. The frozen and
+            // hidden pieces are counted per level rather than per basket, so the pick has to see
+            // the whole board at once - it cannot be made a basket at a time.
+            //
+            // Slices, not references: DimsumCombination is a struct, so Take().ToArray() copies.
+            // That matters, because the array being sliced belongs to the LevelData asset and
+            // writing the masks straight into it would bake this run's ice into the asset.
+            List<DimsumCombination[]> deals = new List<DimsumCombination[]>();
+            int index = 0;
+            for (int b = 0; b < totalBasket; b++)
+            {
+                if (displayedBaskets[b] != DisplayedBasket.Displayed) continue;
+
+                int totalTray = _gameSetting.currentLevelData.currentDropArea[b];
+                deals.Add(currentLevelData.Skip(index).Take(totalTray).ToArray());
+                index += totalTray;
+            }
+
+            ApplyBoardModifiers(deals);
+
+            // Opened and filled one basket at a time, in order, because a Locked basket reads the
+            // board as it is being built: MDropArea.SetOpen asks GetDimsumTypeOnTop for a dish the
+            // player can already match, and on level 3 that answer depends on the baskets filled
+            // before it. Opening them all first would leave it nothing to look at.
+            int dealIndex = 0;
+            for (int b = 0; b < totalBasket; b++)
+            {
+                baskets[b].SetOpen(displayedBaskets[b]);
+
+                if (displayedBaskets[b] == DisplayedBasket.Displayed)
                 {
-                    baskets[b].SetOpen(displayedBaskets[b]);
-                    if (displayedBaskets[b] == DisplayedBasket.Displayed)
-                    {
-                        int totalTray = _gameSetting.currentLevelData.currentDropArea[b];
-                        var randomPick = currentLevelData.Skip(index).Take(totalTray).ToArray();
-                        index += totalTray;
-                        baskets[b].SetDimsums(randomPick);
-                    }
+                    baskets[b].SetDimsums(deals[dealIndex]);
+                    dealIndex++;
                 }
             }
-            
+
             CheckInitialDealPlayable();
             CheckShowRequest();
         }
 
-        private Sprite[] GetRandomUniqueSprites()
+        /// <summary>
+        /// Picks this level's dishes and their frozen faces in one go.
+        ///
+        /// The shuffle is applied to indices rather than to the sprite arrays, because the two
+        /// arrays have to stay in step: type 4 must be the same dish whether it is drawn as food
+        /// or as ice. Shuffling them separately - which is what shuffling sprites and then
+        /// looking up the frozen one would amount to - hands a piece a frozen face belonging to
+        /// some other dish, and it silently changes identity the moment it thaws.
+        /// </summary>
+        private void BuildLevelSprites()
         {
             // Pastikan jumlah yang diminta tidak lebih besar dari sumber
-            if (_gameSetting.currentLevelData.TotalVariation > _gameSetting.dimsumSprite.Length)
+            int variation = _gameSetting.currentLevelData.TotalVariation;
+            if (variation > _gameSetting.dimsumSprite.Length)
             {
                 Debug.LogError("Jumlah elemen yang diminta lebih besar dari array sumber!");
-                return null;
+                return;
             }
-            
-            Sprite[] shuffled = _gameSetting.dimsumSprite.Take(_gameSetting.currentLevelData.TotalVariation).ToArray();
-            shuffled = shuffled.OrderBy(x => Random.value).ToArray();
-            
-            return shuffled;
+
+            int[] order = Enumerable.Range(0, variation).OrderBy(x => Random.value).ToArray();
+
+            Sprite[] faces = new Sprite[variation];
+            Sprite[] frozenFaces = new Sprite[variation];
+            Sprite[] frozenSource = _gameSetting.dimsumFrozenSprite;
+
+            for (int i = 0; i < variation; i++)
+            {
+                int source = order[i];
+                faces[i] = _gameSetting.dimsumSprite[source];
+
+                // A gap here is expected, not an error: a few dishes have no frozen art, and
+                // those simply never freeze. See GameSetting.CanFreeze.
+                frozenFaces[i] = frozenSource != null && source < frozenSource.Length
+                    ? frozenSource[source]
+                    : null;
+            }
+
+            _gameSetting.currentDimsumSprites = faces;
+            _gameSetting.currentFrozenDimsumSprites = frozenFaces;
+        }
+
+        /// <summary>
+        /// One slot the dealer is allowed to modify: the basket deal it belongs to, which row of
+        /// that deal, and which of the row's three positions. The deal is an array, so this is
+        /// enough to write the flag back where it came from.
+        /// </summary>
+        private struct DealSlot
+        {
+            public readonly DimsumCombination[] Deal;
+            public readonly int Row;
+            public readonly int Slot;
+
+            public DealSlot(DimsumCombination[] deal, int row, int slot)
+            {
+                Deal = deal;
+                Row = row;
+                Slot = slot;
+            }
+        }
+
+        // Reused across levels rather than rebuilt: a board is a few hundred slots and this runs
+        // on a scene load, where the frame budget is already tight.
+        private readonly List<DealSlot> _frozenCandidates = new();
+        private readonly List<DealSlot> _hiddenCandidates = new();
+
+        /// <summary>
+        /// Picks exactly the number of frozen and hidden dim sums this level asks for - see
+        /// <see cref="LevelData.TotalFrozen"/> - and scatters them at random over the whole deal.
+        ///
+        /// It takes every basket's deal at once because the counts are per level. Picking a basket
+        /// at a time could only ever divide the budget up in advance, which is not the same thing:
+        /// it would stop a level from ever dealing three frozen pieces into one unlucky basket, and
+        /// that is exactly the kind of board worth running into occasionally.
+        ///
+        /// Both picks are made fresh every time the level is loaded, so replaying a level ices and
+        /// hides different pieces.
+        ///
+        /// Edits the arrays in place: they are about to be handed to the baskets, and it is the row
+        /// that carries these flags down to the piece eventually dealt from it.
+        /// </summary>
+        private void ApplyBoardModifiers(List<DimsumCombination[]> deals)
+        {
+            LevelData level = _gameSetting.currentLevelData;
+            int wantFrozen = level.TotalFrozen;
+            int wantHidden = level.TotalHidden;
+
+            // Whatever the level asset happened to carry is cleared either way, so a stale mask
+            // saved into an asset cannot leak into a level that asks for none.
+            foreach (var deal in deals)
+            {
+                for (int r = 0; r < deal.Length; r++)
+                {
+                    deal[r].frozenMask = 0;
+                    deal[r].hiddenMask = 0;
+                }
+            }
+
+            if (wantFrozen <= 0 && wantHidden <= 0) return;
+
+            _frozenCandidates.Clear();
+            _hiddenCandidates.Clear();
+
+            foreach (var deal in deals)
+            {
+                for (int r = 0; r < deal.Length; r++)
+                {
+                    int[] types = deal[r].ToArray();
+                    for (int s = 0; s < types.Length; s++)
+                    {
+                        if (types[s] == -1) continue;
+
+                        // A dish nobody drew ice for can never be a frozen piece, so it must not
+                        // take up a place in the draw either - it would silently cost the level
+                        // one of the frozen pieces it asked for.
+                        if (_gameSetting.CanFreeze(types[s]))
+                        {
+                            _frozenCandidates.Add(new DealSlot(deal, r, s));
+                        }
+
+                        // Row 0 is dealt onto the basket the instant the level loads, so it is
+                        // never seen sitting on a plate - hiding it would hide it from nobody.
+                        if (r > 0) _hiddenCandidates.Add(new DealSlot(deal, r, s));
+                    }
+                }
+            }
+
+            Shuffle(_frozenCandidates);
+            Shuffle(_hiddenCandidates);
+
+            int frozen = 0;
+            for (int i = 0; i < _frozenCandidates.Count && frozen < wantFrozen; i++)
+            {
+                DealSlot pick = _frozenCandidates[i];
+                DimsumCombination row = pick.Deal[pick.Row];
+
+                // Never ice over a whole row - see Settings.MAX_FROZEN_PER_ROW. Checked here
+                // rather than filtered out above because it depends on what the draw has already
+                // done to this row, which is not known until the picks are being made.
+                int allowed = Mathf.Min(Settings.MAX_FROZEN_PER_ROW, row.FilledCount() - 1);
+                if (CountBits(row.frozenMask) >= allowed) continue;
+
+                row.SetFrozen(pick.Slot, true);
+                pick.Deal[pick.Row] = row;
+                frozen++;
+            }
+
+            int hidden = 0;
+            for (int i = 0; i < _hiddenCandidates.Count && hidden < wantHidden; i++)
+            {
+                DealSlot pick = _hiddenCandidates[i];
+                DimsumCombination row = pick.Deal[pick.Row];
+
+                // No cap here. A plate with all three dishes hidden is a mystery plate, not a
+                // trap: hiding costs the player information, never a move.
+                row.SetHidden(pick.Slot, true);
+                pick.Deal[pick.Row] = row;
+                hidden++;
+            }
+
+            // Worth saying out loud rather than quietly under-delivering. A level can ask for more
+            // than its board can hold - too few rows, or too many dishes with no frozen art - and
+            // the only other symptom is a level that feels easier than it was meant to.
+            if (frozen < wantFrozen)
+            {
+                Debug.LogWarning($"[Level] asked for {wantFrozen} frozen dim sums but only {frozen} fit "
+                                 + $"({_frozenCandidates.Count} slots could take one). Lower TotalFrozen "
+                                 + "on this LevelData, or add frozen art for more dishes.");
+            }
+
+            if (hidden < wantHidden)
+            {
+                Debug.LogWarning($"[Level] asked for {wantHidden} hidden dim sums but only {hidden} fit "
+                                 + $"({_hiddenCandidates.Count} slots sit on a plate). Lower TotalHidden "
+                                 + "on this LevelData.");
+            }
+        }
+
+        /// <summary>How many bits are set - i.e. how many slots of a row already carry a flag.</summary>
+        private static int CountBits(int mask)
+        {
+            int total = 0;
+            while (mask != 0)
+            {
+                mask &= mask - 1;
+                total++;
+            }
+            return total;
+        }
+
+        /// <summary>Fisher-Yates, in place. The draw order is the whole of the random pick.</summary>
+        private static void Shuffle<T>(List<T> list)
+        {
+            for (int i = list.Count - 1; i > 0; i--)
+            {
+                int j = Random.Range(0, i + 1);
+                (list[i], list[j]) = (list[j], list[i]);
+            }
         }
         
         private DimsumCombination[] ShuffleLevelData(DimsumCombination[] array)
@@ -329,6 +524,11 @@ namespace Controllers
             SetCharacterPosition();
         }
 
+        /// <summary>
+        /// Called the moment three of a kind come together, wherever that happened. Everything
+        /// that keys off "a match just cleared" hangs here: Locked baskets printed with that dish
+        /// open, waiting customers tick their order off, and the ice melts.
+        /// </summary>
         public void CheckClearDimsum(int dimsumType)
         {
             foreach (var basket in _gameBaskets)
@@ -340,7 +540,49 @@ namespace Controllers
             {
                 characterSpawn.CheckClearRequest(dimsumType);
             }
+
+            ThawFrozenDimsums();
         }
+
+        /// <summary>
+        /// Melts every frozen piece on the board. Any match frees all of them, deliberately: the
+        /// alternative - one match per frozen piece - turns a board that iced over badly into a
+        /// slow grind with no way back, and the player cannot tell in advance which it will be.
+        /// One rule, easy to learn in a level or two: get a match, get your pieces back.
+        ///
+        /// Pieces still down on the plates are untouched. Their ice is part of a row that has not
+        /// been dealt yet, and it thaws when the board is thawed after they arrive - so a level
+        /// keeps producing frozen pieces rather than being cleared of them once and for all.
+        /// </summary>
+        private void ThawFrozenDimsums()
+        {
+            if (_gameBaskets == null) return;
+
+            int thawed = 0;
+            foreach (var basket in _gameBaskets)
+            {
+                if (basket == null) continue;
+
+                // Each piece starts its wiggle a beat after the last, so a board full of ice
+                // breaks up as a ripple across the table rather than every piece twitching on the
+                // same frame. The basket clamps each piece to the ceiling, or a heavily iced board
+                // would still be shaking itself out long after the player has moved on.
+                thawed += basket.ThawFrozenDimsums(
+                    thawed * thawStaggerSeconds, thawStaggerSeconds, thawStaggerMaxDelay);
+            }
+
+            // One sound for the whole board, not one per piece: three pieces melting together
+            // fired the same clip three times in a frame and it read as a glitch.
+            if (thawed > 0) _soundController.PlayUnfreezeClip();
+        }
+
+        [Tooltip("Gap between one thawing piece starting its wiggle and the next, so a board of " +
+                 "ice breaks up as a ripple instead of all at once.")]
+        [SerializeField] private float thawStaggerSeconds = 0.05f;
+
+        [Tooltip("Longest a thaw wiggle may be held back. Past this the ripple stops spreading " +
+                 "and the remaining pieces go together.")]
+        [SerializeField] private float thawStaggerMaxDelay = 0.4f;
 
         public void DoAddProgress(int progress)
         {
@@ -853,6 +1095,12 @@ namespace Controllers
                 freeSlots += 3 - basket.TotalFilledDimsums();
             }
 
+            // Not one hole anywhere, so no piece can be put down anywhere: whatever the board
+            // holds, nothing on it can move. Every test below assumes at least one free slot
+            // exists to start a chain of moves off, so this guard is load-bearing, not a
+            // shortcut.
+            if (freeSlots <= 0) return false;
+
             foreach (var basket in _gameBaskets)
             {
                 if (!IsPlayableBasket(basket)) continue;
@@ -861,6 +1109,11 @@ namespace Controllers
                 // the same pieces around.
                 if (!basket.HasStillTrayLeft()) continue;
 
+                // One frozen piece pins the whole basket: it cannot be emptied by hand at all
+                // until a match somewhere else melts it, so it is not a move that is available
+                // now. If a match is what frees it, the match is what this counts - below.
+                if (basket.HasFrozenDimsum()) continue;
+
                 // Its own holes are no help in emptying it, and the pieces coming off it can be
                 // split across as many baskets as it takes. One basket happening to have exactly
                 // the right number of holes was never the requirement.
@@ -868,7 +1121,7 @@ namespace Controllers
                 if (freeSlots - (3 - filled) >= filled) return true;
             }
 
-            return HasReachableMatch(freeSlots);
+            return HasReachableMatch();
         }
 
         /// <summary>
@@ -891,7 +1144,7 @@ namespace Controllers
         /// deciding whether the player can act: on a board with no hole left in it those three
         /// can never be gathered, and calling that a move strands the player with no offer.
         /// </summary>
-        private bool HasReachableMatch(int freeSlots)
+        private bool HasReachableMatch()
         {
             for (int b = 0; b < _gameBaskets.Count; b++)
             {
@@ -902,7 +1155,7 @@ namespace Controllers
                 {
                     if (slots[s] == null) continue;
                     if (slots[s].dimsumType == -1) continue;
-                    if (CanGatherThree(slots[s].dimsumType, freeSlots)) return true;
+                    if (CanGatherThree(slots[s].dimsumType)) return true;
                 }
             }
 
@@ -910,35 +1163,66 @@ namespace Controllers
         }
 
         /// <summary>
-        /// Whether three of <paramref name="dimsumType"/> can be gathered onto one basket.
+        /// Whether three of <paramref name="dimsumType"/> can still be gathered onto one basket.
         ///
-        /// Gathering onto the basket that already holds the most of the type is always the
-        /// cheapest route. That basket needs room for the ones it is missing, and evicting its
-        /// other pieces frees exactly that much room - so the only thing that can block the match
-        /// is having nowhere to evict them to. Written out, "free slots away from the host at
-        /// least covers the host's other pieces" cancels down to <c>free + held &gt;= 3</c>,
-        /// which is why what the host holds besides the match never appears below.
+        /// Every basket is tried as the host rather than just the one holding the most, because
+        /// frozen pieces break the tie-break that used to make that safe: the best host is now the
+        /// one whose pieces can actually be shifted, which is not always the fullest.
+        ///
+        /// For a host that already holds some of the type, the question is two conditions deep:
+        /// enough movable copies exist elsewhere to make up three, and the host can be opened up
+        /// far enough to take them. Opening it up means evicting its other pieces, and an evicted
+        /// piece can always go into the slot vacated by one arriving - so the eviction never needs
+        /// free space of its own beyond the single hole the board is guaranteed to have by
+        /// <see cref="HasAnyMove"/> before this is reached.
+        ///
+        /// Frozen pieces count where they sit and nowhere else: one already on the host helps the
+        /// match along, one anywhere else cannot be brought over, and one on the host that is not
+        /// part of the match can never be evicted to make room.
         /// </summary>
-        private bool CanGatherThree(int dimsumType, int freeSlots)
+        private bool CanGatherThree(int dimsumType)
         {
-            int total = 0;
-            int bestHeld = 0;
-
-            foreach (var basket in _gameBaskets)
+            foreach (var host in _gameBaskets)
             {
-                if (!IsPlayableBasket(basket)) continue;
+                if (!IsPlayableBasket(host)) continue;
 
-                int held = 0;
-                foreach (var dimsum in basket.mDimSums)
+                int heldAtHost = 0;
+                int evictable = 0;
+                foreach (var dimsum in host.mDimSums)
                 {
-                    if (dimsum != null && dimsum.dimsumType == dimsumType) held++;
+                    if (dimsum == null || dimsum.dimsumType == -1) continue;
+
+                    if (dimsum.dimsumType == dimsumType) heldAtHost++;
+                    else if (!dimsum.IsFrozen) evictable++;
                 }
 
-                total += held;
-                if (held > bestHeld) bestHeld = held;
+                int need = 3 - heldAtHost;
+
+                // Three already together would have cleared themselves in CheckComplete, so this
+                // only happens mid-animation. Either way there is plainly something happening.
+                if (need <= 0) return true;
+
+                int movableElsewhere = 0;
+                foreach (var other in _gameBaskets)
+                {
+                    if (other == host || !IsPlayableBasket(other)) continue;
+
+                    foreach (var dimsum in other.mDimSums)
+                    {
+                        if (dimsum != null && dimsum.dimsumType == dimsumType && !dimsum.IsFrozen)
+                        {
+                            movableElsewhere++;
+                        }
+                    }
+                }
+
+                if (movableElsewhere < need) continue;
+
+                int freeAtHost = 3 - host.TotalFilledDimsums();
+                if (evictable >= need - freeAtHost) return true;
             }
 
-            return total >= 3 && freeSlots + bestHeld >= 3;
+            return false;
         }
 
         /// <summary>

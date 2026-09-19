@@ -14,11 +14,43 @@ namespace Commons
 
         public Sprite[] dimsumSprite;
 
+        [Tooltip("The iced-over version of each dish, indexed in step with dimsumSprite. Leave an " +
+                 "entry empty when that dish has no frozen art - it simply never freezes.")]
+        public Sprite[] dimsumFrozenSprite;
+
+        [Tooltip("Drawn on a plate in place of a hidden dish, until the basket above empties and " +
+                 "the row is dealt for real.")]
+        public Sprite hiddenDimsumSprite;
+
         public int currentLevel = 0;
         public int maximumLevel = 2;
         
         public LevelData currentLevelData;
         public Sprite[] currentDimsumSprites;
+
+        /// <summary>
+        /// Frozen art for this level's dishes, in step with <see cref="currentDimsumSprites"/>.
+        /// Both are built from one shuffle of the same indices, so type 4 is the same dish in
+        /// each; shuffling the two arrays separately would hand a frozen piece a different food
+        /// from the one it thaws into.
+        /// </summary>
+        public Sprite[] currentFrozenDimsumSprites;
+
+        /// <summary>
+        /// The frozen face of <paramref name="dimsumType"/>, or null when that dish has no frozen
+        /// art. Null is a real answer, not a failure: the level generator asks this before it
+        /// freezes anything, and simply leaves dishes it cannot draw as ice alone.
+        /// </summary>
+        public Sprite GetFrozenSprite(int dimsumType)
+        {
+            if (currentFrozenDimsumSprites == null) return null;
+            if (dimsumType < 0 || dimsumType >= currentFrozenDimsumSprites.Length) return null;
+            return currentFrozenDimsumSprites[dimsumType];
+        }
+
+        /// <summary>True when this dish can be dealt frozen - i.e. somebody drew ice for it.</summary>
+        public bool CanFreeze(int dimsumType) => GetFrozenSprite(dimsumType) != null;
+
         public LevelData[] allLevelData;
         
         public float lifeTimer;
@@ -677,6 +709,21 @@ namespace Commons
     {
         public int dimsum1, dimsum2, dimsum3;
 
+        /// <summary>
+        /// Which of the three slots are frozen, and which are hidden, one bit per slot.
+        ///
+        /// They live on the row rather than on the piece because that is what survives the
+        /// journey: a row is dealt into a basket, then waits on a plate under it - sometimes for
+        /// most of a level - and only becomes real <see cref="Models.MDimSum"/> objects when the
+        /// basket above it empties. A flag stored on the piece would not exist yet.
+        ///
+        /// Masks rather than six bools so an existing <c>LevelData</c> asset keeps deserialising:
+        /// a new int field simply reads back 0, which is "nothing special about this row" - and
+        /// that is exactly what every level below the introduction threshold wants.
+        /// </summary>
+        public int frozenMask;
+        public int hiddenMask;
+
         public int[] ToArray()
         {
             return new int[] { dimsum1, dimsum2, dimsum3 };
@@ -687,11 +734,38 @@ namespace Commons
             this.dimsum1 = dimsum1;
             this.dimsum2 = dimsum2;
             this.dimsum3 = dimsum3;
+            this.frozenMask = 0;
+            this.hiddenMask = 0;
         }
 
         public bool isEmpty()
         {
             return dimsum1 == -1 && dimsum2 == -1 && dimsum3 == -1;
+        }
+
+        public bool IsFrozen(int slot) => (frozenMask & (1 << slot)) != 0;
+        public bool IsHidden(int slot) => (hiddenMask & (1 << slot)) != 0;
+
+        public void SetFrozen(int slot, bool frozen)
+        {
+            if (frozen) frozenMask |= 1 << slot;
+            else frozenMask &= ~(1 << slot);
+        }
+
+        public void SetHidden(int slot, bool hidden)
+        {
+            if (hidden) hiddenMask |= 1 << slot;
+            else hiddenMask &= ~(1 << slot);
+        }
+
+        /// <summary>How many of the three slots hold a dim sum. Empty slots are -1.</summary>
+        public int FilledCount()
+        {
+            int total = 0;
+            if (dimsum1 != -1) total++;
+            if (dimsum2 != -1) total++;
+            if (dimsum3 != -1) total++;
+            return total;
         }
     }
 

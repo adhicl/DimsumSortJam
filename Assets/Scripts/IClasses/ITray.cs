@@ -1,3 +1,4 @@
+using Commons;
 using UnityEngine;
 
 namespace IClasses
@@ -6,7 +7,7 @@ namespace IClasses
     {
         public void SetRendererOrder(int order);
         public Transform[] GetDimsumPositions();
-        public void SetDimsums(int[] dimsums);
+        public void SetDimsums(DimsumCombination combination);
 
         public void CleanDimsums();
     }

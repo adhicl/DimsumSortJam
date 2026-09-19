@@ -20,6 +20,27 @@ namespace Commons
         public const int minLevelBooster2 = 14;
         public const int minLevelBooster3 = 20;
 
+        #region frozen_and_hidden
+
+        // How many frozen and hidden dim sums a level carries is the level asset's business -
+        // LevelData.TotalFrozen and TotalHidden. There is deliberately no minimum-level constant
+        // here: a rule in code would quietly override whatever a level asset asked for, and
+        // leaving the counts at zero already says "not in this level" perfectly well.
+
+        /// <summary>
+        /// Most slots in one row that may be frozen. Capped below three so a row can never arrive
+        /// completely iced over: a basket holding nothing but frozen pieces cannot be emptied at
+        /// all, and if the board runs out of matches while one is sitting there the only way out
+        /// is the stuck-board rescue. Leaving one piece movable keeps that a rare accident rather
+        /// than something the dealer does on purpose.
+        ///
+        /// This caps the shape of a row, not the total - a level asking for more frozen pieces
+        /// than the rows can carry gets as many as fit, and a warning.
+        /// </summary>
+        public const int MAX_FROZEN_PER_ROW = 2;
+
+        #endregion
+
         public const float TIME_CHARACTER_STAY = 120f;
         public static Vector2 START_POSITION_CHAR = new Vector2(-4f, 2.7f);
         public static Vector2 END_POSITION_CHAR = new Vector2(6f, 2.7f);

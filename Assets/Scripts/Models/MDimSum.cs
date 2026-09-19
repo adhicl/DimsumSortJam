@@ -17,7 +17,143 @@ namespace Models
         [SerializeField] SpriteRenderer _renderer;
         
         public int dimsumType { get; set; }
-        
+
+        #region frozen
+
+        /// <summary>
+        /// True while this piece is iced over and refuses to be dragged. It thaws when any match
+        /// completes anywhere on the board - see <c>GameController.ThawFrozenDimsums</c>.
+        ///
+        /// A frozen piece is not inert: it still fills a slot, still counts towards a match, and
+        /// can still be the piece a match completes on. It just cannot be the piece that moves,
+        /// which is what makes it a problem worth solving - it pins down the basket it is in
+        /// until the player earns a match somewhere else.
+        /// </summary>
+        public bool IsFrozen { get; private set; }
+
+        [Header("Frozen")]
+        [Tooltip("How far the piece rocks when the player tries to drag it while frozen. Pure " +
+                 "feedback: a press that does nothing at all reads as a dead touch.")]
+        [SerializeField] private float frozenNudgeAngle = 12f;
+
+        [Tooltip("How far the piece rocks as it thaws. Bigger than the refusal nudge on purpose - " +
+                 "this one is good news and should carry across the board.")]
+        [SerializeField] private float thawWiggleAngle = 22f;
+
+        [Tooltip("How long the thaw wiggle runs.")]
+        [SerializeField] private float thawWiggleDuration = 0.55f;
+
+        [Tooltip("How much the piece swells as the ice lets go.")]
+        [SerializeField] private float thawPunchScale = 0.3f;
+
+        // Kept so the two things that rock this piece - a refused drag and a thaw - can cancel
+        // each other rather than running at once and adding their angles together. It is tracked
+        // separately from _scaleTween, and neither touches the DOMove that settles a piece into
+        // its slot, so cancelling a wiggle can never strand a piece halfway between baskets.
+        private Tween _wiggleTween;
+
+        /// <summary>
+        /// Rocks the piece and always leaves it straight again.
+        ///
+        /// A punch rather than a shake: a punch returns to the rotation it started from, so
+        /// starting from square means ending square. A shake settles wherever it happens to stop,
+        /// and a piece left a few degrees crooked in its slot never recovers - nothing else in the
+        /// game ever writes rotation back.
+        /// </summary>
+        private void Wiggle(float angle, float duration, int vibrato, float delay)
+        {
+            if (_wiggleTween != null && _wiggleTween.IsActive()) _wiggleTween.Kill();
+
+            transform.localRotation = Quaternion.identity;
+            _wiggleTween = transform
+                .DOPunchRotation(new Vector3(0f, 0f, angle), duration, vibrato, 0.8f)
+                .SetDelay(delay);
+        }
+
+        /// <summary>
+        /// Puts the piece into or out of the ice, and swaps the sprite to match. Silent - the
+        /// caller owns the sound, because dealing a frozen piece and thawing one should not
+        /// sound the same.
+        /// </summary>
+        public void SetFrozen(bool frozen)
+        {
+            // Ice for a dish nobody drew ice for would leave the piece looking perfectly normal
+            // while quietly refusing every drag. Better to deal it unfrozen.
+            if (frozen && gameSetting != null && !gameSetting.CanFreeze(dimsumType)) frozen = false;
+
+            IsFrozen = frozen;
+            ApplyFace();
+        }
+
+        /// <summary>
+        /// Melts the ice: the piece goes back to being food, swells, and rocks itself loose.
+        /// Does nothing to a piece that was not frozen, so callers can thaw the whole board.
+        ///
+        /// <paramref name="delay"/> staggers only the animation, never the state. The piece is
+        /// draggable the instant this is called, whatever the wiggle is doing - a piece that
+        /// looks free but refuses the finger for another third of a second would read as the
+        /// thaw being broken.
+        /// </summary>
+        public void Thaw(float delay = 0f)
+        {
+            if (!IsFrozen) return;
+
+            SetFrozen(false);
+
+            // Punch rather than DOScale: a punch returns to the scale it started from, so this
+            // cannot fight the drag tweens in ScaleTo over what "normal size" means.
+            if (_scaleTween != null && _scaleTween.IsActive()) _scaleTween.Kill();
+            transform.localScale = Vector3.one;
+            transform.DOPunchScale(Vector3.one * thawPunchScale, thawWiggleDuration, 7, 0.7f)
+                     .SetDelay(delay);
+
+            Wiggle(thawWiggleAngle, thawWiggleDuration, 14, delay);
+        }
+
+        /// <summary>Draws the piece as ice or as food, whichever it currently is.</summary>
+        private void ApplyFace()
+        {
+            if (gameSetting == null) return;
+
+            if (IsFrozen)
+            {
+                Sprite frozenSprite = gameSetting.GetFrozenSprite(dimsumType);
+                if (frozenSprite != null)
+                {
+                    _renderer.sprite = frozenSprite;
+                    return;
+                }
+            }
+
+            if (gameSetting.currentDimsumSprites != null
+                && gameSetting.currentDimsumSprites.Length > dimsumType
+                && dimsumType >= 0)
+            {
+                _renderer.sprite = gameSetting.currentDimsumSprites[dimsumType];
+            }
+            else
+            {
+                // Silently keeping the previous sprite shows the wrong food, and a never-used
+                // pool object has none at all and renders nothing. Both are level-data faults
+                // worth seeing rather than a piece that quietly goes missing.
+                Debug.LogError("[Dimsum] type " + dimsumType + " has no sprite: this level loaded only "
+                               + (gameSetting.currentDimsumSprites == null
+                                   ? 0 : gameSetting.currentDimsumSprites.Length) + ".");
+            }
+        }
+
+        /// <summary>
+        /// The "no" a frozen piece gives back when it is pressed. Rocking it says the game saw
+        /// the touch and the piece is stuck, which a silent non-response does not.
+        /// </summary>
+        private void RefuseDrag()
+        {
+            soundController.PlayBubbleSoundClips();
+            Wiggle(frozenNudgeAngle, 0.4f, 10, 0f);
+        }
+
+        #endregion
+
         #region drag
 
         [Header("Drag feel")]
@@ -47,6 +183,14 @@ namespace Models
             // A popup covering the board does not stop Unity delivering this, and OnStartDrag
             // would call DoStartTimer and resume the level underneath the popup.
             if (gameController != null && !gameController.AcceptsBoardInput) return;
+            // Refused here rather than in OnStartDrag: the drag must never begin, or OnMouseUp
+            // would run the whole drop path - sound, tweens, DoStartTimer - on a piece that was
+            // not allowed to move.
+            if (IsFrozen)
+            {
+                RefuseDrag();
+                return;
+            }
             OnStartDrag();
         }
 
@@ -201,7 +345,7 @@ namespace Models
         
         #region pool_zenject
 
-        void Reset(int dimsumType)
+        void Reset(int dimsumType, bool frozen)
         {
             //Debug.Log($"Reset {dimsumType}");
             this.dimsumType = dimsumType;
@@ -213,32 +357,28 @@ namespace Models
             // after this returns, so killing here is safe.
             transform.DOKill();
             transform.localScale = Vector3.one;
+            // A piece despawned mid-wiggle - a power-up clearing the board during a thaw - comes
+            // back out of the pool still crooked, and nothing else ever writes rotation back.
+            transform.localRotation = Quaternion.identity;
+            _wiggleTween = null;
             // A piece despawned mid-drag (a power-up clearing the board) never reaches OnEndDrag,
             // so it would come back out of the pool still believing it was held — drawn a lift
             // above the finger and at drag size.
             _moved = false;
             _scaleTween = null;
+            // A piece that came back out of the pool still frozen would refuse every drag for a
+            // reason the player cannot see, since the sprite is about to be reassigned anyway.
+            IsFrozen = false;
             BackToBottom();
 
-            if (gameSetting.currentDimsumSprites.Length > dimsumType)
-            {
-                _renderer.sprite = gameSetting.currentDimsumSprites[dimsumType];
-            }
-            else
-            {
-                // Silently keeping the previous sprite shows the wrong food, and a never-used
-                // pool object has none at all and renders nothing. Both are level-data faults
-                // worth seeing rather than a piece that quietly goes missing.
-                Debug.LogError("[Dimsum] type " + dimsumType + " has no sprite: this level loaded only "
-                               + gameSetting.currentDimsumSprites.Length + ".");
-            }
+            SetFrozen(frozen);
         }
 
-        public class Pool : MonoMemoryPool<int, MDimSum>
+        public class Pool : MonoMemoryPool<int, bool, MDimSum>
         {
-            protected override void Reinitialize(int dimsumType, MDimSum dimsum)
+            protected override void Reinitialize(int dimsumType, bool frozen, MDimSum dimsum)
             {
-                dimsum.Reset(dimsumType);
+                dimsum.Reset(dimsumType, frozen);
             }
         }
 

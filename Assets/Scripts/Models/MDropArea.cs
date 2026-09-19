@@ -53,6 +53,18 @@ namespace Models
             return dimsums;
         }
 
+        /// <summary>
+        /// Everything this basket still holds, top row first, for a reshuffle to redeal.
+        ///
+        /// The ice does not survive the trip, here or in the rows below. A reshuffle is the
+        /// game's answer to a board with no move left in it, and frozen pieces are one of the
+        /// things that can cause that - so a reshuffle that preserved the ice could hand back the
+        /// same dead board five times and then lose the level for the player. It is also what the
+        /// animation says happens: the pieces fly up and come back as a fresh deal.
+        ///
+        /// Hidden rows stay hidden. They cannot deadlock anything, and revealing the whole queue
+        /// would make the refresh power-up a way to buy information rather than a way out.
+        /// </summary>
         public DimsumCombination[] GetLeftDimsums()
         {
             DimsumCombination dimsumCombination = new DimsumCombination();
@@ -76,12 +88,60 @@ namespace Models
                 int index = 1;
                 foreach (var arrayDimsum in arrayDimsums)
                 {
-                    dimsumCombinations[index] = arrayDimsum;
+                    DimsumCombination thawed = arrayDimsum;
+                    thawed.frozenMask = 0;
+                    dimsumCombinations[index] = thawed;
                     index++;
                 }
 
                 return dimsumCombinations;
             }
+        }
+
+        /// <summary>
+        /// True when at least one piece on top of this basket is frozen, so the basket cannot be
+        /// emptied by dragging. The whole point of the mechanic, and the reason the no-move check
+        /// has to ask: a basket pinned by ice is not a basket the player can clear.
+        /// </summary>
+        public bool HasFrozenDimsum()
+        {
+            foreach (var dimsum in mDimSums)
+            {
+                if (dimsum != null && dimsum.IsFrozen) return true;
+            }
+            return false;
+        }
+
+        /// <summary>How many pieces on top can actually be picked up.</summary>
+        public int MovableDimsums()
+        {
+            int total = 0;
+            foreach (var dimsum in mDimSums)
+            {
+                if (dimsum != null && dimsum.dimsumType != -1 && !dimsum.IsFrozen) total++;
+            }
+            return total;
+        }
+
+        /// <summary>
+        /// Melts every frozen piece on top of this basket and returns how many gave way, so the
+        /// caller can keep counting across baskets and spread the wiggles out. Quiet if there are
+        /// none - callers thaw the whole board without checking first.
+        /// </summary>
+        public int ThawFrozenDimsums(float firstDelay, float stagger, float maxDelay)
+        {
+            int thawed = 0;
+            foreach (var dimsum in mDimSums)
+            {
+                if (dimsum == null || !dimsum.IsFrozen) continue;
+
+                // Clamped per piece, not per basket. Capping only where a basket starts still let
+                // the pieces inside it walk past the cap, so a heavily iced board finished later
+                // than the ceiling claimed.
+                dimsum.Thaw(Mathf.Min(firstDelay + thawed * stagger, maxDelay));
+                thawed++;
+            }
+            return thawed;
         }
 
         public MDimSum[] GetAllDimsumTypeInsides()
@@ -335,7 +395,7 @@ namespace Models
                 newTray.SetRendererOrder(10 + i);
                 trayList.Add(newTray);
                 
-                if (i >= arrayDimsums.Count - 1) newTray.SetDimsums(arrayDimsums[0].ToArray());
+                if (i >= arrayDimsums.Count - 1) newTray.SetDimsums(arrayDimsums[0]);
             }
         }
 
@@ -354,7 +414,7 @@ namespace Models
             {
                 if (row[i] != -1)
                 {
-                    MDimSum newDimsum = dimsumSpawner.Create(row[i]);
+                    MDimSum newDimsum = dimsumSpawner.Create(row[i], firstCombination.IsFrozen(i));
                     newDimsum.DoDropPlaceAt(this, i, false);
                 }
                 else
@@ -387,7 +447,9 @@ namespace Models
             {
                 if (row[i] != -1)
                 {
-                    MDimSum newDimsum = dimsumSpawner.Create(row[i]);
+                    // Whatever the plate was showing, the piece that comes up is the real dish:
+                    // being dealt IS the reveal, so hiddenMask is deliberately not consulted here.
+                    MDimSum newDimsum = dimsumSpawner.Create(row[i], firstCombination.IsFrozen(i));
                     newDimsum.transform.position = trayTransforms[i].position;
                     newDimsum.transform.localScale = Vector3.one * 0.7f;
                     newDimsum.transform.DOScale(Vector3.one, 0.2f);
@@ -415,7 +477,7 @@ namespace Models
                 // method on the last row, and arrayDimsums[0] then threw inside this callback.
                 if (trayList.Count > 0 && arrayDimsums.Count > 0)
                 {
-                    trayList[^1].SetDimsums(arrayDimsums[0].ToArray());
+                    trayList[^1].SetDimsums(arrayDimsums[0]);
                 }
             };
         }

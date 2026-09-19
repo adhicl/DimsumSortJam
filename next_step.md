@@ -625,6 +625,146 @@ otherwise leave two of them writing `localScale` every frame. `Reset` clears `_m
 reference too, so a piece despawned mid-drag by a power-up cannot come back still believing it is
 held — the same pooling trap as everything above.
 
+## Frozen and hidden jajanan
+
+Two complications, both **authored per level**. `LevelData.TotalFrozen` and `TotalHidden` say how
+many of each that level carries — counts for the whole level, not per basket — and the game picks
+*which* pieces at random every time the level loads, so replaying a level ices different ones.
+
+There is deliberately **no minimum-level rule in code**. A rule there would quietly override what a
+level asset asked for; leaving the counts at zero already says "not in this level" perfectly well.
+Levels 1–14 are all at zero, and the assets from level 15 up are seeded on a ramp — 4 frozen / 8
+hidden at level 15, reaching 12 / 20 by level 35. Tune them on the `LevelData` asset; nothing in
+code needs touching.
+
+| | What it does | Where it is seen | How it ends |
+|---|---|---|---|
+| **Frozen** | The piece cannot be dragged. It still fills its slot and still counts towards a match. | On top of a basket, drawn as `JAJANAN FROZEN - <dish>` | **Any** match anywhere on the board thaws **every** frozen piece |
+| **Hidden** | The dish is not shown while it waits its turn. | On a plate under a basket, drawn as `secret item - icon 1` | Being dealt onto the basket *is* the reveal |
+
+### The flags live on the row, not on the piece
+
+`DimsumCombination` carries `frozenMask` and `hiddenMask`, one bit per slot. That is the only place
+they *can* live: a row is dealt into a basket and then waits on a plate — often for most of a level
+— and does not become `MDimSum` objects until the basket above it empties. A flag on the piece
+would not exist yet.
+
+They are `int` masks rather than six `bool`s so that **every existing `LevelData` asset keeps
+deserialising**: a new int field reads back as 0, which is exactly "an ordinary row".
+
+### Picking them
+
+`GameController.ApplyBoardModifiers` takes **every basket's deal at once** and draws the requested
+number of slots out of the whole board. It has to see the whole board, because the counts are per
+level: dividing the budget up basket by basket would stop a level from ever dealing three frozen
+pieces into one unlucky basket, and that is exactly the kind of board worth meeting occasionally.
+
+`CreateLevel` therefore slices the deal **before** filling anything. The slices are copies —
+`DimsumCombination` is a struct, so `Take().ToArray()` copies — which matters, because the array
+being sliced belongs to the `LevelData` asset and writing masks straight into it would bake one
+run's ice into the asset. Baskets are still opened and filled one at a time in the original order,
+because a Locked basket reads the board as it is being built (`MDropArea.SetOpen` → level 3).
+
+Three rules in the draw are load-bearing:
+
+- **Row 0 is never hidden.** It goes straight onto the basket when the level loads, so it is never
+  seen on a plate — hiding it would hide it from nobody.
+- **A row is never frozen solid** (`MAX_FROZEN_PER_ROW`, further capped at `FilledCount() - 1`). A
+  basket holding nothing but ice cannot be emptied by hand at all; it can only be freed by a match
+  found elsewhere, and if none is left the board is dead through no fault of the player.
+- **Dishes with no frozen art never enter the draw.** If they did, they would silently cost the
+  level frozen pieces it asked for.
+
+Asking for more than the board can hold is not an error — it places what fits and logs a warning
+naming the real ceiling. (Level_018 asked for 999 of each and got 42 frozen / 71 hidden, with no row
+iced solid.) Note that `read_console` can hide warnings; check `Logs/Editor.log` if one is
+expected and missing.
+
+### Why any match thaws everything
+
+The alternative — one match per frozen piece — turns a board that iced over badly into a grind with
+no way back, and the player cannot tell in advance which kind of board they are on. One rule,
+learnable in a level or two. Pieces still queued on the plates keep their ice, so a level goes on
+producing frozen pieces rather than being cleared of them once.
+
+The hook is `GameController.CheckClearDimsum`, which is already what "a match just cleared" means
+here — Locked baskets and customer orders hang off the same call. The suck-package power-up routes
+through it too, so it thaws as well.
+
+**The thaw is juiced**, because it hands the player back pieces they could not move and that should
+land: each piece swells, rocks itself loose, and `SoundController.PlayUnfreezeClip` fires once for
+the board (not once per piece — three clips in one frame read as a glitch). Drop an ice-crack clip
+into `unfreezeClip` on the Sound prefab; until then it falls back to a bubble clip, so the thaw is
+never silent.
+
+The wiggles are **staggered** — `thawStaggerSeconds` on `GameController`, 0.05s apart, capped at
+`thawStaggerMaxDelay` — so a board full of ice breaks up as a ripple across the table instead of
+every piece twitching on the same frame. The **stagger is animation only**: a piece is draggable the
+instant it thaws, whatever its wiggle is doing. A piece that looked free but refused the finger for
+another third of a second would read as the thaw being broken.
+
+Two details in `MDimSum` worth not undoing. The rock is a **punch**, not a shake: a punch returns to
+the rotation it started from, and nothing else in the game ever writes rotation back, so a shake
+that settled a few degrees off would leave a piece crooked in its slot forever. And the refusal
+nudge and the thaw wiggle share one tracked `_wiggleTween`, so they cancel each other rather than
+adding their angles together.
+
+### A reshuffle thaws, and that is deliberate
+
+`MDropArea.GetLeftDimsums` clears `frozenMask` on everything it hands back. A reshuffle is the
+game's answer to a board with no move left in it, and **ice is one of the things that can cause
+that** — a reshuffle that preserved it could hand back the same dead board five times and then lose
+the level for the player. It is also what the animation already says happens: the pieces fly up and
+come back as a fresh deal.
+
+Hidden rows survive a reshuffle. They cannot deadlock anything, and revealing the whole queue would
+turn the refresh power-up into a way to buy information.
+
+### The no-moves check had to learn about ice
+
+See *"What counts as a move"* below for the pre-ice rules. Frozen pieces changed two of them:
+
+- A basket with **any** frozen piece can no longer be emptied, so it is skipped as a clearing
+  candidate — even though it still counts as occupied space.
+- `CanGatherThree` can no longer use the old cancelled-down `free + held >= 3`. That identity
+  assumed the fullest basket was always the cheapest host, which ice breaks: the best host is the
+  one whose pieces can actually be *shifted*. It now tries **every** basket as host and asks two
+  questions — are there enough *movable* copies elsewhere to make up three, and can the host be
+  opened up far enough to take them (`evictable >= need - freeAtHost`).
+- A new guard returns false when the board has **no free slot at all**. The eviction argument above
+  relies on there being one hole somewhere to start a chain of moves, so this is load-bearing, not
+  a shortcut.
+
+Verified against nine synthetic boards in play mode, including the two that matter: ice pinning the
+only clearable basket reads as *no move* (it read as a move before), and ice on a basket that has
+nothing under it does not. The draw itself was checked over twelve loads of Level_018 — exact
+counts every time, never a row iced solid, never a hidden row 0, and twelve different layouts.
+
+### Art
+
+`GameSetting.dimsumFrozenSprite` is indexed **in step with** `dimsumSprite`, and
+`GameController.BuildLevelSprites` shuffles *indices* rather than the arrays, so type 4 is the same
+dish whether drawn as food or as ice. Shuffling the two separately would hand a piece a frozen face
+belonging to another dish, and it would silently change identity when it thawed.
+
+**Three of the 36 dishes have no frozen art** and therefore never freeze — `GetFrozenSprite`
+returns null, `CanFreeze` says no, and the dealer skips them. This is a designed gap, not a bug:
+
+| Dish | Note |
+|---|---|
+| `JAJANAN - PUTRI MANDI 1` | no frozen version drawn (`PUTRI KANDIS` is a different dish) |
+| `JAJANAN - ONDE ONDE 1 - new` | no frozen version drawn |
+| `JAJANAN - KUE KUKUS PANDAN 1` | no frozen version drawn (`KUKUS KOTAK` / `BOLU KUKUS` are other dishes) |
+
+Drop a `JAJANAN FROZEN - <dish>.png` into `Assets/Sprites/JAJANAN FROZEN/` and slot it into that
+index of `dimsumFrozenSprite` to switch one on. One mapping was a judgement call worth knowing
+about: **`TALAM 1 - kotak` is paired with `JAJANAN FROZEN - TALAM 2`** to keep it visually distinct
+from plain `TALAM 1`; swap it if that is the wrong square.
+
+> Imported art defaults to **100 PPU / Multiple**, but every sprite in this project is **250 PPU /
+> Single**. New dish art dropped into the project will render 2.5x too large until that is fixed on
+> the importer.
+
 ## Power-ups — gating, spending, and the buy popup
 
 Four power-ups sit in the top bar (`PlayTopBar`, inside `Panel-Game.prefab`). The button order is

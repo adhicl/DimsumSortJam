@@ -49,18 +49,40 @@ namespace Models
             }
         }
 
-        public void SetDimsums(int[] dimsums)
+        /// <summary>
+        /// Draws a row onto the plate. Takes the whole combination rather than just the types
+        /// because the plate is the only place a hidden dish is ever seen: hidden is not a
+        /// property of the dish, it is a property of this row waiting its turn, and it stops
+        /// meaning anything the moment the row is dealt.
+        /// </summary>
+        public void SetDimsums(DimsumCombination combination)
         {
-            _dimsums = dimsums;
+            _dimsums = combination.ToArray();
             for (int i = 0; i < _spriteRenderers.Length; i++)
             {
-                if (dimsums[i] >= 0)
+                if (_dimsums[i] < 0)
                 {
-                    _spriteRenderers[i].sprite = gameSetting.currentDimsumSprites[_dimsums[i]];
+                    _spriteRenderers[i].sprite = null;
+                }
+                else if (combination.IsHidden(i))
+                {
+                    // No secret icon assigned means the level would silently give the dish away,
+                    // which is worse than a visibly missing sprite: the mechanic would look like
+                    // it simply was not working.
+                    if (gameSetting.hiddenDimsumSprite == null)
+                    {
+                        Debug.LogError("[Tray] A hidden dim sum has no icon: assign "
+                                       + "hiddenDimsumSprite on the GameSetting asset.", this);
+                        _spriteRenderers[i].sprite = gameSetting.currentDimsumSprites[_dimsums[i]];
+                    }
+                    else
+                    {
+                        _spriteRenderers[i].sprite = gameSetting.hiddenDimsumSprite;
+                    }
                 }
                 else
                 {
-                    _spriteRenderers[i].sprite = null;
+                    _spriteRenderers[i].sprite = gameSetting.currentDimsumSprites[_dimsums[i]];
                 }
             }
         }
