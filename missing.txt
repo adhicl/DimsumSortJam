@@ -20,6 +20,8 @@ missing:
 - fix item in plate not shown *
 - always shown game version number *
 
+- if no video ad available, window is not shown and just unlock, this should be show window but button is disabled
+
 
 * = is fixed
 

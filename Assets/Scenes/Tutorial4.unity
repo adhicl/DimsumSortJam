@@ -3257,6 +3257,10 @@ PrefabInstance:
       value: 
       objectReference: {fileID: 2875766372118975236, guid: 66021bb4244564e4eaa42655d5ee2699, type: 3}
     - target: {fileID: 8681086508371544235, guid: 42fff8a1375da0a4aae34bbf95c0e67e, type: 3}
+      propertyPath: popupUnlockBasket
+      value: 
+      objectReference: {fileID: 2875766372118975236, guid: 53599fcc777982844983cebc4d3fdc29, type: 3}
+    - target: {fileID: 8681086508371544235, guid: 42fff8a1375da0a4aae34bbf95c0e67e, type: 3}
       propertyPath: 'baskets.Array.data[0]'
       value: 
       objectReference: {fileID: 1670245195}

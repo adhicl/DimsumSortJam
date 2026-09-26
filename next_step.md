@@ -1288,6 +1288,269 @@ Add a scene name there to show it somewhere new. `Profile` is deliberately not i
 
 ---
 
+## Power-up row order
+
+The four power-up buttons along the bottom read **left to right in unlock order**: magnifier
+(Lv.2), package (Lv.7), hourglass (Lv.10), shuffle (Lv.14). Before 2026-09-25 they sat in slot
+order — package, magnifier, shuffle, hourglass — so the first one a player unlocked was second
+from the left and the row made no sense as a progression.
+
+### Where the order lives
+
+One place: the sibling order of the four children of `ScrollRect-Toolbar/Viewport/Content` in
+**`Assets/Prefabs/UI/Panel-Game.prefab`**. That Content is a `HorizontalLayoutGroup`, so sibling
+order *is* left-to-right order, and all eight play scenes (Game, Tutorial1–7) are instances of that
+prefab with **no order overrides** — editing the prefab moves the row everywhere at once.
+
+The slot numbering never changed. `powerUpBtn1` is still the package and `GameSetting.GetPowerup(1)`
+still counts packages; only where they sit changed. Nothing that addresses a power-up by slot
+needed touching.
+
+### The tutorial covers are separate copies
+
+Tutorial2, 5, 6 and 7 each introduce one power-up. Their `UseItem1` cover holds its **own duplicate**
+of the toolbar — not a prefab instance — drawn above the dimming layer so the new power-up stays
+lit while the rest of the screen goes dark, plus a `DownArrow` pointing at it. Those four copies
+were reordered to match. **A change to the prefab row does not reach them**; they have to be done
+by hand.
+
+| Scene | Entered from level | Unlocks | Position in the row |
+|---|---|---|---|
+| Tutorial2 | 1 | power-up 2, magnifier (Lv.2) | 1st |
+| Tutorial7 | 6 | power-up 1, package (Lv.7) | 2nd |
+| Tutorial5 | 9 | power-up 4, hourglass (Lv.10) | 3rd |
+| Tutorial6 | 13 | power-up 3, shuffle (Lv.14) | 4th |
+
+### Why the arrow is positioned in code
+
+`TutorialPowerUpPointer` on each cover centres the DownArrow over the slot at runtime. This is not
+tidiness — a fixed position is provably wrong on most devices:
+
+- The toolbar is anchored to both screen edges, and the layout group has `childForceExpandWidth`,
+  so the four slots are spread across whatever width the toolbar has.
+- The CanvasScaler runs `ScaleWithScreenSize` at **`match = 0.5`**, which makes the canvas width *in
+  canvas units* a function of aspect ratio — measured 1075 to 2275 units across the range tried.
+
+So the slots sit at different canvas-unit positions on a tall phone than on a short one, and a
+hand-placed arrow only lines up at the one aspect it was authored for. The arrows that were there
+before had this bug already; they were simply never noticed because nobody compared them across
+devices. The serialized `anchoredPosition` that remains on each DownArrow is **only an editor
+preview** — the pointer overwrites its X on enable and whenever the row moves.
+
+Which slot to point at is derived, not configured: the row is in unlock order, so the nth slot has
+the nth lowest unlock level, and the target is the one whose level equals `currentLevel + 1` — the
+same rule `PlayTopBar.ShowTutorialPowerUp` uses to reveal it. No per-scene wiring to keep in step.
+
+### If you change an unlock level
+
+`Settings.minLevelPowerup1`..`4` are the source of truth, but the row order is *authored*, so
+changing a constant silently leaves the row — and every tutorial arrow pointing into it — wrong.
+`PlayTopBar.ValidateSlotOrder` catches that: an editor-only check that logs, on entering Play mode,
+the exact order the row should be in. To fix, reorder the prefab's Content children, then the
+duplicate row in each of the four covers. The arrows need nothing; they follow.
+
+> **That warning is easy to miss in this project.** `Debug.LogWarning` does not come back through
+> the MCP `read_console` tool here — `Debug.Log` does. Read it in the Unity console window, or
+> capture it with `Application.logMessageReceived`.
+
+### Verified 2026-09-25
+
+All eight scenes report `Lv2 Lv7 Lv10 Lv14` left to right, for both the real row and the four cover
+copies. In Tutorial7 at `currentLevel = 6` the arrow stayed exactly centred on the package
+(0.00 offset) while the row was forced to widths 1075, 1775 and 2275 — the neighbouring slots moved
+away proportionally, the arrow did not. The order guard was confirmed to fire once when the row is
+scrambled and stay silent when it is correct.
+
+---
+
+## Power-ups — the empty-target crash
+
+Fixed 2026-09-25. Symptom:
+
+```
+IndexOutOfRangeException: Index was outside the bounds of the array.
+PowerUpAnimationEffect+<DoAnimateSuckPowerRoutine>d__15.MoveNext ()
+  (at Assets/Scripts/GameObjects/PowerUpAnimationEffect.cs:85)
+```
+
+### What happened
+
+`PowerUpSuckPackage` spent the power-up first and gathered its targets second, passing
+`GetDimsumReadyOnTop()` straight through. That returns an **empty array** when the board holds no
+triple, and a second later the routine read `positionDimsums[0]`.
+
+The button is supposed to be greyed out in that state — `PlayTopBar` gates both match-driven
+power-ups on `HasReadyMatch` — but it re-checks on a **0.15s poll**, not the instant the board
+changes. So there is a ~150ms window after the last triple clears in which the button is still
+live. A press landing there was all it took.
+
+### Why it was worse than one exception
+
+The throw happened *after* `DoAnimateSuckPower` had already switched the effect object on, and it
+skipped the line at the end of the routine that switches it off. `GameController.PowerupRunning`
+is nothing more than "is that object active", and `PlayTopBar` greys the entire row — all four
+buttons and the "+" badges — while it is true.
+
+So one mistimed press **cost a power-up and then killed every power-up button for the rest of the
+level**. Confirmed live in the crashed session that reported it: `PowerupRunning=True`,
+`HasReadyMatch=False`, effect object still active, all four buttons `interactable=False`.
+
+### Closing the window that allowed it
+
+The match gate itself was never missing — `PlayTopBar.RefreshInteractable` has always computed
+`usable = unlocked && levelRunning && !powerUpRunning && (!NeedsMatch[i] || hasMatch)`, with
+`NeedsMatch = { true, true, false, false }`: package and magnifier need a triple on the board, the
+shuffle and the timer do not. What was missing was *immediacy*. That refresh only ran on the
+0.15s poll, so the button stayed lit for up to a refresh interval after the board's last triple
+went.
+
+`RefreshInteractable` now runs **every frame**, outside the poll. The reason it did not before was
+cost, and that turned out to be misjudged: `HasReadyMatch` measures **0.76 us per call** on a
+30-slot board — about 0.005% of a frame at 60fps — so the poll was saving roughly nothing in
+exchange for the hole it left. The counters stay on the poll, because those format strings and walk
+the held/in-flight bookkeeping for a number that changes a handful of times a level.
+
+Writes are guarded by `SetInteractable`, which skips the assignment when the value has not moved:
+setting `Selectable.interactable` re-runs its colour transition either way, and this now touches
+eight buttons every frame.
+
+### The fix, in two layers
+
+**Gather before spending** (`GameController.PowerUpSuckPackage`, `PowerUpMagnifier`). Targets are
+collected first and the call returns early if there are none — the player is not charged for a
+press the UI meant to refuse. The buy popup is unaffected: that is the separate "+" badge, which
+never routed through here.
+
+**The effect cannot lock the row** (`PowerUpAnimationEffect`). Independently of the caller:
+
+- `DoAnimateSuckPower` / `DoAnimateMagnifier` refuse an empty or all-null list *before* switching
+  the object on.
+- The type is read from the first surviving target instead of element zero, and every loop skips
+  entries that have gone — a second or more passes inside these routines and the board can clear a
+  piece while they run.
+- All four routines wrap their body in `try/finally` with the deactivation in the `finally`, so an
+  exception can never again leave the row stuck. An exception thrown inside a coroutine unwinds
+  through `MoveNext`, so the `finally` does run.
+
+One bad frame should cost an animation, not the rest of the level.
+
+### Verified
+
+Against the fixed build, with no exceptions logged:
+
+| Case | Result |
+|---|---|
+| `DoAnimateSuckPower(empty)` | no throw, effect never activates, `PowerupRunning=False` |
+| `DoAnimateSuckPower(3 nulls)` | same |
+| `DoAnimateMagnifier(empty)` | same |
+| `PowerUpSuckPackage()` with no triple | package count unchanged — not charged |
+| `PowerUpMagnifier()` with no triple | not charged |
+| `PowerUpSuckPackage()` with a triple | charges 1, effect runs, and `PowerupRunning` returns to false when it ends |
+| last triple removed | magnifier goes `interactable=False` on the **next frame** |
+| triple restored | back to `interactable=True` on the next frame |
+| poll blocked 9986s, button forced to the wrong value | corrected anyway — proves the per-frame path, not just the polled one |
+
+The no-triple state was forced by nulling `_gameBaskets`, which is what makes `FindReadyMatchType`
+return -1 — the same condition as the poll gap, without having to hand-play a board empty.
+
+### Open: the unlock tutorials reveal a button that cannot be pressed
+
+Found while verifying the above, **not fixed** — it is a separate bug and nobody has asked for it
+yet.
+
+Each unlock tutorial runs at the level *before* the one that unlocks its power-up: Tutorial7 is
+played at `currentLevel = 6` and the package unlocks at `minLevelPowerup1 = 7`.
+`CloseTutorialCover` calls `PlayTopBar.ShowTutorialPowerUp`, which swaps the padlock for the live
+icon — but only the icon. `RefreshInteractable` still computes `unlocked = currentLevel >= minLevel`,
+which is `6 >= 7`, so the button stays **non-interactable** for the whole tutorial.
+
+Measured in Tutorial7 at `currentLevel = 6`: `activeRootShown=True`, `interactable=False`, with a
+triple on the board. So the tutorial reveals the new power-up, points an arrow at it and captions
+it "Clear 1 group of food", and the player cannot press it. It only becomes usable on the next
+level.
+
+The fix, when it is wanted, is to let the tutorial reveal count as unlocked for that slot — the
+same condition `ShowTutorialPowerUp` already tests (`currentLevel == minLevel - 1`) — rather than
+having the reveal and the gate disagree.
+
+---
+
+## The basket unlock offer
+
+Fixed 2026-09-26. The offer was never appearing in the tutorial scenes: tapping a Closed basket
+there just opened it, free and silently.
+
+**Cause was scene wiring, not logic.** `GameController.ShowUnlockBasketPopup` falls back to
+unlocking for free when `popupUnlockBasket` is unassigned — better than swallowing the tap — and
+**all seven tutorial scenes had it `NULL`**. Only `Game` was wired. Three of those scenes actually
+deal a Closed basket, so the bypass was reachable in normal play:
+
+| Level | Scene | Baskets dealt (`LevelData.firstDisplayed`) |
+|---|---|---|
+| 6 | Tutorial7 | `DDDDDDDCDDLD` — one Closed |
+| 9 | Tutorial5 | `DDDDDDDDDLCL` — one Closed |
+| 13 | Tutorial6 | `LCLDDDDDDDDD` — one Closed |
+
+All eight scenes now reference `Assets/Prefabs/UI Popups/Unlock-Basket-Popup.prefab`. Tutorial1–4
+deal no Closed basket, so wiring them changes nothing today and stops the hole reopening if their
+level data ever gains one. The fallback now logs a warning naming the scene, so a missing reference
+announces itself instead of quietly giving baskets away.
+
+### The "watch an ad" button was already gated
+
+`AdRewardButton` on `Button-Use-Video` greys the option — `interactable = false`, alpha `0.45` —
+whenever no rewarded ad is loaded, polling `RewardedAdController.IsAvailable` every 0.25s. It was
+correctly wired in the prefab all along (`watchAdGate`); it simply never got the chance to run,
+because the popup it lives on was never shown.
+
+Two things to know when testing it:
+
+- **In the Editor the button never greys.** `RewardedAdController.IsAvailable` is hardcoded `true`
+  under `UNITY_EDITOR` so the three ad flows stay exercisable in Play mode, and `AdRewardButton`
+  also treats a missing controller as available — which is what you get entering a gameplay scene
+  directly, since the controller lives in Splash. On device neither applies and the gate reads
+  `IsReady`.
+- **The 0.25s poll is deliberate and fine here**, unlike the power-up row's. `IsReady` is a JNI hop
+  on Android, and a press landing in the stale window costs nothing: `ShowAd` finds no ad, runs
+  `onUnavailable`, and the gate re-greys itself. Nothing is spent and nothing throws.
+
+## Character requests — no repeated item in one bubble
+
+Fixed 2026-09-26. A character asking for two items showed the same dim sum twice.
+
+`StartShowCharacter` took `N` items off one list. For `getOnTopOnly` requests that list came from
+`GetDimsumReadyOnTop()`, which returns **the three pieces of a single matching type** — it is the
+match-triple finder the magnifier and package use. Shuffling three identical types and taking two
+returns that type twice, every time. Measured on the level 9 board: `[5,5]` on four runs out of
+four.
+
+The other branch was already fine — `GetAvailableDimsums()` is built on a dictionary keyed by type,
+so it holds one entry per type.
+
+**26 of the 223 authored requests are multi-item with `getOnTopOnly`**, so every one of them showed
+a duplicate.
+
+`PickRequestItems` now builds the order type by type. `getOnTopOnly` means "ask for something the
+player can hand over right now", so the on-top type still **seeds** the request and that promise
+holds for the first item; the rest of the board tops the order up with types not already asked for.
+It also covers a case the old code got wrong in the other direction: `getOnTopOnly` with no triple
+on the board used to hand the character an empty bubble, and now falls through to what is
+available.
+
+Single-item requests are unchanged by construction — one pick from the same source as before.
+
+### Verified on the level 9 board
+
+| Request | Result |
+|---|---|
+| `getOnTopOnly`, 2 items, x6 | `[5,7] [5,2] [5,7] [5,8] [5,2] [5,2]` — all unique, on-top type 5 always first |
+| `getOnTopOnly`, 3 items, x3 | `[5,2,10] [5,8,7] [5,10,2]` — all unique |
+| not `getOnTopOnly`, 3 items | unique, as before |
+| `getOnTopOnly`, 1 item | `[5]` — identical to old behaviour |
+| **old code, 2 items, x4** | `[5,5]` every time |
+
+---
+
 ## Reference — what is already wired in Unity
 
 | File / object | Role |

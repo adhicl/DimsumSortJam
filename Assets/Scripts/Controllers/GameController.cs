@@ -296,25 +296,70 @@ namespace Controllers
             RequestCharacter request = _requestCharacters[0];
             
             _soundController.PlayBikeBellSoundClips();
-            MDimSum[] dimsumsOnTop;
-            if (request.getOnTopOnly)
-            {
-                dimsumsOnTop = GetDimsumReadyOnTop();
-            }
-            else
-            {
-                dimsumsOnTop = GetAvailableDimsums();
-            }
-                
-            dimsumsOnTop = shuffleDimSums(dimsumsOnTop);
-            
+
             MCharacter mCharacter = _characterSpawner.Create();
-            mCharacter.SetRequest(dimsumsOnTop.Take(request.totalRequestItems).ToArray(), new Vector2(-1f, 2.7f));
+            mCharacter.SetRequest(PickRequestItems(request), new Vector2(-1f, 2.7f));
             _characterSpawns.Add(mCharacter);
 
             SetCharacterPosition();
             
             _requestCharacters.RemoveAt(0);
+        }
+
+        // Reused across requests rather than reallocated - a level spawns a character every few
+        // seconds, and both of these are small and short-lived.
+        private readonly List<MDimSum> _requestPicks = new();
+        private readonly HashSet<int> _requestPickedTypes = new();
+
+        /// <summary>
+        /// Chooses what one character asks for. Never the same dim sum twice in a bubble: the
+        /// request is a list of things to fetch, and asking for the same item twice reads as a
+        /// display bug rather than a harder order.
+        ///
+        /// <c>getOnTopOnly</c> means "ask for something the player can hand over right now", and
+        /// that is why it could not simply be taken N at a time: it is served by
+        /// <see cref="GetDimsumReadyOnTop"/>, which reports the three pieces of a *single* matching
+        /// type. Taking two from it returned that one type twice. It seeds the request instead -
+        /// so the promise still holds for the first item - and the rest of the board, which
+        /// <see cref="GetAvailableDimsums"/> already returns one-per-type, tops the order up.
+        ///
+        /// A request can come back shorter than asked for when the board does not hold enough
+        /// distinct types; <c>MCharacter.SetRequest</c> only lights the icons it is given.
+        /// </summary>
+        private MDimSum[] PickRequestItems(RequestCharacter request)
+        {
+            _requestPicks.Clear();
+            _requestPickedTypes.Clear();
+
+            int wanted = Mathf.Max(0, request.totalRequestItems);
+
+            if (request.getOnTopOnly)
+            {
+                AddDistinctTypes(shuffleDimSums(GetDimsumReadyOnTop()), wanted);
+            }
+
+            // Also the fallback when getOnTopOnly found no triple at all, which used to hand the
+            // character an empty bubble.
+            if (_requestPicks.Count < wanted)
+            {
+                AddDistinctTypes(shuffleDimSums(GetAvailableDimsums()), wanted);
+            }
+
+            return _requestPicks.ToArray();
+        }
+
+        /// <summary>Appends from <paramref name="source"/>, skipping types already asked for.</summary>
+        private void AddDistinctTypes(MDimSum[] source, int limit)
+        {
+            if (source == null) return;
+
+            foreach (var dimsum in source)
+            {
+                if (_requestPicks.Count >= limit) return;
+                if (dimsum == null) continue;
+                if (!_requestPickedTypes.Add(dimsum.dimsumType)) continue;
+                _requestPicks.Add(dimsum);
+            }
         }
 
         private void SetCharacterPosition()
@@ -640,9 +685,16 @@ namespace Controllers
                 onUnlock?.Invoke();
             }
 
-            // No popup assigned (the tutorial scenes): unlock for free rather than swallow the tap.
+            // No popup assigned: open the basket rather than swallow the tap, because a dead
+            // basket is worse than a free one. This is a wiring mistake, not a mode - every play
+            // scene has the prefab - so it says so instead of failing quietly. It used to be the
+            // normal state of all seven tutorial scenes, which is why the offer never appeared
+            // there and closed baskets opened for nothing.
             if (popupUnlockBasket == null)
             {
+                Debug.LogWarning("[Game] popupUnlockBasket is not assigned on GameController in " +
+                                 $"'{gameObject.scene.name}'; the basket was opened for free. " +
+                                 "Assign Assets/Prefabs/UI Popups/Unlock-Basket-Popup.prefab.", this);
                 Unlock();
                 return;
             }
@@ -1318,10 +1370,17 @@ namespace Controllers
         //do power up magnifier
         public void PowerUpMagnifier()
         {
+            // Gathered before spending, not after. The top bar greys both match-driven buttons
+            // when the board holds no triple, but it re-checks on a poll rather than the instant
+            // the board changes, so a press can still land in the gap after the last match went.
+            // Charging there costs the player a power-up for a press the UI meant to refuse, and
+            // hands the effect nothing to animate. See PowerUpSuckPackage.
+            MDimSum[] targetDimsums = GetDimsumReadyOnTop();
+            if (targetDimsums.Length == 0) return;
+
             if (!TryUsePowerup(PowerupSlotMagnifier)) return;
 
             _soundController.PlayPowerUpClip();
-            MDimSum[] targetDimsums = GetDimsumReadyOnTop();
             powerUpAnimationEffect.DoAnimateMagnifier(targetDimsums);
         }
 
@@ -1401,11 +1460,17 @@ namespace Controllers
         //do power up suck package
         public void PowerUpSuckPackage()
         {
+            // Gathered before spending. A press landing in the poll gap after the board's last
+            // triple went used to charge the player, then hand DoAnimateSuckPower an empty array -
+            // which threw on positionDimsums[0] a second later, and because the throw skipped the
+            // line that switches the effect object off, PowerupRunning stayed true and every
+            // power-up button in the row was dead for the rest of the level.
+            MDimSum[] targetDimsums = GetDimsumReadyOnTop();
+            if (targetDimsums.Length == 0) return;
+
             if (!TryUsePowerup(PowerupSlotSuckPackage)) return;
 
             _soundController.PlayPowerUpClip();
-            MDimSum[] targetDimsums = GetDimsumReadyOnTop();
-            
             powerUpAnimationEffect.DoAnimateSuckPower(targetDimsums);
         }
         
