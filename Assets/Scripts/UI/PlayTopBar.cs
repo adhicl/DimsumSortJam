@@ -226,7 +226,62 @@ namespace UI
             // the match gate has to be right on the very first frame or the magnifier is lit over
             // an empty board for a moment.
             RefreshInteractable();
+
+#if UNITY_EDITOR
+            ValidateSlotOrder();
+#endif
         }
+
+#if UNITY_EDITOR
+        /// <summary>
+        /// Checks the row still reads left-to-right in unlock order.
+        ///
+        /// The order itself is authored — sibling order under the toolbar's Content, which is a
+        /// HorizontalLayoutGroup — but the order it is *supposed* to be in comes from the
+        /// <see cref="Settings.minLevelPowerup1"/> constants, and nothing keeps the two in step.
+        /// Change an unlock level and the row silently becomes wrong, along with the duplicate row
+        /// and the arrow inside every tutorial cover that points into it (see next_step.md,
+        /// "Power-up row order"). This turns that into a message instead of a bug someone notices
+        /// in a build.
+        ///
+        /// Editor-only: it is an authoring mistake, not anything a player can cause, and walking
+        /// the row costs nothing worth shipping.
+        /// </summary>
+        private void ValidateSlotOrder()
+        {
+            var expected = new int[_powerUpButtons.Length];
+            for (int i = 0; i < expected.Length; i++) expected[i] = i;
+            System.Array.Sort(expected, (a, b) =>
+                _minLevels[a] != _minLevels[b] ? _minLevels[a].CompareTo(_minLevels[b]) : a.CompareTo(b));
+
+            var actual = new System.Collections.Generic.List<int>(_powerUpButtons.Length);
+            for (int i = 0; i < _powerUpButtons.Length; i++)
+            {
+                if (_powerUpButtons[i] != null) actual.Add(i);
+            }
+            if (actual.Count != _powerUpButtons.Length) return;
+
+            actual.Sort((a, b) => _powerUpButtons[a].transform.GetSiblingIndex()
+                                    .CompareTo(_powerUpButtons[b].transform.GetSiblingIndex()));
+
+            for (int i = 0; i < expected.Length; i++)
+            {
+                if (actual[i] == expected[i]) continue;
+
+                var want = new System.Text.StringBuilder();
+                for (int j = 0; j < expected.Length; j++)
+                    want.Append(j == 0 ? "" : ", ").Append("power-up ").Append(expected[j] + 1)
+                        .Append(" (Lv.").Append(_minLevels[expected[j]]).Append(')');
+
+                Debug.LogWarning(
+                    $"[PlayTopBar] Power-up row is not in unlock order. Expected left to right: {want}. " +
+                    "Reorder the children of ScrollRect-Toolbar/Viewport/Content in " +
+                    "Assets/Prefabs/UI/Panel-Game.prefab, then the duplicate row and the DownArrow " +
+                    "in each tutorial cover to match.", this);
+                return;
+            }
+        }
+#endif
 
         private void Update()
         {
@@ -234,10 +289,20 @@ namespace UI
             // did, so it should not wait up to a refresh interval to set off.
             FlushPendingPunches();
 
+            // Every frame, not on the poll. The package and the magnifier are only pressable while
+            // the board holds three of a kind, and on a poll the button stayed lit for up to a
+            // refresh interval after the last triple went - long enough for a press to land in the
+            // gap, spend the power-up and reach the effect with nothing to act on. Measured at
+            // 0.76us per check on a 30-slot board, roughly 0.005% of a frame, so the poll was
+            // saving nothing worth the hole it left.
+            RefreshInteractable();
+
             if (Time.unscaledTime < _nextRefresh) return;
             _nextRefresh = Time.unscaledTime + Mathf.Max(0.02f, refreshInterval);
 
-            RefreshInteractable();
+            // The counters stay on the poll: they format strings and walk the held/in-flight
+            // bookkeeping, and a number that changes a handful of times a level does not need
+            // rewriting sixty times a second.
             if (_countsVisible) SetUpPowerUpButtons();
         }
 
@@ -254,8 +319,10 @@ namespace UI
         }
 
         /// <summary>
-        /// Greys or lights every power-up button. Called on a timer because the two match-driven
-        /// power-ups depend on the board, which changes on its own.
+        /// Greys or lights every power-up button. Called every frame because the two match-driven
+        /// power-ups depend on the board, which changes on its own and without warning - a basket
+        /// completing or a refill landing can take the last triple away between one press and the
+        /// next.
         /// </summary>
         private void RefreshInteractable()
         {
@@ -278,15 +345,26 @@ namespace UI
                 // The "+" badge sits on top of an empty slot and is a button in its own right, so
                 // it would otherwise still be tappable - opening the shop, and pausing the game,
                 // over a power-up that is still playing.
-                if (_addButtons[i] != null) _addButtons[i].interactable = levelRunning && !powerUpRunning;
+                if (_addButtons[i] != null) SetInteractable(_addButtons[i], levelRunning && !powerUpRunning);
 
                 if (_powerUpButtons[i] == null) continue;
 
                 bool unlocked = gameSetting.currentLevel >= _minLevels[i];
                 bool usable = unlocked && levelRunning && !powerUpRunning && (!NeedsMatch[i] || hasMatch);
 
-                _powerUpButtons[i].interactable = usable;
+                SetInteractable(_powerUpButtons[i], usable);
             }
+        }
+
+        /// <summary>
+        /// Writes <c>interactable</c> only when it would actually change. Assigning it re-runs the
+        /// Selectable's colour transition whether or not the value moved, and this now runs on
+        /// every button every frame.
+        /// </summary>
+        private static void SetInteractable(Selectable target, bool value)
+        {
+            if (target == null || target.interactable == value) return;
+            target.interactable = value;
         }
 
         private void SetUpPowerUpButtons()

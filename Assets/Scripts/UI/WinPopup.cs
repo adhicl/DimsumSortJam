@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using Commons;
 using Controllers;
@@ -53,7 +53,7 @@ namespace UI
 
             if (RewardedAdController.Instance != null)
             {
-                RewardedAdController.Instance.ShowAd(GrantDouble);
+                RewardedAdController.Instance.ShowAd(GrantDouble, placement: GameAnalytics.PlacementDoubleReward);
             }
             else
             {

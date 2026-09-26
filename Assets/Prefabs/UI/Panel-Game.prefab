@@ -841,6 +841,16 @@ MonoBehaviour:
   addPowerup3Btn: {fileID: 2308602031656638869}
   addPowerup4Btn: {fileID: 4410016224484472946}
   refreshInterval: 0.15
+  punchScale: 0.35
+  punchDuration: 0.45
+  flyIconSize: {x: 140, y: 140}
+  flyPopDuration: 0.35
+  flyHoldDuration: 0.45
+  flyDuration: 0.9
+  flyJumpPower: 160
+  flyScatter: 90
+  flyStagger: 0.12
+  maxFlyIcons: 5
 --- !u!114 &7593672055467403418
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1976,10 +1986,10 @@ RectTransform:
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children:
-  - {fileID: 8763730447310158742}
   - {fileID: 3215282181541667632}
-  - {fileID: 2225687174073800685}
+  - {fileID: 8763730447310158742}
   - {fileID: 277377670880654858}
+  - {fileID: 2225687174073800685}
   m_Father: {fileID: 6339433719851469737}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 0}

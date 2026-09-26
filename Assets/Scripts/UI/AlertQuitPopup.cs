@@ -1,3 +1,4 @@
+﻿using Commons;
 using Controllers;
 using Ricimi;
 using UnityEngine;
@@ -35,7 +36,7 @@ namespace DefaultNamespace.UI
 
             if (RewardedAdController.Instance != null)
             {
-                RewardedAdController.Instance.ShowAd(GrantRevive);
+                RewardedAdController.Instance.ShowAd(GrantRevive, placement: GameAnalytics.PlacementContinueGame);
             }
             else
             {

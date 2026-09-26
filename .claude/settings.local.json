@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir)",
+      "mcp__UnityMCP__manage_prefabs",
+      "mcp__UnityMCP__read_console"
+    ]
+  }
+}

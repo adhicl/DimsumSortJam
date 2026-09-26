@@ -44,11 +44,17 @@ any of it functions on a real device.
       rewarded ad on live units.
 - [x] ~~**Publish the two legal pages**~~ — **both live, fetched 2026-08-17** (§5). `app-ads.txt`
       is up too, carrying the correct publisher line for `pub-8590881680208951`.
+- [ ] **Register the nine Analytics event schemas** (§3a). Version code 5 reported nothing
+      because the client never started data collection; that is fixed for version code 6, which
+      also sends nine custom events. The standard events will flow on the fix alone, but the
+      custom ones stay invisible until their schemas exist in Event Manager.
 - [ ] **Extend the privacy policy** (§5). The published page covers Google AdMob / advertising ID
       and Google Play Games, but **does not mention Unity Gaming Services (pseudonymous player id,
-      Cloud Save) or Google Play Billing (purchase records)** — both of which the app uses. Play's
-      Data safety review compares the form against the policy, and this gap is exactly the kind of
-      mismatch that gets a submission rejected.
+      Cloud Save), Unity Analytics (gameplay events), or Google Play Billing (purchase records)** —
+      all of which the app uses. Play's Data safety review compares the form against the policy,
+      and this gap is exactly the kind of mismatch that gets a submission rejected. The analytics
+      line matters twice over now: the consent dialog tells the player their data is anonymous and
+      points them at the policy, so the policy has to actually describe what is collected.
 
 ---
 
@@ -218,6 +224,107 @@ services answer. What that run proved, and what it could not:
       **Not verifiable from the Editor**: `[IAP] 15 products ready` there is the built-in fake
       store answering, not Google Play. This one only proves itself on a real device.
 - Economy is still unused; balances live in the Cloud Save snapshot instead.
+- [ ] **Analytics** — enable the service, then register the nine custom event schemas. Full
+      procedure in §3a below. **This is the remaining blocker on analytics data**: the client
+      sends all nine as of version code 6, but an event with no matching schema is rejected by
+      validation and never reaches a report, which looks identical to the SDK being broken.
+
+---
+
+## 3a. Unity Cloud Dashboard — Analytics Event Manager
+
+**Why this exists:** version code 5 sent nothing at all, because
+`AnalyticsService.Instance.StartDataCollection()` was never called — since Analytics SDK 5.0 the
+service ships inactive and collects nothing, not even the automatic standard events, until that
+call is made. It is called now (`GameServicesController.StartAnalytics`). That fix alone gets the
+**standard** events flowing. The **custom** events below additionally need schemas registered here
+before they will chart.
+
+Dashboard is at **https://cloud.unity.com** ▸ project *DimsumSortJam* ▸ **Analytics**. Exact menu
+wording drifts between dashboard revisions — go by the names below, not by pixel position.
+
+### Step 1 — turn the service on
+
+Analytics ▸ **enable** for the project, if it is not already. Nothing needs pasting; the project is
+already linked by `cloudProjectId 968e9456-…`, which is why Authentication and Cloud Save work.
+
+### Step 2 — create the nine custom events
+
+**Analytics ▸ Event Manager ▸ Custom Events ▸ create a new event.** Do this nine times, once per
+row. For each one, enter the event name, then add every parameter listed with its type.
+
+> **Names and parameter keys are case-sensitive and must match character for character.** They
+> come from `Assets/Scripts/Commons/GameAnalytics.cs`, which is the only file in the game that
+> spells them. A typo here does not error anywhere — the event simply never appears.
+
+| # | Event name | Parameter | Type |
+|---|---|---|---|
+| 1 | `levelStarted` | `levelIndex` | Integer |
+| 2 | `levelCompleted` | `levelIndex` | Integer |
+| | | `durationSeconds` | Integer |
+| | | `reviveCount` | Integer |
+| 3 | `levelFailed` | `levelIndex` | Integer |
+| | | `failReason` | String |
+| | | `durationSeconds` | Integer |
+| | | `reviveCount` | Integer |
+| 4 | `levelRevived` | `levelIndex` | Integer |
+| | | `reviveReason` | String |
+| 5 | `boardReshuffled` | `levelIndex` | Integer |
+| | | `attempts` | Integer |
+| | | `rescued` | Boolean |
+| 6 | `reviveOfferShown` | `levelIndex` | Integer |
+| | | `offerReason` | String |
+| 7 | `rewardedAdCompleted` | `placement` | String |
+| 8 | `rewardedAdUnavailable` | `placement` | String |
+| 9 | `iapPurchased` | `productID` | String |
+
+> **`productID` ends in a capital `ID`** — it is the one key that does not follow the `levelIndex`
+> lower-camel shape, so it is the easiest of the nine to mistype as `productId`. The client sends
+> `productID`; the schema must say `productID`.
+
+If the type dropdown uses different words than the table (`INT` / `STRING` / `BOOL` rather than
+Integer / String / Boolean), pick the equivalent — the SDK sends C# `int`, `string` and `bool`.
+
+**Values the string parameters can take**, so you can build segments without waiting to see them
+arrive:
+
+| Parameter | Possible values |
+|---|---|
+| `failReason`, `reviveReason`, `offerReason` | `outOfTime`, `outOfMoves` |
+| `placement` | `continueGame`, `reviveOutOfMove`, `unlockBasket`, `buyPowerUp`, `doubleReward` |
+| `productID` | the 15 IDs in §1 |
+
+`levelIndex` is **0-based** — it is `GameSetting.currentLevel` as stored, so level 1 on screen
+arrives as `levelIndex 0`. Add 1 in the dashboard if you chart it for anyone non-technical.
+
+### Step 3 — publish the schemas, if your dashboard asks
+
+Some dashboard revisions keep newly created events in a draft state until you explicitly save or
+publish the set. If there is such a control, use it — a draft schema does not validate incoming
+events.
+
+### Step 4 — verify
+
+In order of how fast they answer:
+
+1. **Editor, immediately** — *Window ▸ Analytics ▸ Debug Panel* in Unity lists events the moment
+   they are recorded, before any upload. This proves the **call site fires**. It says nothing
+   about whether the schema is right, because it never leaves the machine.
+2. **Device, within a minute** — logcat must show
+   `[GameServices] Analytics data collection started.` If that line is missing, UGS init failed
+   and nothing will ever be sent; no amount of dashboard work will help.
+3. **Dashboard, hours later** — Analytics ▸ **Data Explorer** / event browser. Check the
+   **Production** environment: the game never calls `SetEnvironmentName`, so everything lands in
+   `production`, including Editor Play mode sessions (see the note under *Analytics events*).
+
+> **Do not judge a build in the first hour.** UGS Analytics is not real-time and routinely takes
+> several hours to surface events even when the whole pipeline is healthy. This is the single
+> most common reason to conclude "it is still broken" while it is in fact working. Confirm with
+> logcat first, then wait.
+
+If an event never appears but logcat shows collection started, the schema is the suspect: check
+the Event Manager entry for a name or parameter-key mismatch against `GameAnalytics.cs` before
+touching any code.
 
 ---
 
@@ -231,7 +338,14 @@ services answer. What that run proved, and what it could not:
       strip sits above the ad instead of under it.
 - [ ] **Confirm in the AdMob console** that this app's status is *Ready* and not
       "Requires attention" — a newly created app can sit in review, and units return no fill
-      until it clears.
+      until it clears. **This is the first thing to check when the banner "rarely shows".**
+      The client now self-heals from every failure it can see (below), but it cannot conjure
+      fill: a new app under AdMob's *limited ad serving* period, or one not yet linked to its
+      Play listing, gets a trickle of impressions no matter how correct the code is. Look for
+      the *Ad serving limited* / *Getting ready* banners on the app's page, and link the app to
+      the store listing once it is live. Until then, judge the code by logcat, not by whether an
+      ad is on screen: `[BannerAd] Failed to load: … No fill` means the pipeline reached Google
+      and Google said no — that is AdMob-side, not a bug.
 - [ ] **Privacy & messaging ▸ GDPR** — create and **publish** a consent message (§4a below).
       *Without a published message the UMP form never appears, `CanRequestAds()` stays false in
       the EEA, and ads silently stop serving there — with no error to explain why.*
@@ -1130,6 +1244,452 @@ it. Rendering the canvas camera to a `RenderTexture` works when the Game view wi
 
 All the copy uses TMP **auto-sizing** (message 24–46, buttons 24–42), so a longer line shrinks to
 fit rather than overflowing the card.
+
+## Analytics events
+
+This is the **code** side. The console work — enabling the service and registering the schemas —
+is **§3a**, and is still outstanding.
+
+Version code 5 sent **nothing at all**, not even the automatic standard events, because
+`StartDataCollection()` was never called; since Analytics SDK 5.0 the service ships inactive until
+it is. `GameServicesController.StartAnalytics` now calls it right after UGS init and opens the gate
+on `GameAnalytics`.
+
+All custom events go through `Commons/GameAnalytics.cs`, the only file that names them. Two things
+must both be true for an event to reach a chart:
+
+1. The client calls it — **done**, call sites below.
+2. A schema with the exact name and parameter keys exists in Event Manager — **not done**, §3a.
+
+| Event | Parameters | Fired from |
+|---|---|---|
+| `levelStarted` | `levelIndex` int | `GameController.ResetGame` |
+| `levelCompleted` | `levelIndex` int, `durationSeconds` int, `reviveCount` int | `OnFinishUpdateProgress`, when the win is decided |
+| `levelFailed` | `levelIndex` int, `failReason` string, `durationSeconds` int, `reviveCount` int | `CommitLose` — the confirmed give-up only |
+| `levelRevived` | `levelIndex` int, `reviveReason` string | `GrantRevive` |
+| `boardReshuffled` | `levelIndex` int, `attempts` int, `rescued` bool | `ReshuffleUntilPlayable`, both outcomes |
+| `reviveOfferShown` | `levelIndex` int, `offerReason` string | `ShowRevivePopup`, new offers only |
+| `rewardedAdCompleted` | `placement` string | `RewardedAdController.ShowAd` reward callback |
+| `rewardedAdUnavailable` | `placement` string | `ShowAd` when there is no fill (device only) |
+| `iapPurchased` | `productID` string | `IAPController.OnPurchasePending`, inside the already-granted guard |
+
+`levelIndex` is 0-based; the reason and placement strings are listed in §3a. All of them are
+constants on `GameAnalytics`, so change them there rather than at a call site — and update the
+Event Manager schema to match if you do.
+
+Two deliberate choices worth keeping:
+
+- **`levelFailed` is not the revive popup.** Opening the popup is `reviveOfferShown`; the level is
+  only *failed* once the player confirms giving up. Pairing the two gives the offer's take rate,
+  and counting the popup as a failure would have double-counted every rescued level.
+- **`rewardedAdCompleted` fires in the reward callback, not next to `Show`.** A user who backs out
+  of an ad never earns the reward, and counting the presentation would overstate it.
+
+Verification steps are in §3a, step 4.
+
+Note that **Editor Play mode sessions report into the same production environment as real
+players** wherever consent resolves to granted — which, in the Editor, it always does (see
+*Analytics consent*). If that starts skewing the numbers, gate `StartAnalytics` behind
+`!Application.isEditor`. It is left on because the Debug Panel is the only practical way to verify
+a new event.
+
+---
+
+## Analytics consent
+
+**Nothing is collected until the player's answer says so.** `AnalyticsConsent` stores that answer
+(PlayerPrefs `analytics_consent`), `GameServicesController` acts on it, and
+`AnalyticsConsentPrompt` decides whether to ask. Three states, defaulting to Unknown — an
+unanswered prompt collects nothing, so "we are collecting" is always a recorded decision rather
+than the absence of one.
+
+### Who gets asked
+
+Only players in a region that requires a privacy prompt. Everyone else is opted in silently, which
+is what the game did before consent existed and what `PrivacyOptionsButton` already does for the ad
+form — it shows itself only where a form was required. The region comes from UMP
+(`ConsentController.IsConsentRequiredRegion`), which reports `Required` or `Obtained` for the EEA,
+UK, Switzerland and the regulated US states, and `NotRequired` for most of the world. Google makes
+that determination, which is why it is read back off UMP rather than guessed from a locale.
+
+> **This is Google's determination for *ad* consent.** It is the best regional signal in the
+> project and the prompt is genuinely separate from the ad form, but pointing an ad-consent region
+> check at an analytics question is a judgement call, not a legal opinion. If a lawyer reviews
+> this, that is the line to show them. The stricter alternative is to ask everybody.
+
+### The flow
+
+1. UGS finishes initializing. If consent is already Granted, collection starts immediately — a
+   returning player does not wait on UMP.
+2. `AnalyticsConsentPrompt.AskIfNeeded()` waits for the UMP flow to resolve.
+3. Answer already stored → nothing happens. Region not regulated → opted in, no dialog. Otherwise
+   the prompt is shown.
+4. The answer is stored and `AnalyticsConsent.OnChanged` fires, which starts collection or purges.
+
+**Timing.** On the *first* launch, collection does not begin until step 3 — it waits on the UMP
+round-trip, typically a second or two. Nothing is lost by that: the standard startup events
+(`gameStarted`, `sessionStart`, `clientDevice`) are generated *by* `StartDataCollection`, not
+before it, so they are simply timestamped a moment later. Custom events fired before that point
+would be dropped, but reaching a level takes several seconds of navigation, so none are realistically
+at risk. On *every later* launch the stored answer is read before UMP is consulted and collection
+starts immediately after UGS init, with no wait at all.
+
+**If the region cannot be determined** — the UMP update failed because the device is offline, or
+because no consent message is published yet (§4a) — no answer is stored and nothing is collected
+that session. The question stays open and is retried on the next launch. This is deliberate:
+`ConsentController` resolves even when the update fails, leaving `ConsentStatus` at `Unknown`, and
+`Unknown` must not be read as "not in the EEA". Treating the two alike would permanently opt in an
+EEA player whose first launch happened to be offline, and they would never be asked again. The cost
+is that a genuinely offline first session reports nothing.
+
+### Withdrawing
+
+**Settings ▸ Privacy options** reopens the ad consent form and then the analytics prompt behind it,
+sequentially. Both privacy choices sit behind that one existing entry rather than getting a row
+each — it is already visible in exactly the regions where a prompt is owed, and a player looking
+for "Privacy options" is looking for all of it. The `alsoAskAnalyticsConsent` checkbox on
+`PrivacyOptionsButton` controls this; **turning it off removes the only route to withdrawing
+analytics consent** unless you wire a dedicated button.
+
+Withdrawal calls `RequestDataDeletion()`, not `StopDataCollection()`. It disables collection *and*
+erases what the backend already holds, is safe to call in any SDK state, and retries across
+sessions if the player is offline. `StopDataCollection` would only stop the future, which is the
+weaker reading of withdrawing consent. Re-granting works afterwards — the SDK resets its deletion
+status on the next `StartDataCollection`.
+
+### The prompt itself
+
+A **native Android dialog** (`NativeDialog`), not a Unity prefab: it has to appear during Splash
+before any game canvas exists, and a system dialog is what players expect a privacy question to
+look like. To replace it with a styled popup, reimplement `NativeDialog.ShowConfirm` — nothing else
+changes.
+
+Android hands dialog callbacks back on its own UI thread, where PlayerPrefs and the Analytics SDK
+are not safe to touch, so `MainThreadDispatcher` marshals the answer back to Unity's main thread.
+It spawns itself on first use; there is nothing to place in a scene.
+
+Where no native dialog exists the call returns a fallback answer instead of hanging: **false on
+device** (no dialog means no informed answer, so never opt in), but **true in the Editor**, since
+otherwise every event would be a silent no-op and the Debug Panel would be useless for verifying
+call sites.
+
+### Testing it
+
+`AnalyticsConsent.Reset()` forgets the answer so the prompt appears again on the next launch. To
+see the real dialog, you need a regulated region: set `debugGeography` to `EEA` on the
+ConsentController in Splash and add your device's hashed id to `testDeviceHashedIds` (the Ads SDK
+prints it in logcat). In the Editor the UMP bridge is a placeholder that always answers
+`NotRequired`, so the dialog never appears there.
+
+Verified in the Editor on 2026-09-11: grant → `[GameServices] Analytics data collection started.`,
+deny → `[GameServices] Analytics stopped and data deletion requested.` and `GameAnalytics.IsReady`
+false, re-grant → collection back on. Events recorded while denied are dropped without throwing.
+**The native dialog itself is only exercisable on device** — the Editor never shows it.
+
+---
+
+## Ads — how the pipeline stays alive
+
+Both ad controllers are `DontDestroyOnLoad` singletons in `Splash`, so structurally they were
+already following the player through every scene. What made the banner *rarely* appear was
+everything upstream of it being fragile: one bad network moment at launch and the session had no
+ads, with nothing in logcat to say why. Four causes, all fixed on 2026-09-12:
+
+| What went wrong | Where | What it did | Fix |
+|---|---|---|---|
+| **UMP lookup failed once → no ads all session.** `ConsentInformation.Update` was called exactly once; on failure `CanRequestAds()` read false and `WhenAdsAllowed` **dropped** the SDK-init action. `MobileAdsSdk._initializing` stayed true forever. | `ConsentController` | Every retry the banner and rewarded controllers have never ran, because the SDK they wait on never started. First launch on a flaky connection is exactly when this bit. | Failed lookups retry with backoff (10s → 60s cap). Init waiters are **held**, not dropped, and released the moment a later update says ads are allowed — including the player changing their answer in Privacy options. |
+| **Threading rested on an obsolete flag.** `MobileAds.RaiseAdEventsOnUnityMainThread` is `[Obsolete]` in plugin 11.3.0. | `MobileAdsSdk`, both controllers | If a callback landed off-thread, `OnBannerAdLoaded → SafeAreaPanel` moved a RectTransform from a JNI thread, threw, and the exception was swallowed inside the callback. Timing-dependent, so it looked random. | Every ad and consent callback is marshalled explicitly through `MainThreadDispatcher.Run` — inline when already on the main thread, next frame otherwise. The flag is still set (harmless, `#pragma`-silenced) but nothing depends on it. |
+| **No load watchdog.** A `LoadAd` that never called back — the SDK does not promise one — left the banner with no retry scheduled, and the rewarded `_isLoading` stuck true, which gates every future request. | Both controllers | Dead for the session, every "watch an ad" button greyed out. | 30s watchdog per request; no callback is treated as failure and enters the normal backoff. A late callback from a timed-out request keeps the ad if it is good and is otherwise ignored. |
+| **No resume handling.** | Both controllers, `MobileAdsSdk` | Backgrounding the app mid-backoff meant waiting out the rest of it (up to 60s) after coming back — and coming back is precisely when connectivity changes. | `OnApplicationPause(false)` cancels the backoff and requests immediately. A loaded banner is re-shown, because some devices drop the ad's window on resume. `MobileAds.Initialize` gets its own 20s watchdog. |
+
+### Verified
+
+In the Editor on 2026-09-12, across every enabled build scene: Splash (hidden) → Home (shown) →
+Game (shown) → Tutorial3 (shown) → Profile (hidden — not in `bannerScenes`) → Home (shown again).
+The rewarded ad stayed ready throughout, and all three controllers survived every load. No ad
+warnings, no exceptions.
+
+**What the Editor cannot prove:** it runs the plugin's placeholder clients, which always fill,
+always call back, and always deliver on the main thread. The retry, watchdog, and threading paths
+only exercise on a device. The proof there is logcat:
+
+- `[Consent] Update failed: …` followed later by `[Consent] Retrying consent lookup.` — the retry
+  is alive.
+- `[BannerAd] No response to load request; retrying.` / `[RewardedAd] No response …` — a watchdog
+  caught a silent request.
+- `[MobileAds] Initialize did not call back; retrying.` — the init watchdog fired.
+- `[BannerAd] Failed to load: … No fill` — the code did its job; see §4 for the AdMob side.
+
+### Where the banner shows
+
+`BannerAdController.bannerScenes` on the Splash object: Home, Game, Tutorial1–7. It is hidden,
+not destroyed, everywhere else, so it is back the instant one of those loads with no new request.
+Add a scene name there to show it somewhere new. `Profile` is deliberately not in the list.
+
+---
+
+## Power-up row order
+
+The four power-up buttons along the bottom read **left to right in unlock order**: magnifier
+(Lv.2), package (Lv.7), hourglass (Lv.10), shuffle (Lv.14). Before 2026-09-25 they sat in slot
+order — package, magnifier, shuffle, hourglass — so the first one a player unlocked was second
+from the left and the row made no sense as a progression.
+
+### Where the order lives
+
+One place: the sibling order of the four children of `ScrollRect-Toolbar/Viewport/Content` in
+**`Assets/Prefabs/UI/Panel-Game.prefab`**. That Content is a `HorizontalLayoutGroup`, so sibling
+order *is* left-to-right order, and all eight play scenes (Game, Tutorial1–7) are instances of that
+prefab with **no order overrides** — editing the prefab moves the row everywhere at once.
+
+The slot numbering never changed. `powerUpBtn1` is still the package and `GameSetting.GetPowerup(1)`
+still counts packages; only where they sit changed. Nothing that addresses a power-up by slot
+needed touching.
+
+### The tutorial covers are separate copies
+
+Tutorial2, 5, 6 and 7 each introduce one power-up. Their `UseItem1` cover holds its **own duplicate**
+of the toolbar — not a prefab instance — drawn above the dimming layer so the new power-up stays
+lit while the rest of the screen goes dark, plus a `DownArrow` pointing at it. Those four copies
+were reordered to match. **A change to the prefab row does not reach them**; they have to be done
+by hand.
+
+| Scene | Entered from level | Unlocks | Position in the row |
+|---|---|---|---|
+| Tutorial2 | 1 | power-up 2, magnifier (Lv.2) | 1st |
+| Tutorial7 | 6 | power-up 1, package (Lv.7) | 2nd |
+| Tutorial5 | 9 | power-up 4, hourglass (Lv.10) | 3rd |
+| Tutorial6 | 13 | power-up 3, shuffle (Lv.14) | 4th |
+
+### Why the arrow is positioned in code
+
+`TutorialPowerUpPointer` on each cover centres the DownArrow over the slot at runtime. This is not
+tidiness — a fixed position is provably wrong on most devices:
+
+- The toolbar is anchored to both screen edges, and the layout group has `childForceExpandWidth`,
+  so the four slots are spread across whatever width the toolbar has.
+- The CanvasScaler runs `ScaleWithScreenSize` at **`match = 0.5`**, which makes the canvas width *in
+  canvas units* a function of aspect ratio — measured 1075 to 2275 units across the range tried.
+
+So the slots sit at different canvas-unit positions on a tall phone than on a short one, and a
+hand-placed arrow only lines up at the one aspect it was authored for. The arrows that were there
+before had this bug already; they were simply never noticed because nobody compared them across
+devices. The serialized `anchoredPosition` that remains on each DownArrow is **only an editor
+preview** — the pointer overwrites its X on enable and whenever the row moves.
+
+Which slot to point at is derived, not configured: the row is in unlock order, so the nth slot has
+the nth lowest unlock level, and the target is the one whose level equals `currentLevel + 1` — the
+same rule `PlayTopBar.ShowTutorialPowerUp` uses to reveal it. No per-scene wiring to keep in step.
+
+### If you change an unlock level
+
+`Settings.minLevelPowerup1`..`4` are the source of truth, but the row order is *authored*, so
+changing a constant silently leaves the row — and every tutorial arrow pointing into it — wrong.
+`PlayTopBar.ValidateSlotOrder` catches that: an editor-only check that logs, on entering Play mode,
+the exact order the row should be in. To fix, reorder the prefab's Content children, then the
+duplicate row in each of the four covers. The arrows need nothing; they follow.
+
+> **That warning is easy to miss in this project.** `Debug.LogWarning` does not come back through
+> the MCP `read_console` tool here — `Debug.Log` does. Read it in the Unity console window, or
+> capture it with `Application.logMessageReceived`.
+
+### Verified 2026-09-25
+
+All eight scenes report `Lv2 Lv7 Lv10 Lv14` left to right, for both the real row and the four cover
+copies. In Tutorial7 at `currentLevel = 6` the arrow stayed exactly centred on the package
+(0.00 offset) while the row was forced to widths 1075, 1775 and 2275 — the neighbouring slots moved
+away proportionally, the arrow did not. The order guard was confirmed to fire once when the row is
+scrambled and stay silent when it is correct.
+
+---
+
+## Power-ups — the empty-target crash
+
+Fixed 2026-09-25. Symptom:
+
+```
+IndexOutOfRangeException: Index was outside the bounds of the array.
+PowerUpAnimationEffect+<DoAnimateSuckPowerRoutine>d__15.MoveNext ()
+  (at Assets/Scripts/GameObjects/PowerUpAnimationEffect.cs:85)
+```
+
+### What happened
+
+`PowerUpSuckPackage` spent the power-up first and gathered its targets second, passing
+`GetDimsumReadyOnTop()` straight through. That returns an **empty array** when the board holds no
+triple, and a second later the routine read `positionDimsums[0]`.
+
+The button is supposed to be greyed out in that state — `PlayTopBar` gates both match-driven
+power-ups on `HasReadyMatch` — but it re-checks on a **0.15s poll**, not the instant the board
+changes. So there is a ~150ms window after the last triple clears in which the button is still
+live. A press landing there was all it took.
+
+### Why it was worse than one exception
+
+The throw happened *after* `DoAnimateSuckPower` had already switched the effect object on, and it
+skipped the line at the end of the routine that switches it off. `GameController.PowerupRunning`
+is nothing more than "is that object active", and `PlayTopBar` greys the entire row — all four
+buttons and the "+" badges — while it is true.
+
+So one mistimed press **cost a power-up and then killed every power-up button for the rest of the
+level**. Confirmed live in the crashed session that reported it: `PowerupRunning=True`,
+`HasReadyMatch=False`, effect object still active, all four buttons `interactable=False`.
+
+### Closing the window that allowed it
+
+The match gate itself was never missing — `PlayTopBar.RefreshInteractable` has always computed
+`usable = unlocked && levelRunning && !powerUpRunning && (!NeedsMatch[i] || hasMatch)`, with
+`NeedsMatch = { true, true, false, false }`: package and magnifier need a triple on the board, the
+shuffle and the timer do not. What was missing was *immediacy*. That refresh only ran on the
+0.15s poll, so the button stayed lit for up to a refresh interval after the board's last triple
+went.
+
+`RefreshInteractable` now runs **every frame**, outside the poll. The reason it did not before was
+cost, and that turned out to be misjudged: `HasReadyMatch` measures **0.76 us per call** on a
+30-slot board — about 0.005% of a frame at 60fps — so the poll was saving roughly nothing in
+exchange for the hole it left. The counters stay on the poll, because those format strings and walk
+the held/in-flight bookkeeping for a number that changes a handful of times a level.
+
+Writes are guarded by `SetInteractable`, which skips the assignment when the value has not moved:
+setting `Selectable.interactable` re-runs its colour transition either way, and this now touches
+eight buttons every frame.
+
+### The fix, in two layers
+
+**Gather before spending** (`GameController.PowerUpSuckPackage`, `PowerUpMagnifier`). Targets are
+collected first and the call returns early if there are none — the player is not charged for a
+press the UI meant to refuse. The buy popup is unaffected: that is the separate "+" badge, which
+never routed through here.
+
+**The effect cannot lock the row** (`PowerUpAnimationEffect`). Independently of the caller:
+
+- `DoAnimateSuckPower` / `DoAnimateMagnifier` refuse an empty or all-null list *before* switching
+  the object on.
+- The type is read from the first surviving target instead of element zero, and every loop skips
+  entries that have gone — a second or more passes inside these routines and the board can clear a
+  piece while they run.
+- All four routines wrap their body in `try/finally` with the deactivation in the `finally`, so an
+  exception can never again leave the row stuck. An exception thrown inside a coroutine unwinds
+  through `MoveNext`, so the `finally` does run.
+
+One bad frame should cost an animation, not the rest of the level.
+
+### Verified
+
+Against the fixed build, with no exceptions logged:
+
+| Case | Result |
+|---|---|
+| `DoAnimateSuckPower(empty)` | no throw, effect never activates, `PowerupRunning=False` |
+| `DoAnimateSuckPower(3 nulls)` | same |
+| `DoAnimateMagnifier(empty)` | same |
+| `PowerUpSuckPackage()` with no triple | package count unchanged — not charged |
+| `PowerUpMagnifier()` with no triple | not charged |
+| `PowerUpSuckPackage()` with a triple | charges 1, effect runs, and `PowerupRunning` returns to false when it ends |
+| last triple removed | magnifier goes `interactable=False` on the **next frame** |
+| triple restored | back to `interactable=True` on the next frame |
+| poll blocked 9986s, button forced to the wrong value | corrected anyway — proves the per-frame path, not just the polled one |
+
+The no-triple state was forced by nulling `_gameBaskets`, which is what makes `FindReadyMatchType`
+return -1 — the same condition as the poll gap, without having to hand-play a board empty.
+
+### Open: the unlock tutorials reveal a button that cannot be pressed
+
+Found while verifying the above, **not fixed** — it is a separate bug and nobody has asked for it
+yet.
+
+Each unlock tutorial runs at the level *before* the one that unlocks its power-up: Tutorial7 is
+played at `currentLevel = 6` and the package unlocks at `minLevelPowerup1 = 7`.
+`CloseTutorialCover` calls `PlayTopBar.ShowTutorialPowerUp`, which swaps the padlock for the live
+icon — but only the icon. `RefreshInteractable` still computes `unlocked = currentLevel >= minLevel`,
+which is `6 >= 7`, so the button stays **non-interactable** for the whole tutorial.
+
+Measured in Tutorial7 at `currentLevel = 6`: `activeRootShown=True`, `interactable=False`, with a
+triple on the board. So the tutorial reveals the new power-up, points an arrow at it and captions
+it "Clear 1 group of food", and the player cannot press it. It only becomes usable on the next
+level.
+
+The fix, when it is wanted, is to let the tutorial reveal count as unlocked for that slot — the
+same condition `ShowTutorialPowerUp` already tests (`currentLevel == minLevel - 1`) — rather than
+having the reveal and the gate disagree.
+
+---
+
+## The basket unlock offer
+
+Fixed 2026-09-26. The offer was never appearing in the tutorial scenes: tapping a Closed basket
+there just opened it, free and silently.
+
+**Cause was scene wiring, not logic.** `GameController.ShowUnlockBasketPopup` falls back to
+unlocking for free when `popupUnlockBasket` is unassigned — better than swallowing the tap — and
+**all seven tutorial scenes had it `NULL`**. Only `Game` was wired. Three of those scenes actually
+deal a Closed basket, so the bypass was reachable in normal play:
+
+| Level | Scene | Baskets dealt (`LevelData.firstDisplayed`) |
+|---|---|---|
+| 6 | Tutorial7 | `DDDDDDDCDDLD` — one Closed |
+| 9 | Tutorial5 | `DDDDDDDDDLCL` — one Closed |
+| 13 | Tutorial6 | `LCLDDDDDDDDD` — one Closed |
+
+All eight scenes now reference `Assets/Prefabs/UI Popups/Unlock-Basket-Popup.prefab`. Tutorial1–4
+deal no Closed basket, so wiring them changes nothing today and stops the hole reopening if their
+level data ever gains one. The fallback now logs a warning naming the scene, so a missing reference
+announces itself instead of quietly giving baskets away.
+
+### The "watch an ad" button was already gated
+
+`AdRewardButton` on `Button-Use-Video` greys the option — `interactable = false`, alpha `0.45` —
+whenever no rewarded ad is loaded, polling `RewardedAdController.IsAvailable` every 0.25s. It was
+correctly wired in the prefab all along (`watchAdGate`); it simply never got the chance to run,
+because the popup it lives on was never shown.
+
+Two things to know when testing it:
+
+- **In the Editor the button never greys.** `RewardedAdController.IsAvailable` is hardcoded `true`
+  under `UNITY_EDITOR` so the three ad flows stay exercisable in Play mode, and `AdRewardButton`
+  also treats a missing controller as available — which is what you get entering a gameplay scene
+  directly, since the controller lives in Splash. On device neither applies and the gate reads
+  `IsReady`.
+- **The 0.25s poll is deliberate and fine here**, unlike the power-up row's. `IsReady` is a JNI hop
+  on Android, and a press landing in the stale window costs nothing: `ShowAd` finds no ad, runs
+  `onUnavailable`, and the gate re-greys itself. Nothing is spent and nothing throws.
+
+## Character requests — no repeated item in one bubble
+
+Fixed 2026-09-26. A character asking for two items showed the same dim sum twice.
+
+`StartShowCharacter` took `N` items off one list. For `getOnTopOnly` requests that list came from
+`GetDimsumReadyOnTop()`, which returns **the three pieces of a single matching type** — it is the
+match-triple finder the magnifier and package use. Shuffling three identical types and taking two
+returns that type twice, every time. Measured on the level 9 board: `[5,5]` on four runs out of
+four.
+
+The other branch was already fine — `GetAvailableDimsums()` is built on a dictionary keyed by type,
+so it holds one entry per type.
+
+**26 of the 223 authored requests are multi-item with `getOnTopOnly`**, so every one of them showed
+a duplicate.
+
+`PickRequestItems` now builds the order type by type. `getOnTopOnly` means "ask for something the
+player can hand over right now", so the on-top type still **seeds** the request and that promise
+holds for the first item; the rest of the board tops the order up with types not already asked for.
+It also covers a case the old code got wrong in the other direction: `getOnTopOnly` with no triple
+on the board used to hand the character an empty bubble, and now falls through to what is
+available.
+
+Single-item requests are unchanged by construction — one pick from the same source as before.
+
+### Verified on the level 9 board
+
+| Request | Result |
+|---|---|
+| `getOnTopOnly`, 2 items, x6 | `[5,7] [5,2] [5,7] [5,8] [5,2] [5,2]` — all unique, on-top type 5 always first |
+| `getOnTopOnly`, 3 items, x3 | `[5,2,10] [5,8,7] [5,10,2]` — all unique |
+| not `getOnTopOnly`, 3 items | unique, as before |
+| `getOnTopOnly`, 1 item | `[5]` — identical to old behaviour |
+| **old code, 2 items, x4** | `[5,5]` every time |
+
+---
 
 ## Reference — what is already wired in Unity
 

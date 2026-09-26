@@ -42,7 +42,15 @@ namespace Controllers
         // the number the HUD counts up to and lags it by half a second, which is exactly the window
         // the no-move check runs in - reading the tweened value there judges a won level unfinished.
         private int _awardedTotal = 0;
-        
+
+        // Analytics bookkeeping for the current attempt, reset in ResetGame. Wall-clock rather
+        // than the countdown: _timer is spent, paused by popups and topped up by revives, so
+        // 300 - _timer is not how long the player was on the level.
+        private float _levelStartTime;
+        private int _reviveCount;
+
+        private int LevelDurationSeconds => Mathf.RoundToInt(Time.time - _levelStartTime);
+
         public float Timer
         {
             get => _timer;
@@ -113,7 +121,11 @@ namespace Controllers
             
             _timer = 5f * 60f;
             isTimerPause = false;
-            
+
+            _levelStartTime = Time.time;
+            _reviveCount = 0;
+            GameAnalytics.LevelStarted(_gameSetting.currentLevel);
+
             CreateLevel();
         }
 
@@ -479,25 +491,70 @@ namespace Controllers
             RequestCharacter request = _requestCharacters[0];
             
             _soundController.PlayBikeBellSoundClips();
-            MDimSum[] dimsumsOnTop;
-            if (request.getOnTopOnly)
-            {
-                dimsumsOnTop = GetDimsumReadyOnTop();
-            }
-            else
-            {
-                dimsumsOnTop = GetAvailableDimsums();
-            }
-                
-            dimsumsOnTop = shuffleDimSums(dimsumsOnTop);
-            
+
             MCharacter mCharacter = _characterSpawner.Create();
-            mCharacter.SetRequest(dimsumsOnTop.Take(request.totalRequestItems).ToArray(), new Vector2(-1f, 2.7f));
+            mCharacter.SetRequest(PickRequestItems(request), new Vector2(-1f, 2.7f));
             _characterSpawns.Add(mCharacter);
 
             SetCharacterPosition();
             
             _requestCharacters.RemoveAt(0);
+        }
+
+        // Reused across requests rather than reallocated - a level spawns a character every few
+        // seconds, and both of these are small and short-lived.
+        private readonly List<MDimSum> _requestPicks = new();
+        private readonly HashSet<int> _requestPickedTypes = new();
+
+        /// <summary>
+        /// Chooses what one character asks for. Never the same dim sum twice in a bubble: the
+        /// request is a list of things to fetch, and asking for the same item twice reads as a
+        /// display bug rather than a harder order.
+        ///
+        /// <c>getOnTopOnly</c> means "ask for something the player can hand over right now", and
+        /// that is why it could not simply be taken N at a time: it is served by
+        /// <see cref="GetDimsumReadyOnTop"/>, which reports the three pieces of a *single* matching
+        /// type. Taking two from it returned that one type twice. It seeds the request instead -
+        /// so the promise still holds for the first item - and the rest of the board, which
+        /// <see cref="GetAvailableDimsums"/> already returns one-per-type, tops the order up.
+        ///
+        /// A request can come back shorter than asked for when the board does not hold enough
+        /// distinct types; <c>MCharacter.SetRequest</c> only lights the icons it is given.
+        /// </summary>
+        private MDimSum[] PickRequestItems(RequestCharacter request)
+        {
+            _requestPicks.Clear();
+            _requestPickedTypes.Clear();
+
+            int wanted = Mathf.Max(0, request.totalRequestItems);
+
+            if (request.getOnTopOnly)
+            {
+                AddDistinctTypes(shuffleDimSums(GetDimsumReadyOnTop()), wanted);
+            }
+
+            // Also the fallback when getOnTopOnly found no triple at all, which used to hand the
+            // character an empty bubble.
+            if (_requestPicks.Count < wanted)
+            {
+                AddDistinctTypes(shuffleDimSums(GetAvailableDimsums()), wanted);
+            }
+
+            return _requestPicks.ToArray();
+        }
+
+        /// <summary>Appends from <paramref name="source"/>, skipping types already asked for.</summary>
+        private void AddDistinctTypes(MDimSum[] source, int limit)
+        {
+            if (source == null) return;
+
+            foreach (var dimsum in source)
+            {
+                if (_requestPicks.Count >= limit) return;
+                if (dimsum == null) continue;
+                if (!_requestPickedTypes.Add(dimsum.dimsumType)) continue;
+                _requestPicks.Add(dimsum);
+            }
         }
 
         private void SetCharacterPosition()
@@ -597,6 +654,11 @@ namespace Controllers
             if (_currentTotal >= _totalGoal)
             {
                 gameStatus = Settings.GAME_STATUS.win;
+
+                // Recorded here rather than in ShowWin: the win is decided at this line, and
+                // ShowWin yields for two tenths of a second before it does anything visible.
+                GameAnalytics.LevelCompleted(_gameSetting.currentLevel, LevelDurationSeconds, _reviveCount);
+
                 StartCoroutine(ShowWin());
             }
         }
@@ -664,6 +726,11 @@ namespace Controllers
             OutOfTime,
             OutOfMoves
         }
+
+        // The enum's own ToString would work, but its names are free to change with the code and
+        // the dashboard's saved segments are not. Mapping here pins the wire format.
+        private static string ReasonOf(LoseReason reason) =>
+            reason == LoseReason.OutOfTime ? GameAnalytics.ReasonOutOfTime : GameAnalytics.ReasonOutOfMoves;
 
         // Why the level is being lost, so cancelling the confirmation comes back to the popup the
         // player actually came from. The reason is recorded rather than the popup instance or its
@@ -767,7 +834,12 @@ namespace Controllers
         // Opens the revive popup that matches the current reason. Also the way back in when the
         // player cancels the confirmation, which is why it reads _loseReason rather than taking
         // a prefab: the caller cancelling has no idea which popup started this.
-        private void ShowRevivePopup()
+        /// <param name="isNewOffer">
+        /// False when the player is coming back from cancelling the give-up confirmation. The same
+        /// popup reopens, but it is not a new offer — counting it would inflate the impressions the
+        /// revive take rate is measured against.
+        /// </param>
+        private void ShowRevivePopup(bool isNewOffer = true)
         {
             gameStatus = Settings.GAME_STATUS.pause;
 
@@ -786,6 +858,8 @@ namespace Controllers
                 ShowLoseConfirm();
                 return;
             }
+
+            if (isNewOffer) GameAnalytics.ReviveOfferShown(_gameSetting.currentLevel, ReasonOf(_loseReason));
 
             m_popup = Instantiate(prefab, m_canvas.transform, false);
             m_popup.SetActive(true);
@@ -820,7 +894,7 @@ namespace Controllers
         /// </summary>
         public void ReopenRevivePopup()
         {
-            ShowRevivePopup();
+            ShowRevivePopup(isNewOffer: false);
         }
 
         /// <summary>
@@ -829,6 +903,9 @@ namespace Controllers
         public void CommitLose()
         {
             gameStatus = Settings.GAME_STATUS.lose;
+
+            GameAnalytics.LevelFailed(
+                _gameSetting.currentLevel, ReasonOf(_loseReason), LevelDurationSeconds, _reviveCount);
 
             // The one place a life is spent. A running unlimited-lives window makes it free.
             _gameSetting.TrySpendLife();
@@ -850,9 +927,16 @@ namespace Controllers
                 onUnlock?.Invoke();
             }
 
-            // No popup assigned (the tutorial scenes): unlock for free rather than swallow the tap.
+            // No popup assigned: open the basket rather than swallow the tap, because a dead
+            // basket is worse than a free one. This is a wiring mistake, not a mode - every play
+            // scene has the prefab - so it says so instead of failing quietly. It used to be the
+            // normal state of all seven tutorial scenes, which is why the offer never appeared
+            // there and closed baskets opened for nothing.
             if (popupUnlockBasket == null)
             {
+                Debug.LogWarning("[Game] popupUnlockBasket is not assigned on GameController in " +
+                                 $"'{gameObject.scene.name}'; the basket was opened for free. " +
+                                 "Assign Assets/Prefabs/UI Popups/Unlock-Basket-Popup.prefab.", this);
                 Unlock();
                 return;
             }
@@ -928,6 +1012,9 @@ namespace Controllers
         /// </summary>
         public void GrantRevive()
         {
+            _reviveCount++;
+            GameAnalytics.LevelRevived(_gameSetting.currentLevel, ReasonOf(_loseReason));
+
             if (_loseReason == LoseReason.OutOfMoves)
             {
                 ReviveWithReshuffle();
@@ -1331,12 +1418,16 @@ namespace Controllers
 
                 if (HasAnyMove())
                 {
+                    // attempt is zero-based; report how many reshuffles it actually took.
+                    GameAnalytics.BoardReshuffled(_gameSetting.currentLevel, attempt + 1, rescued: true);
                     _reshuffleRoutine = null;
                     yield break;
                 }
             }
 
             _reshuffleRoutine = null;
+
+            GameAnalytics.BoardReshuffled(_gameSetting.currentLevel, maxReshuffleAttempts, rescued: false);
 
             // Deliberately not ShowOutOfMove(): the player already paid for this reshuffle, and
             // re-opening the popup that sold it would charge them a second time for the same
@@ -1563,10 +1654,17 @@ namespace Controllers
         //do power up magnifier
         public void PowerUpMagnifier()
         {
+            // Gathered before spending, not after. The top bar greys both match-driven buttons
+            // when the board holds no triple, but it re-checks on a poll rather than the instant
+            // the board changes, so a press can still land in the gap after the last match went.
+            // Charging there costs the player a power-up for a press the UI meant to refuse, and
+            // hands the effect nothing to animate. See PowerUpSuckPackage.
+            MDimSum[] targetDimsums = GetDimsumReadyOnTop();
+            if (targetDimsums.Length == 0) return;
+
             if (!TryUsePowerup(PowerupSlotMagnifier)) return;
 
             _soundController.PlayPowerUpClip();
-            MDimSum[] targetDimsums = GetDimsumReadyOnTop();
             powerUpAnimationEffect.DoAnimateMagnifier(targetDimsums);
         }
 
@@ -1646,11 +1744,17 @@ namespace Controllers
         //do power up suck package
         public void PowerUpSuckPackage()
         {
+            // Gathered before spending. A press landing in the poll gap after the board's last
+            // triple went used to charge the player, then hand DoAnimateSuckPower an empty array -
+            // which threw on positionDimsums[0] a second later, and because the throw skipped the
+            // line that switches the effect object off, PowerupRunning stayed true and every
+            // power-up button in the row was dead for the rest of the level.
+            MDimSum[] targetDimsums = GetDimsumReadyOnTop();
+            if (targetDimsums.Length == 0) return;
+
             if (!TryUsePowerup(PowerupSlotSuckPackage)) return;
 
             _soundController.PlayPowerUpClip();
-            MDimSum[] targetDimsums = GetDimsumReadyOnTop();
-            
             powerUpAnimationEffect.DoAnimateSuckPower(targetDimsums);
         }
         

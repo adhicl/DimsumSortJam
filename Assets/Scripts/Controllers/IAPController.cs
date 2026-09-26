@@ -175,6 +175,11 @@ namespace Controllers
                 gameSetting.ApplyReward(reward);
                 MarkOrderProcessed(transactionId);
                 Debug.Log($"[IAP] Granted '{productId}'.");
+
+                // Inside the already-granted guard, so an order the store re-delivers after a
+                // crash is not counted as a second purchase.
+                GameAnalytics.IapPurchased(productId);
+
                 OnPurchaseSucceeded?.Invoke(productId);
             }
 

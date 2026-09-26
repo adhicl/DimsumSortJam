@@ -20,10 +20,12 @@ missing:
 - fix item in plate not shown *
 - always shown game version number *
 
+- if no video ad available, window is not shown and just unlock, this should be show window but button is disabled
+
 
 * = is fixed
 
-claude --resume 72142d36-bd3e-4f7c-bd6e-894d972f7aae
+claude --resume 05153f4e-14d4-44ec-b90e-76adb65c4de6
 
 claude --resume 5c1b4e7f-b84b-41c0-b4f8-ae53916200e1
 
@@ -31,3 +33,6 @@ Hi, I am also in the middle of close testing. Let us help each other.
 Please join google group: https://groups.google.com/g/yourfavoritegamestudiotester
 Web Link: https://play.google.com/apps/testing/com.yourfavoritegamestudio.Jajanan
 Android Link: https://play.google.com/store/apps/details?id=com.yourfavoritegamestudio.Jajanan
+
+
+https://forms.gle/kVfbLkjSgvbh7VBz6

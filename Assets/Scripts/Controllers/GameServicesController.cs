@@ -1,5 +1,7 @@
 using System;
 using System.Threading.Tasks;
+using Commons;
+using Unity.Services.Analytics;
 using Unity.Services.Authentication;
 using Unity.Services.Core;
 using UnityEngine;
@@ -78,6 +80,8 @@ namespace Controllers
                 OnSignInFailed?.Invoke(e.Message);
                 return;
             }
+
+            SetUpAnalytics();
 
             if (AuthenticationService.Instance.IsSignedIn)
             {
@@ -191,6 +195,90 @@ namespace Controllers
             return tcs.Task;
         }
 #endif
+
+        /// <summary>
+        /// Wires analytics to the player's consent answer, then asks for one if it is missing.
+        ///
+        /// Since Analytics SDK 5.0 nothing is collected — not even the automatic standard events
+        /// (gameStarted, sessionStart, clientDevice, …) — until StartDataCollection is called
+        /// explicitly after UGS init. Without that call the dashboard stays empty no matter how
+        /// long the build runs, which is why versions up to and including 5 reported no data.
+        ///
+        /// The call is now gated on <see cref="AnalyticsConsent"/> rather than unconditional. Note
+        /// the ordering: consent is applied *before* the prompt is raised, so a returning player
+        /// who already agreed starts collecting immediately instead of waiting on UMP.
+        /// </summary>
+        private static void SetUpAnalytics()
+        {
+            // Static event, instance lifetime — unsubscribe first or a second Splash load (or a
+            // domain reload with reload-on-play disabled) stacks another handler on the same event.
+            AnalyticsConsent.OnChanged -= OnAnalyticsConsentChanged;
+            AnalyticsConsent.OnChanged += OnAnalyticsConsentChanged;
+
+            if (AnalyticsConsent.IsGranted) StartAnalytics();
+
+            AnalyticsConsentPrompt.AskIfNeeded();
+        }
+
+        /// <summary>
+        /// The answer changed while the game was running — either the first-launch prompt was just
+        /// answered, or the player changed their mind in Settings.
+        /// </summary>
+        private static void OnAnalyticsConsentChanged(AnalyticsConsentState state)
+        {
+            if (state == AnalyticsConsentState.Granted)
+            {
+                StartAnalytics();
+                return;
+            }
+
+            StopAnalyticsAndPurge();
+        }
+
+        private static void StartAnalytics()
+        {
+            try
+            {
+                AnalyticsService.Instance.StartDataCollection();
+
+                // Opens the gate on GameAnalytics. Kept after the call rather than before it so a
+                // throwing StartDataCollection leaves every later RecordEvent a no-op instead of
+                // letting it reach an Instance that is not there.
+                GameAnalytics.IsReady = true;
+
+                Debug.Log("[GameServices] Analytics data collection started.");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[GameServices] Analytics start failed: {e.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Consent was withdrawn. Closes the gate first so nothing can slip through while the SDK
+        /// is being torn down, then asks the backend to purge what it already holds for this
+        /// player.
+        ///
+        /// RequestDataDeletion rather than StopDataCollection: it disables collection *and* erases
+        /// the history, is safe to call whatever state the SDK is in, and retries across sessions
+        /// if the player is offline right now. StopDataCollection would only stop the future, which
+        /// is the weaker reading of withdrawing consent. Collection can still be re-enabled later
+        /// if the player changes their mind again.
+        /// </summary>
+        private static void StopAnalyticsAndPurge()
+        {
+            GameAnalytics.IsReady = false;
+
+            try
+            {
+                AnalyticsService.Instance.RequestDataDeletion();
+                Debug.Log("[GameServices] Analytics stopped and data deletion requested.");
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[GameServices] Analytics opt-out failed: {e.Message}");
+            }
+        }
 
         private void MarkSignedIn()
         {

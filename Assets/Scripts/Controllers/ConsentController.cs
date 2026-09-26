@@ -1,5 +1,7 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
+using Commons;
 using GoogleMobileAds.Ump.Api;
 using UnityEngine;
 
@@ -30,11 +32,32 @@ namespace Controllers
         [Tooltip("Hashed device ids that should see the debug geography. Printed in logcat by the Ads SDK.")]
         [SerializeField] private List<string> testDeviceHashedIds = new List<string>();
 
+        // A failed UMP lookup is retried with a doubling delay. The first launch on a flaky
+        // connection is exactly when this fails, and without a retry that whole session had no
+        // ads: the SDK is never initialized, so none of the ad controllers' own retries ever run.
+        private const float FirstRetrySeconds = 10f;
+        private const float MaxRetrySeconds = 60f;
+
         /// <summary>True once the consent flow has finished, whether or not a form was shown.</summary>
         public bool IsResolved { get; private set; }
 
-        /// <summary>Fires when consent is resolved. Late subscribers are invoked immediately.</summary>
+        /// <summary>Fires when consent is first resolved. Late subscribers are invoked immediately.</summary>
         public event Action OnResolved;
+
+        /// <summary>
+        /// Fires every time UMP reports fresh consent information — the first resolution, each
+        /// successful retry after a failed lookup, and the privacy options form closing. Static so
+        /// listeners that outlive this object (the analytics prompt) need no instance.
+        /// </summary>
+        public static event Action OnConsentUpdated;
+
+        // Ad initializers waiting for CanRequestAds to come true. Held rather than dropped: a
+        // lookup that failed, or a player who declines and later changes their mind in Settings,
+        // both flip that answer after the first resolution, and the SDK must start when they do.
+        private static readonly List<Action> AdWaiters = new List<Action>();
+
+        private float _retryDelay = FirstRetrySeconds;
+        private Coroutine _retry;
 
         private void Awake()
         {
@@ -47,10 +70,14 @@ namespace Controllers
             Instance = this;
             DontDestroyOnLoad(gameObject);
 
+            // Records which thread is main, before the first UMP callback can arrive on some
+            // other one. Everything below marshals through it.
+            MainThreadDispatcher.Ensure();
+
             RequestConsent();
         }
 
-        private void RequestConsent()
+        private ConsentRequestParameters BuildRequest()
         {
             var request = new ConsentRequestParameters
             {
@@ -66,19 +93,30 @@ namespace Controllers
                 };
             }
 
-            ConsentInformation.Update(request, updateError =>
+            return request;
+        }
+
+        private void RequestConsent()
+        {
+            CancelRetry();
+
+            // Both callbacks are marshalled: the plugin does not promise which thread UMP calls
+            // back on, and Resolve reaches into coroutines and the ad SDK.
+            ConsentInformation.Update(BuildRequest(), updateError => MainThreadDispatcher.Run(() =>
             {
                 if (updateError != null)
                 {
                     // Network failure or misconfiguration. Resolve anyway so the game is not
-                    // stuck behind a prompt that will never arrive; CanRequestAds still gates
-                    // whether ads actually load.
+                    // stuck behind a prompt that will never arrive — CanRequestAds still gates
+                    // whether ads actually load — and try again later, because a lookup that
+                    // failed once is not a lookup that will fail forever.
                     Debug.LogWarning($"[Consent] Update failed: {updateError.Message}");
                     Resolve();
+                    ScheduleRetry();
                     return;
                 }
 
-                ConsentForm.LoadAndShowConsentFormIfRequired(formError =>
+                ConsentForm.LoadAndShowConsentFormIfRequired(formError => MainThreadDispatcher.Run(() =>
                 {
                     if (formError != null)
                     {
@@ -87,15 +125,66 @@ namespace Controllers
 
                     Debug.Log($"[Consent] Status={ConsentInformation.ConsentStatus}, " +
                               $"canRequestAds={ConsentInformation.CanRequestAds()}");
+
+                    _retryDelay = FirstRetrySeconds;
                     Resolve();
-                });
-            });
+                }));
+            }));
         }
 
+        private void ScheduleRetry()
+        {
+            CancelRetry();
+            _retry = StartCoroutine(RetryAfter(_retryDelay));
+            _retryDelay = Mathf.Min(_retryDelay * 2f, MaxRetrySeconds);
+        }
+
+        private IEnumerator RetryAfter(float seconds)
+        {
+            // Realtime: popups pause Time.timeScale, and Splash may be long gone by now.
+            yield return new WaitForSecondsRealtime(seconds);
+            _retry = null;
+
+            // A retry that would be a no-op is skipped. Ads being allowed is what the retry is
+            // for; if a cached status already permits them, there is nothing to chase.
+            if (CanRequestAds() && IsRegionKnown()) yield break;
+
+            Debug.Log("[Consent] Retrying consent lookup.");
+            RequestConsent();
+        }
+
+        private void CancelRetry()
+        {
+            if (_retry == null) return;
+            StopCoroutine(_retry);
+            _retry = null;
+        }
+
+        /// <summary>
+        /// Publishes fresh consent information. The first call also marks the flow resolved and
+        /// fires <see cref="OnResolved"/>; every call fires <see cref="OnConsentUpdated"/> and
+        /// releases any ad initializer whose turn has come.
+        /// </summary>
         private void Resolve()
         {
-            IsResolved = true;
-            OnResolved?.Invoke();
+            if (!IsResolved)
+            {
+                IsResolved = true;
+                OnResolved?.Invoke();
+            }
+
+            OnConsentUpdated?.Invoke();
+            ReleaseAdWaitersIfAllowed();
+        }
+
+        private static void ReleaseAdWaitersIfAllowed()
+        {
+            if (AdWaiters.Count == 0 || !CanRequestAds()) return;
+
+            // Copy first: an action may itself call WhenAdsAllowed.
+            var ready = AdWaiters.ToArray();
+            AdWaiters.Clear();
+            foreach (var action in ready) action();
         }
 
         /// <summary>
@@ -120,6 +209,11 @@ namespace Controllers
         /// Runs <paramref name="action"/> once ads are allowed. Ad controllers use this instead
         /// of initializing the Ads SDK directly.
         ///
+        /// "Once" is the operative word. If ads are not allowed yet — the lookup has not
+        /// finished, or failed, or the player declined — the action is *kept*, and runs the
+        /// moment a later consent update says yes. It used to be dropped, which meant one failed
+        /// lookup at launch silenced every ad for the rest of the session.
+        ///
         /// If no ConsentController exists (for example entering a gameplay scene directly in
         /// the Editor), the action runs immediately so ads still work while developing.
         /// </summary>
@@ -135,24 +229,95 @@ namespace Controllers
                 return;
             }
 
+            if (Instance.IsResolved && CanRequestAds())
+            {
+                action();
+                return;
+            }
+
             if (Instance.IsResolved)
             {
-                InvokeIfAllowed(action);
-                return;
+                Debug.Log("[Consent] Ads not allowed yet; the SDK will start if that changes.");
             }
 
-            Instance.OnResolved += () => InvokeIfAllowed(action);
+            AdWaiters.Add(action);
         }
 
-        private static void InvokeIfAllowed(Action action)
+        /// <summary>
+        /// Runs <paramref name="action"/> once the UMP flow has finished, regardless of what the
+        /// player answered. Unlike <see cref="WhenAdsAllowed"/> this does not gate on the answer —
+        /// it exists so the analytics prompt can wait for UMP to establish which region the player
+        /// is in before deciding whether to ask anything at all.
+        ///
+        /// Runs immediately when there is no ConsentController (entering a gameplay scene directly
+        /// in the Editor), which leaves the region reading at its Unknown default.
+        /// </summary>
+        public static void WhenResolved(Action action)
         {
-            if (!CanRequestAds())
+            if (action == null) return;
+
+            if (Instance == null)
             {
-                Debug.Log("[Consent] Player declined; not requesting ads.");
+                action();
                 return;
             }
 
-            action();
+            if (Instance.IsResolved) action();
+            else Instance.OnResolved += action;
+        }
+
+        /// <summary>
+        /// True when the player is somewhere a privacy prompt is legally expected — the EEA, UK,
+        /// Switzerland, and the regulated US states. Google decides this, which is why it is read
+        /// back off UMP rather than guessed from a locale or a timezone.
+        ///
+        /// <c>Required</c> means a form is owed and unanswered; <c>Obtained</c> means one was owed
+        /// and has been answered. Both mean "this player is in a regulated region".
+        /// <c>NotRequired</c> is most of the world.
+        ///
+        /// Only meaningful after the flow has resolved — see <see cref="WhenResolved"/>. Before
+        /// that it reads Unknown and this returns false.
+        ///
+        /// Note this is Google's determination for *ad* consent. It is the best regional signal
+        /// available in the project, but it is not a legal opinion about analytics — see
+        /// next_step.md, "Analytics consent".
+        /// </summary>
+        public static bool IsConsentRequiredRegion()
+        {
+            try
+            {
+                var status = ConsentInformation.ConsentStatus;
+                return status == ConsentStatus.Required || status == ConsentStatus.Obtained;
+            }
+            catch (Exception)
+            {
+                // No UMP native bridge in the Editor.
+                return false;
+            }
+        }
+
+        /// <summary>
+        /// True when UMP has actually established where the player is. False means the question is
+        /// still open — the update failed (offline, or a missing published consent message) and
+        /// <see cref="ConsentStatus"/> is sitting at its <c>Unknown</c> default.
+        ///
+        /// The distinction matters because <see cref="IsConsentRequiredRegion"/> answers false for
+        /// both "definitely outside the EEA" and "no idea", and those must not be treated alike:
+        /// silently opting in a player whose region could not be determined is exactly the case
+        /// GDPR is about. Callers that are deciding whether to collect data must check this first
+        /// and defer rather than guess — the flow resolves anyway so the game is never stuck, and
+        /// the next launch gets another chance to determine it.
+        /// </summary>
+        public static bool IsRegionKnown()
+        {
+            try
+            {
+                return ConsentInformation.ConsentStatus != ConsentStatus.Unknown;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         /// <summary>
@@ -173,14 +338,28 @@ namespace Controllers
             }
         }
 
-        /// <summary>Reopens the consent form so the player can change their choice.</summary>
+        /// <summary>
+        /// Reopens the consent form so the player can change their choice. The answer may now
+        /// allow ads that were refused at launch, so the waiters are re-evaluated on close.
+        /// </summary>
         public static void ShowPrivacyOptions(Action onDismissed = null)
         {
-            ConsentForm.ShowPrivacyOptionsForm(error =>
+            ConsentForm.ShowPrivacyOptionsForm(error => MainThreadDispatcher.Run(() =>
             {
                 if (error != null) Debug.LogWarning($"[Consent] Privacy form failed: {error.Message}");
+
+                OnConsentUpdated?.Invoke();
+                ReleaseAdWaitersIfAllowed();
                 onDismissed?.Invoke();
-            });
+            }));
+        }
+
+        private void OnDestroy()
+        {
+            if (Instance != this) return;
+
+            CancelRetry();
+            Instance = null;
         }
     }
 }
