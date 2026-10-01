@@ -55,6 +55,22 @@ namespace Controllers
             ConsentController.WhenAdsAllowed(Initialize);
         }
 
+        /// <summary>
+        /// Forgets that the SDK was ever started, so a boot retry asks for it again.
+        ///
+        /// The native SDK cannot really be un-initialized and does not need to be - it tolerates
+        /// a repeat Initialize. What has to go is *our* memory of it: `_initializing` latches on
+        /// the first call and would make every later WhenInitialized a silent no-op, and
+        /// `_onInitialized` still holds callbacks belonging to controllers the retry destroys.
+        /// </summary>
+        internal static void ResetForRestart()
+        {
+            StopWatchdog();
+            _initialized = false;
+            _initializing = false;
+            _onInitialized = null;
+        }
+
         private static void Initialize()
         {
             // Must be on the main thread: WhenAdsAllowed delivers there, but the SDK's Next-Gen

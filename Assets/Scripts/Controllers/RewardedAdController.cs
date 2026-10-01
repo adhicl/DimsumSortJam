@@ -3,6 +3,7 @@ using System.Collections;
 using Commons;
 using GoogleMobileAds.Api;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 namespace Controllers
 {
@@ -40,8 +41,27 @@ namespace Controllers
         // dead for the whole session with every "watch an ad" button greyed out.
         private const float LoadTimeoutSeconds = 30f;
 
+        // After the ad closes, how long to keep the screen blocked before handing out the reward.
+        // Lets the game view come back first, and swallows the tap that closed the ad.
+        private const float ResumeDelaySeconds = 0.35f;
+
+        // Upper bound on waiting for the app to regain focus after the ad, so a device that never
+        // reports focus cannot hold the reward back forever.
+        private const float FocusWaitSeconds = 3f;
+
         private RewardedAd _rewardedAd;
         private bool _isLoading;
+
+        // The reward for the ad currently showing. On Android the game keeps running behind a
+        // rewarded ad and the "earned" callback fires before the player closes it, so paying out
+        // there played the win popup's coins - and its scene change - unseen behind the video.
+        // The reward is held here and delivered once the ad has closed instead.
+        private Action _pendingReward;
+        private bool _rewardEarned;
+        private Coroutine _resume;
+
+        // The EventSystem switched off while an ad is up, so nothing behind it can be pressed.
+        private EventSystem _blockedEventSystem;
         private float _staleCheckIn = StaleCheckSeconds;
         private float _retryDelay = FirstRetrySeconds;
         private Coroutine _retry;
@@ -54,10 +74,17 @@ namespace Controllers
         /// </summary>
         public static bool IsShowingAd { get; private set; }
 
-        private string AdUnitId =>
-            (useTestAd || string.IsNullOrEmpty(androidLiveAdUnitId))
-                ? AndroidTestAdUnitId
-                : androidLiveAdUnitId;
+        // AdTestMode also forces test units on an emulator, where a live one never fills.
+        private bool UseTestAds =>
+            AdTestMode.ShouldUseTestAds(useTestAd) || string.IsNullOrEmpty(androidLiveAdUnitId);
+
+        private string AdUnitId => UseTestAds ? AndroidTestAdUnitId : androidLiveAdUnitId;
+
+        /// <summary>Clears the showing-an-ad latch, which the game timer reads, for a boot retry.</summary>
+        internal static void ResetForRestart()
+        {
+            IsShowingAd = false;
+        }
 
         private void Awake()
         {
@@ -108,6 +135,7 @@ namespace Controllers
 
             _isLoading = true;
             StartLoadWatchdog();
+            Debug.Log($"[RewardedAd] Requesting {(UseTestAds ? "TEST" : "LIVE")} rewarded {AdUnitId}");
 
             // Marshalled explicitly: the plugin does not promise a thread, and ScheduleRetry
             // starts a coroutine. Also guards against a late callback from a request the
@@ -211,14 +239,74 @@ namespace Controllers
             ad.OnAdFullScreenContentClosed += () => MainThreadDispatcher.Run(() =>
             {
                 IsShowingAd = false;
+                BeginResume();
                 LoadAd();
             });
             ad.OnAdFullScreenContentFailed += (AdError err) => MainThreadDispatcher.Run(() =>
             {
                 IsShowingAd = false;
                 Debug.LogWarning($"[RewardedAd] Failed to present: {err}");
+                BeginResume();
                 LoadAd();
             });
+        }
+
+        /// <summary>
+        /// Called when the ad has gone, closed or failed. The reward, if earned, is paid once the
+        /// player is back looking at the game.
+        /// </summary>
+        private void BeginResume()
+        {
+            if (_resume != null) StopCoroutine(_resume);
+            _resume = StartCoroutine(ResumeAfterAd());
+        }
+
+        private IEnumerator ResumeAfterAd()
+        {
+            float waited = 0f;
+            while (!Application.isFocused && waited < FocusWaitSeconds)
+            {
+                waited += Time.unscaledDeltaTime;
+                yield return null;
+            }
+
+            yield return new WaitForSecondsRealtime(ResumeDelaySeconds);
+            _resume = null;
+
+            UnblockInput();
+            if (_rewardEarned) DeliverReward();
+            else _pendingReward = null;
+        }
+
+        private void OnRewardEarned()
+        {
+            _rewardEarned = true;
+
+            // Normally the ad is still on screen here and ResumeAfterAd pays out on close. Some
+            // SDK versions report the reward after the close instead; pay it out now in that case.
+            if (!IsShowingAd && _resume == null) DeliverReward();
+        }
+
+        private void DeliverReward()
+        {
+            Action reward = _pendingReward;
+            _pendingReward = null;
+            _rewardEarned = false;
+            reward?.Invoke();
+        }
+
+        private void BlockInput()
+        {
+            EventSystem current = EventSystem.current;
+            if (current == null || !current.enabled) return;
+            current.enabled = false;
+            _blockedEventSystem = current;
+        }
+
+        private void UnblockInput()
+        {
+            if (_blockedEventSystem != null) _blockedEventSystem.enabled = true;
+            _blockedEventSystem = null;
         }
 
         public bool IsReady => _rewardedAd != null && _rewardedAd.CanShowAd();
@@ -254,13 +342,17 @@ namespace Controllers
             {
                 // Cleared by the closed/failed handlers registered in RegisterReloadHandlers.
                 IsShowingAd = true;
+                _pendingReward = onReward;
+                _rewardEarned = false;
+                BlockInput();
+
                 _rewardedAd.Show(_ => MainThreadDispatcher.Run(() =>
                 {
                     // Inside the reward callback, not next to Show: this fires when the user has
                     // actually earned the reward, which is the number worth having. Show only
                     // means the ad was put on screen, and a user who backs out never rewards.
                     GameAnalytics.RewardedAdCompleted(placement);
-                    onReward?.Invoke();
+                    OnRewardEarned();
                 }));
                 return;
             }
@@ -284,6 +376,7 @@ namespace Controllers
 
             // Never leave the timer frozen because the controller died mid-ad.
             IsShowingAd = false;
+            UnblockInput();
             CancelRetry();
             CancelLoadWatchdog();
 

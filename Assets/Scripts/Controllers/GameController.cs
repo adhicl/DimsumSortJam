@@ -1344,6 +1344,12 @@ namespace Controllers
                                       && powerUpAnimationEffect.gameObject.activeInHierarchy;
 
         /// <summary>
+        /// True in the Tutorial1..7 scenes - the names <see cref="Settings.GetNextLevelScene"/>
+        /// routes the tutorial levels to.
+        /// </summary>
+        private bool IsTutorialScene => gameObject.scene.name.StartsWith("Tutorial", StringComparison.Ordinal);
+
+        /// <summary>
         /// Spends one power-up, or opens the buy popup when the player has none. Every power-up
         /// button goes through here, so there is no route that fires an effect without paying
         /// for it. Returns false when the caller should stop.
@@ -1355,6 +1361,10 @@ namespace Controllers
             // no route can spend a power-up into an effect that is still playing - and refused
             // before the empty check, so it cannot be mistaken for having run out.
             if (PowerupRunning) return false;
+
+            // The tutorials are teaching the power-up, not selling it: the press is free there,
+            // and the player's stock is left untouched rather than charged or sent to the shop.
+            if (IsTutorialScene) return true;
 
             if (_gameSetting != null && _gameSetting.TrySpendPowerup(slot))
             {

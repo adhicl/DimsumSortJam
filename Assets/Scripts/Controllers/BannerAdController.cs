@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Reflection;
 using Commons;
 using GoogleMobileAds.Api;
 using UnityEngine;
@@ -58,6 +59,14 @@ namespace Controllers
         /// </summary>
         public static float BannerHeightPixels { get; private set; }
 
+        /// <summary>
+        /// True once an ad has actually come back, whether or not the current scene shows it.
+        /// <see cref="BannerHeightPixels"/> cannot answer this: it is the *reserved* height, and
+        /// reads 0 in a scene that hides the banner - Splash included, which is exactly where the
+        /// loading screen needs to know whether the banner is ready.
+        /// </summary>
+        public bool IsLoaded => _loaded;
+
         /// <summary>Raised on the Unity main thread whenever <see cref="BannerHeightPixels"/> changes.</summary>
         public static event Action<float> BannerHeightChanged;
 
@@ -68,6 +77,18 @@ namespace Controllers
         private float _retryDelay = FirstRetrySeconds;
         private Coroutine _retry;
         private Coroutine _loadWatchdog;
+
+#if UNITY_EDITOR
+        // Set once the Editor placeholder has been moved out of the scene, so the work - and any
+        // warning about not being able to do it - happens on the first load rather than every one.
+        private static bool _placeholderKept;
+
+        // Statics survive a domain reload when that is turned off for faster iteration, and a flag
+        // left set from the previous play session would skip the one thing keeping the banner
+        // alive - so the second run onwards would lose it again. Matches PlayTopBar's reset.
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void ResetPlaceholderKept() => _placeholderKept = false;
+#endif
 
         private static string AdUnitId
         {
@@ -143,7 +164,11 @@ namespace Controllers
             AdSize adaptiveSize =
                 AdSize.GetCurrentOrientationAnchoredAdaptiveBannerAdSizeWithWidth(AdSize.FullWidth);
 
-            string unitId = useTestAd ? TestAdUnitId : AdUnitId;
+            // AdTestMode also forces test units on an emulator, where a live one never fills.
+            bool testAds = AdTestMode.ShouldUseTestAds(useTestAd);
+            string unitId = testAds ? TestAdUnitId : AdUnitId;
+            Debug.Log($"[BannerAd] Requesting {(testAds ? "TEST" : "LIVE")} banner {unitId}");
+
             BannerView view = new BannerView(unitId, adaptiveSize, AdPosition.Bottom);
             _bannerView = view;
 
@@ -162,6 +187,7 @@ namespace Controllers
                 _loaded = true;
                 _loadedHeight = view.GetHeightInPixels();
                 _retryDelay = FirstRetrySeconds;
+                KeepBannerAcrossScenes(view);
                 ApplyVisibility();
             });
             view.OnBannerAdLoadFailed += (LoadAdError error) => MainThreadDispatcher.Run(() =>
@@ -232,6 +258,60 @@ namespace Controllers
             ApplyVisibility();
         }
 
+        /// <summary>
+        /// Keeps the loaded banner alive across scene loads.
+        ///
+        /// On device this is already true and this method does nothing: the banner is a native
+        /// view owned by the Activity, with no Unity object to lose. In the Editor the plugin
+        /// fakes it with an ordinary GameObject, created as a root of whichever scene happened to
+        /// be active when the ad landed - so loading the next scene destroyed it while this
+        /// controller still believed the ad was up, and the layout went on reserving space for a
+        /// banner nobody could see.
+        ///
+        /// Reaching into the plugin's internals is not nice, but the alternative was re-requesting
+        /// the banner on every scene change, which on device would throw away a live impression
+        /// and ask AdMob for fresh fill on each screen. This costs nothing at runtime and is
+        /// compiled out of player builds entirely.
+        /// </summary>
+        private static void KeepBannerAcrossScenes(BannerView view)
+        {
+#if UNITY_EDITOR
+            if (_placeholderKept || view == null) return;
+
+            const BindingFlags Hidden = BindingFlags.NonPublic | BindingFlags.Instance;
+            try
+            {
+                var clientField = typeof(BannerView).GetField("_client", Hidden);
+                object client = clientField != null ? clientField.GetValue(view) : null;
+
+                var objectField = client != null ? client.GetType().GetField("_gameObject", Hidden) : null;
+                var placeholder = objectField != null ? objectField.GetValue(client) as GameObject : null;
+
+                if (placeholder == null)
+                {
+                    // Field names are the plugin's business and can change when it is updated.
+                    // Say so rather than let the banner quietly start vanishing again.
+                    Debug.LogWarning("[BannerAd] Could not find the Editor placeholder object to keep " +
+                                     "across scenes; the banner will disappear on the next scene load. " +
+                                     "The Google Mobile Ads plugin's internals have probably changed - " +
+                                     "see next_step.md, \"Ads outside Splash\".");
+                    _placeholderKept = true;   // one warning, not one per load
+                    return;
+                }
+
+                // DontDestroyOnLoad only honours root objects.
+                if (placeholder.transform.parent != null) placeholder.transform.SetParent(null, true);
+                DontDestroyOnLoad(placeholder);
+                _placeholderKept = true;
+            }
+            catch (Exception e)
+            {
+                Debug.LogWarning($"[BannerAd] Could not persist the Editor placeholder: {e.Message}");
+                _placeholderKept = true;
+            }
+#endif
+        }
+
         private void ScheduleRetry()
         {
             CancelRetry();
@@ -278,7 +358,13 @@ namespace Controllers
 
             if (_bannerView != null)
             {
-                _bannerView.Destroy();
+                // Guarded because the view underneath may already be gone: in the Editor the
+                // placeholder is a scene GameObject, so a scene change destroys it behind the
+                // plugin's back and tearing it down again can hit a missing reference. Losing the
+                // old view is the point here - a throw must not leave _bannerView dangling.
+                try { _bannerView.Destroy(); }
+                catch (Exception e) { Debug.LogWarning($"[BannerAd] Destroy failed: {e.Message}"); }
+
                 _bannerView = null;
             }
 
@@ -290,6 +376,19 @@ namespace Controllers
         /// <summary>
         /// Publishes the reserved height, notifying listeners only when the value actually moves.
         /// </summary>
+        /// <summary>
+        /// Clears the reserved height and its listeners for a boot retry. The subscribers are
+        /// SafeAreaPanels in a scene that is about to be unloaded.
+        /// </summary>
+        internal static void ResetForRestart()
+        {
+            BannerHeightPixels = 0f;
+            BannerHeightChanged = null;
+#if UNITY_EDITOR
+            _placeholderKept = false;
+#endif
+        }
+
         private static void SetBannerHeight(float heightPixels)
         {
             heightPixels = Mathf.Max(0f, heightPixels);
