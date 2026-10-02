@@ -624,9 +624,21 @@ arrives with no reason recorded. There used to be one — declining the offer to
 straight to the confirmation — which is exactly what made recording the reason at the popup
 unreliable.
 
-**The life is spent in `CommitLose` and nowhere else**, so backing out is always free. Neither
+**On this route the life is spent in `CommitLose`**, so backing out is always free. Neither
 revive popup's Leave button nor its corner X charges anything; both call `LeaveGiveUp()`, which
 closes and hands over to `ShowLoseConfirm()`.
+
+**Walking out costs a life too** (2026-10-02). The three "you will lose 1 heart" popups —
+`Alert Lose Heart QUIT` (in-level Settings → BACK TO HOME), `Alert Lose Heart Retry` (Settings →
+RESTART) and `Alert Request Fail QUIT` (a customer ran out of patience) — all call
+`AlertQuitPopup.QuitPopup()`, which now calls `GameController.QuitLevel()` before the scene
+changes. Tutorials are charged the same as any level. `QuitLevel` logs `levelFailed` with reason
+`"quit"`; `GameController._lifeCharged` makes sure one level can never cost two lives, whichever
+route it leaves by. Before this, `QuitPopup` only had a `//reduce one health` placeholder, so
+quitting and restarting were free.
+
+The Home Settings popup also has a BACK TO HOME button that opens the same "lose 1 heart" popup.
+There is no level to charge there, so nothing is spent, but the warning is wrong — hide that button.
 
 Both revive popups route their Leave through the controller rather than through a `PopupOpener` on
 the button. A `PopupOpener` holds a prefab, not a reason, and it also skips `LeaveGiveUp`'s
@@ -678,6 +690,46 @@ warning and lets the player through rather than locking them out of the game.
 Winning is never gated: `WinPopup` chains straight into the next level, and lives are only spent
 on a loss, so a player on their last life can keep going as long as they keep winning.
 
+### Possible change: charge at level start, refund on a win
+
+**Not implemented — parked 2026-10-02.** Lives are currently charged on the way *out* of a level
+(lose confirm, quit, restart). That leaves one hole: **force-closing the app mid-level costs
+nothing**, because no popup ever runs. The usual fix is to take the life when the level starts
+and hand it back when the level is won. Things to get right if this is ever picked up:
+
+1. **Remove the exit charges.** `CommitLose` and `QuitLevel` must stop calling `TrySpendLife`, or
+   a lost level costs two lives. Restart is the worst case: charged on the way out *and* on the
+   reload.
+2. **Charge inside the level, not on the Play button.** Several entry points skip
+   `PlayButton`'s `CanStartLevel` gate: Settings → RESTART loads `Game` directly, `LoadingScene`
+   boots early-level players straight into a tutorial scene, and `WinPopup` chains early levels
+   into the next tutorial. Charging in `GameController` startup covers all of them. **Needs a
+   decision:** what a level started with 0 lives does — send the player Home with
+   `Out-Of-Lives-Popup`, or let that one through free.
+3. **Refund only what was actually charged.** A level started during an unlimited window was
+   free, so a win must not hand back a life (that would mint lives). Record whether the start
+   charged; that record decides the refund. A window that expires mid-level does not make the
+   level cost anything after the fact; one bought mid-level (IAP bundles) just means the win
+   refunds as normal.
+4. **Regen clock and cap.** Spending from 5 starts `nextLifeAt`; a refund back to 5 must stop it
+   (`RefreshLives` already clears the clock at full). If a life regenerates mid-level, the refund
+   is capped at `MaxLife` and that regenerated life is wasted — rare, since levels are short
+   next to the regen period.
+5. **Refund at the moment of winning, not on Claim.** Refunding in `WinPopup`'s claim would lose
+   the life if the app is killed on the win screen. Refund once (latched) when the level is
+   won, and `SaveData()` right away.
+6. **Player-visible cost (the trade-off itself).** Any mid-level kill now costs a life —
+   including Android killing the game in the background during a rewarded ad (common on low-end
+   phones) and crashes. That is the price of closing the force-close hole; most lives-based
+   games accept it.
+7. **Cloud Save.** `ApplySnapshot` takes `totalLife` wholesale, so a snapshot uploaded mid-level
+   carries the charged count. That is correct (the level was abandoned) and needs no new merge
+   rule, but test it once across two devices.
+8. **Analytics.** Abandoned levels then show up as a start with no complete/fail event, which you
+   could track as their own metric.
+
+Touches `GameController`, `GameSetting`, `AlertQuitPopup` and `LoseQuitPopup`.
+
 ### Still to do
 
 - **No rewarded-ad route out.** `RewardedAdController` already exists for the win-screen double
@@ -685,6 +737,8 @@ on a loss, so a player on their last life can keep going as long as they keep wi
   addition and softens the 30-minute wait.
 - **The top bar shows the life count, not the regeneration timer.** There is one label on the
   heart and the ∞ countdown already owns it. If you want "3 · 12:41", the label needs splitting.
+- **Force-closing mid-level costs no life.** See "Possible change: charge at level start, refund
+  on a win" above.
 - **`lifeTimer` is now dead weight.** It predates all of this, is saved and synced, and only
   `WinPopup` reads it. Removing it means a save-format change, so it was left alone.
 
@@ -1461,25 +1515,12 @@ by hand.
 | Tutorial5 | 9 | power-up 4, hourglass (Lv.10) | 3rd |
 | Tutorial6 | 13 | power-up 3, shuffle (Lv.14) | 4th |
 
-### Why the arrow is positioned in code
+### The arrow is placed by hand
 
-`TutorialPowerUpPointer` on each cover centres the DownArrow over the slot at runtime. This is not
-tidiness — a fixed position is provably wrong on most devices:
-
-- The toolbar is anchored to both screen edges, and the layout group has `childForceExpandWidth`,
-  so the four slots are spread across whatever width the toolbar has.
-- The CanvasScaler runs `ScaleWithScreenSize` at **`match = 0.5`**, which makes the canvas width *in
-  canvas units* a function of aspect ratio — measured 1075 to 2275 units across the range tried.
-
-So the slots sit at different canvas-unit positions on a tall phone than on a short one, and a
-hand-placed arrow only lines up at the one aspect it was authored for. The arrows that were there
-before had this bug already; they were simply never noticed because nobody compared them across
-devices. The serialized `anchoredPosition` that remains on each DownArrow is **only an editor
-preview** — the pointer overwrites its X on enable and whenever the row moves.
-
-Which slot to point at is derived, not configured: the row is in unlock order, so the nth slot has
-the nth lowest unlock level, and the target is the one whose level equals `currentLevel + 1` — the
-same rule `PlayTopBar.ShowTutorialPowerUp` uses to reveal it. No per-scene wiring to keep in step.
+Each cover's `DownArrow` is positioned manually in the editor (`Canvas/UseItem1/DownArrow`). The
+runtime `TutorialPowerUpPointer` that used to re-centre it was removed on 2026-10-01. Caveat: the
+toolbar stretches with the screen (`childForceExpandWidth`, CanvasScaler `match = 0.5`), so a
+hand-placed arrow lines up exactly only at the aspect ratio it was authored at.
 
 ### If you change an unlock level
 
@@ -1487,7 +1528,7 @@ same rule `PlayTopBar.ShowTutorialPowerUp` uses to reveal it. No per-scene wirin
 changing a constant silently leaves the row — and every tutorial arrow pointing into it — wrong.
 `PlayTopBar.ValidateSlotOrder` catches that: an editor-only check that logs, on entering Play mode,
 the exact order the row should be in. To fix, reorder the prefab's Content children, then the
-duplicate row in each of the four covers. The arrows need nothing; they follow.
+duplicate row in each of the four covers, and move each cover's DownArrow by hand.
 
 > **That warning is easy to miss in this project.** `Debug.LogWarning` does not come back through
 > the MCP `read_console` tool here — `Debug.Log` does. Read it in the Unity console window, or
@@ -1688,6 +1729,260 @@ Single-item requests are unchanged by construction — one pick from the same so
 | not `getOnTopOnly`, 3 items | unique, as before |
 | `getOnTopOnly`, 1 item | `[5]` — identical to old behaviour |
 | **old code, 2 items, x4** | `[5,5]` every time |
+
+---
+
+## Ads on an emulator
+
+Live ad units **never fill on an emulator**. The Mobile Ads SDK classifies emulators as test
+devices automatically, and a request against a live unit comes back empty - if one ever did fill,
+the impression would be invalid traffic against the account. The symptom is a build where ads
+simply never appear, with nothing obviously wrong in the project: App ID present in the manifest,
+INTERNET granted, ad units configured, no errors.
+
+`AdTestMode` now forces Google's sample units when it detects an emulator, checking the usual
+`android.os.Build` fields (fingerprint, model, manufacturer, brand/device, product, hardware - no
+single one is reliable alone). **Real hardware still honours the `useTestAd` checkbox**, so live
+ads can still be verified on a device before shipping, and nobody has to remember to flip a toggle
+back before release.
+
+Both controllers now log which unit they ask for, so a build says plainly what it is doing:
+
+```
+[Ads] Emulator detected (Google sdk_gphone64_x86_64, hardware=ranchu); forcing Google's test ad units.
+[BannerAd]   Requesting TEST banner ca-app-pub-3940256099942544/6300978111
+[RewardedAd] Requesting TEST rewarded ca-app-pub-3940256099942544/5224354917
+```
+
+On a real device those read `Requesting LIVE …` with the project's own unit ids.
+
+### Reading the outcome
+
+With test units in play the pipeline is no longer in question, so what happens next is diagnostic:
+
+- **Ads appear** → the client is fine end to end. Anything still missing with *live* units on real
+  hardware is AdMob-side: app not yet Ready, limited ad serving on a new app, or genuinely no
+  demand. See §4.
+- **Ads still do not appear** → it is not AdMob. Check logcat for the request line above; if it is
+  absent the controllers never ran, and if it is followed by a load failure the error code names
+  the cause (3 = no fill, 2 = network, 1 = invalid request, 8 = missing App ID).
+
+Capture with `adb logcat -s Unity:D Ads:V` while launching.
+
+## Ads outside Splash
+
+Fixed 2026-09-26. Starting play on any scene other than Splash gave **no ads at all** — no banner,
+no rewarded video, and nothing in the console to explain it.
+
+### Why
+
+`ConsentController`, `BannerAdController` and `RewardedAdController` are DontDestroyOnLoad
+singletons, but they were only ever *placed* in `Splash.unity`. Nothing else creates them. Start on
+Home, Game or a tutorial — which is how a scene gets tested — and all three are simply absent:
+
+```
+scene=Home
+Consent.Instance = False     ConsentController objects    = 0
+Banner.Instance  = False     BannerAdController objects   = 0
+Rewarded.Instance= False     RewardedAdController objects = 0
+MobileAdsSdk.IsInitialized = False
+```
+
+Nothing calls `MobileAds.Initialize`, so the SDK never starts, and there is no controller alive to
+log a complaint. It looks exactly like "the ads broke" when in fact the ad layer was never booted.
+Note this is silent by design elsewhere too: `ConsentController.WhenAdsAllowed` warns when it finds
+no controller, but that warning only fires if something asks — and with no ad controllers in the
+scene, nothing does.
+
+### The fix
+
+`AdServicesBootstrap` spawns them from `Resources/AdServices` when they are missing. It runs at
+`RuntimeInitializeLoadType.AfterSceneLoad` — *after* the first scene's Awake — so:
+
+- **Booting from Splash is unchanged.** Those instances already exist by then, the bootstrap sees
+  them and does nothing. Verified: Splash still uses its own `BannerAd` object and no clone appears.
+- **Any other scene** gets one spawned copy, which lands in `DontDestroyOnLoad` like the originals.
+
+It checks all three controllers, not just one: the controllers' own duplicate guards call
+`Destroy(gameObject)`, and since the prefab carries all three components on a single root, spawning
+on top of a half-populated scene would take the other two down with it.
+
+The prefab is a **single root object carrying all three components**, deliberately. Each controller
+calls `DontDestroyOnLoad(gameObject)` in Awake, and Unity only honours that for root objects — three
+children under a shared parent would each warn and misbehave.
+
+### Keeping the prefab honest
+
+`Assets/Resources/AdServices.prefab` was generated **from the Splash objects** with
+`ComponentUtility.CopyComponent` / `PasteComponentAsNew`, not configured by hand, so the live ad
+unit ids and flags cannot drift from the ones that ship. Verified field by field against Splash at
+creation: `ConsentController` 4/4, `BannerAdController` 13/13, `RewardedAdController` 2/2 matching,
+zero differences — including `gameSetting`, `useTestAd = false` (live ads, not test), the nine
+banner scenes, and `androidLiveAdUnitId = ca-app-pub-8590881680208951/2518293601`.
+
+**If you change any of those on the Splash objects, rebuild the prefab**, or a scene-direct run will
+quietly use the old values. Rebuilding is a copy of the three components from Splash onto a fresh
+GameObject saved over that path.
+
+### Verified
+
+| Case | Result |
+|---|---|
+| Play **Home** directly | all three instances present, `IsInitialized=True`, `BannerHeightPixels=100`, rewarded `IsReady=True`, exactly 1 of each |
+| Play **Splash** | unchanged — uses Splash's own `BannerAd`, no `AdServices` clone, 1 of each |
+| Splash → Home transition | still 1 of each, banner 100px, rewarded ready |
+
+### Boot waits for the services
+
+`LoadingScene` used to hold the progress bar only for Cloud Save. It now waits on the whole boot
+before leaving Splash, on two budgets:
+
+- **Core services** — sign-in, Cloud Save, IAP, consent, and the ads SDK. Each either succeeds or
+  gives up on its own, so waiting is bounded. A controller that is absent is skipped, so playing a
+  scene directly still boots instead of sitting out the timeout.
+- **Ad fill** — an actual banner and rewarded ad, waited on for `adFillTimeout` (4s) only. AdMob is
+  entitled to return nothing at all, so fill gets a shorter, separate budget; without one, an
+  account with no demand would add the full timeout to *every* launch.
+
+`serviceTimeout` (8s) is a hard cap over both: a service that never answers delays the boot, it
+cannot stop it. When the cap is hit, `ReportOutstanding` logs exactly which gates were late —
+otherwise a slow launch and a broken service look identical from the loading screen.
+
+Two supporting changes:
+
+- `GameServicesController.SignInSettled` — `IsSignedIn` alone is unwaitable, because a *failed*
+  sign-in leaves it false forever and the boot would sit out its whole timeout on every offline
+  launch.
+- `BannerAdController.IsLoaded` — `BannerHeightPixels` cannot answer "is the banner ready", because
+  it is the *reserved* height and reads 0 in any scene that hides the banner. Splash is one of
+  those, which is exactly where the loading screen has to ask.
+
+`CanRequestAds()` is resolved once and cached. It runs from `Update`, and asking per frame spammed
+the Editor console with `Placeholder ConsentInformationClient` every frame and cost a JNI hop per
+frame on device.
+
+The loading caption is now just `Loading` with animating dots. It used to print the player's
+*current* level — not the one being opened — which meant nothing to anyone reading it.
+
+### When the boot gets stuck
+
+Before this, a wedged boot meant a loading bar sitting at 100% forever: no message, nothing to
+press, force-close the only way out. `LoadingScene` now watches the whole boot and offers a way
+out when it does not finish.
+
+**Detection is deliberately generic.** Rather than enumerating what can hang - a service, ad fill,
+the scene transition - the watchdog asks one question: *are we still on Splash after
+`stuckTimeout` (20s)?* That catches every cause, including ones not thought of. It is checked
+before the "transition already started" early-out, because the commonest stall is *after* the
+transition begins with the scene never actually changing, and returning early there would leave
+nothing watching. 20s sits comfortably above `serviceTimeout` (8s) plus the transition, so a merely
+slow launch is never called a failure.
+
+**The popup** is `Assets/Prefabs/UI Popups/Boot-Failed-Popup`, a Variant of
+`Alert Lose Heart Retry`, so it keeps the game's art and follows it if that art changes. RETRY and
+QUIT, and the close (X) is hidden on purpose - dismissing would drop the player back on a loading
+bar that is never going to finish.
+
+It is assigned to `LoadingScene.failurePopupPrefab` on the Splash object rather than loaded from a
+Resources folder, so it can live wherever the other popups live and moving it cannot silently
+break the failure path. Leave the field empty and the boot falls back to a plain system dialog.
+
+> **All wording and artwork live on the prefab.** Edit the labels there; nothing in code writes
+> them. `BootFailedPopup` used to push a title and message into the labels on enable, which meant
+> the prefab showed one thing in the editor and something else at runtime, and every copy change
+> was a code change. The component now serializes only the two buttons.
+
+It builds **its own canvas** rather than borrowing one. Borrowing was wrong twice: the first canvas
+found tends to be Ricimi's `TransitionCanvas`, which is *destroyed* when the fade ends and would
+take the popup with it, and a boot that failed early may have no usable canvas at all. It also
+creates an EventSystem if none exists - without one the buttons are decoration.
+
+> `Popup.Open()` calls `SoundController.Instance.PlayOpenPopupClip()`, and **SoundController does
+> not exist in Splash** - it lives in the game scenes. That NRE killed the whole popup and dropped
+> the boot to the quit path. `Open()` is now attempted inside its own try/catch: what it adds
+> beyond the sound is the dimming backdrop, which is a nicety, and the alert has to appear either
+> way.
+
+**RETRY genuinely retries.** Reloading Splash on its own would retry nothing: every service is a
+`DontDestroyOnLoad` singleton, so it survives the reload, sees its own `Instance` already set and
+destroys the fresh copy Splash just made - the stuck ones stay stuck. `BootRetry.TryRestart` tears
+the six service objects down first (found by component, not by name, since they are named
+differently depending on whether they came from Splash or `AdServicesBootstrap`), clears the
+statics that would otherwise survive them, and only then reloads. Each class exposes its own
+`ResetForRestart` for the parts that are private.
+
+**QUIT, and the fallbacks.** Quit closes the app. If the styled popup cannot be shown at all, the
+boot falls back to `NativeDialog`; where that cannot be shown either it answers false immediately,
+which quits. The boot is dead in every one of those branches - the one outcome worth avoiding is
+leaving the player on a frozen loading screen.
+
+### Verified
+
+| Case | Result |
+|---|---|
+| Boot wedged (`stuckTimeout` forced to 0.5s) | watchdog fires: `[Loading] Boot still on Splash after 0.5s; offering a retry.` |
+| Popup content | title `CONNECTION PROBLEM`, correct message, `RETRY` + `QUIT` both interactable, close hidden |
+| Popup canvas | its own `BootFailureCanvas`, sorting 32767, raycaster + EventSystem present; framebuffer shows the alert colours where Splash's blue would be |
+| RETRY | tears down 6 service objects, resets the statics, reloads Splash; services come back |
+| QUIT / native fallback | exits play mode via `QuitApp` |
+| **Healthy boot** | reaches Home, no popup, no failure canvas — no false positive |
+
+### The banner also died on every scene change (Editor only)
+
+Separate bug, found straight after the above and fixed the same day. Booting from Splash, the
+banner vanished the moment Home loaded — while the controller still believed it was up:
+
+```
+after Splash -> Home
+  controller says BannerHeightPixels = 100     <- layout still reserving space
+  controller _loaded = True
+  placeholder DESTROYED by the scene change = True
+```
+
+In the Editor the "banner" is the plugin's placeholder: an ordinary GameObject parented into
+**whichever scene was active when it loaded**. A scene change destroys it behind the plugin's back,
+so `BannerAdController` goes on reserving the banner's height for something nobody can see. That is
+why playing Home *directly* looked fine and the real boot path did not.
+
+`KeepBannerAcrossScenes` now moves that placeholder into `DontDestroyOnLoad` the first time an ad
+lands — **`#if UNITY_EDITOR` only**, and compiled out of player builds entirely. On device the
+banner is a native view owned by the Activity and already survives; re-requesting it per scene (the
+first attempt at this) would have thrown away a live impression and asked AdMob for fresh fill on
+every screen.
+
+It reaches into the plugin's internals by reflection to find the object, which is not nice but is
+confined to the Editor and warns loudly if the field names ever change under a plugin update,
+rather than letting the banner quietly start vanishing again. `DestroyBanner` also guards its
+`Destroy()` call, since the view underneath may already be gone, and the "kept" flag resets on
+`SubsystemRegistration` so it survives *Disable Domain Reload* being turned on.
+
+Verified after Splash → Home: placeholder alive in `DontDestroyOnLoad`, `BannerHeightPixels = 100`,
+exactly one banner object, and red pixels read back from the framebuffer inside the banner band.
+
+> **The Editor placeholder is an untextured *white* bar** (`sprite = NULL`, colour white), sitting
+> under white UI at the bottom of the screen — so it is very easy to mistake a working banner for a
+> missing one. Two ways to check properly, both of which a normal screenshot gets wrong:
+>
+> - Screenshots taken **through a camera exclude Screen Space – Overlay canvases**, and the
+>   placeholder's canvas is Overlay. It will not appear in a camera capture even when it is
+>   rendering perfectly.
+> - Sample the framebuffer instead: `ScreenCapture.CaptureScreenshotAsTexture()` then `GetPixel`
+>   near the bottom edge. That is what confirmed this fix.
+
+> **Scene transitions stall when the Game view is not rendering.** Ricimi's `Transition.RunFade`
+> waits on `WaitForEndOfFrame` before calling `SceneManager.LoadScene`, and that never fires while
+> the Game view is not drawing — an unfocused Editor being the usual cause. The symptom is Splash
+> sitting there with `_transitioning = true` and `Transition` / `TransitionCanvas` parked in
+> `DontDestroyOnLoad`. This is not a bug in the loading code: the pre-change `LoadingScene` stalls
+> identically. It only shows up when driving the Editor without focus.
+
+### Still Splash-only
+
+`GameServicesController` (UGS auth + analytics), `IAPController` and `CloudSaveController` have the
+same gap — play a scene directly and they do not exist either, so analytics records nothing and
+there is no player id. They were left out on purpose: bootstrapping Cloud Save into an arbitrary
+scene risks a sync against whatever local state that scene happens to start with. Add them to the
+prefab if that trade stops mattering.
 
 ---
 

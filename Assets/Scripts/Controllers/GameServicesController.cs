@@ -45,6 +45,13 @@ namespace Controllers
 
         public bool IsSignedIn { get; private set; }
 
+        /// <summary>
+        /// True once sign-in has finished one way or the other - succeeded, or failed and given up.
+        /// <see cref="IsSignedIn"/> cannot be waited on by itself: a failure leaves it false
+        /// forever, so the loading screen would sit out its whole timeout on every offline launch.
+        /// </summary>
+        public bool SignInSettled { get; private set; }
+
         /// <summary>UGS player id, or null until sign-in completes.</summary>
         public string PlayerId { get; private set; }
 
@@ -77,6 +84,7 @@ namespace Controllers
             catch (Exception e)
             {
                 Debug.LogError($"[GameServices] UGS init failed: {e.Message}");
+                SignInSettled = true;
                 OnSignInFailed?.Invoke(e.Message);
                 return;
             }
@@ -113,6 +121,7 @@ namespace Controllers
             catch (Exception e)
             {
                 Debug.LogError($"[GameServices] Anonymous sign-in failed: {e.Message}");
+                SignInSettled = true;
                 OnSignInFailed?.Invoke(e.Message);
             }
         }
@@ -283,6 +292,7 @@ namespace Controllers
         private void MarkSignedIn()
         {
             IsSignedIn = true;
+            SignInSettled = true;
             PlayerId = AuthenticationService.Instance.PlayerId;
 
             Debug.Log($"[GameServices] Signed in as {PlayerId} " +

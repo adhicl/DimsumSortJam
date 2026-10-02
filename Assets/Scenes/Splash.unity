@@ -992,7 +992,7 @@ RectTransform:
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
   m_AnchorMin: {x: 0, y: 1}
   m_AnchorMax: {x: 0, y: 1}
-  m_AnchoredPosition: {x: 164.99997, y: -110}
+  m_AnchoredPosition: {x: 165, y: -110}
   m_SizeDelta: {x: 210, y: 100}
   m_Pivot: {x: 0.5, y: 0.5}
 --- !u!114 &232377179
@@ -1655,7 +1655,10 @@ MonoBehaviour:
   loadingSlider: {fileID: 1571851810}
   loadingProgressText: {fileID: 1825974314}
   loadingText: {fileID: 2099954686}
-  cloudSyncTimeout: 8
+  serviceTimeout: 8
+  adFillTimeout: 4
+  failurePopupPrefab: {fileID: 2453807092047439011, guid: aa5d9b2f9d1a07d43a49bf169f5a2b61, type: 3}
+  stuckTimeout: 20
   avatarCatalog: {fileID: 11400000, guid: badc8f040f5112c418a12d5b8a6bec53, type: 2}
   mixer: {fileID: 24100000, guid: 2c3106f8b8ab4bb7a62278e767c46966, type: 2}
 --- !u!4 &468855531

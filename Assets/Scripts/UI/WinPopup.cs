@@ -31,15 +31,22 @@ namespace UI
             lifeText.text = $"{Settings.GetTimeFormat(_gameSetting.lifeTimer)}";
         }
 
+        // Set once a claim starts paying out. Each claim spawns coins and loads the next scene,
+        // so a second one landing during the coin flight would pay twice and load twice.
+        private bool _claimed;
+
         public void ButtonClaim()
         {
+            if (_claimed) return;
             SoundController.Instance.PlayButtonClickClip();
+            LockClaimButtons();
             SpawnCoins(buttonClaim, 40);
             StartCoroutine(GoToNextScene());
         }
 
         public void ButtonDoubleClaim()
         {
+            if (_claimed) return;
             SoundController.Instance.PlayButtonClickClip();
 
             // Double bonus is gated behind a rewarded ad. Only pay out x2 once the
@@ -47,6 +54,8 @@ namespace UI
             // popup so they can still tap the normal x1 Claim button.
             void GrantDouble()
             {
+                if (_claimed || this == null) return;
+                LockClaimButtons();
                 SpawnCoins(buttonDoubleClaim, 80);
                 StartCoroutine(GoToNextScene());
             }
@@ -60,6 +69,17 @@ namespace UI
                 // No ad controller in this scene: fall back to granting the bonus so
                 // the button is never dead.
                 GrantDouble();
+            }
+        }
+
+        private void LockClaimButtons()
+        {
+            _claimed = true;
+            foreach (Transform t in new[] { buttonClaim, buttonDoubleClaim })
+            {
+                if (t == null) continue;
+                var button = t.GetComponent<UnityEngine.UI.Button>();
+                if (button != null) button.interactable = false;
             }
         }
 

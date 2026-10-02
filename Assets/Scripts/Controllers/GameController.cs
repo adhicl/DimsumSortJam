@@ -907,11 +907,34 @@ namespace Controllers
             GameAnalytics.LevelFailed(
                 _gameSetting.currentLevel, ReasonOf(_loseReason), LevelDurationSeconds, _reviveCount);
 
-            // The one place a life is spent. A running unlimited-lives window makes it free.
-            _gameSetting.TrySpendLife();
+            // A running unlimited-lives window makes it free.
+            if (!_lifeCharged) _gameSetting.TrySpendLife();
+            _lifeCharged = true;
 
             _bgmController.StopMusic();
             _soundController.PlayFinishOverClip();
+        }
+
+        // Set once this level has cost its life, so no route out of it can charge a second one.
+        private bool _lifeCharged;
+
+        /// <summary>
+        /// The player walked out of the level through an "you will lose 1 heart" popup - back to
+        /// Home or a restart from settings, or QUIT after a customer gave up. That costs a life
+        /// like losing does (tutorials included), unless the level was won or already charged in
+        /// <see cref="CommitLose"/>.
+        /// </summary>
+        public void QuitLevel()
+        {
+            if (gameStatus == Settings.GAME_STATUS.win || _lifeCharged) return;
+            _lifeCharged = true;
+            gameStatus = Settings.GAME_STATUS.lose;
+
+            GameAnalytics.LevelFailed(
+                _gameSetting.currentLevel, GameAnalytics.ReasonQuit, LevelDurationSeconds, _reviveCount);
+
+            // Free while an unlimited-lives window is running, same as CommitLose.
+            _gameSetting.TrySpendLife();
         }
 
         // Shown when the player taps a Closed basket. Offers two ways to open it — coins or a
@@ -1628,6 +1651,12 @@ namespace Controllers
                                       && powerUpAnimationEffect.gameObject.activeInHierarchy;
 
         /// <summary>
+        /// True in the Tutorial1..7 scenes - the names <see cref="Settings.GetNextLevelScene"/>
+        /// routes the tutorial levels to.
+        /// </summary>
+        private bool IsTutorialScene => gameObject.scene.name.StartsWith("Tutorial", StringComparison.Ordinal);
+
+        /// <summary>
         /// Spends one power-up, or opens the buy popup when the player has none. Every power-up
         /// button goes through here, so there is no route that fires an effect without paying
         /// for it. Returns false when the caller should stop.
@@ -1639,6 +1668,10 @@ namespace Controllers
             // no route can spend a power-up into an effect that is still playing - and refused
             // before the empty check, so it cannot be mistaken for having run out.
             if (PowerupRunning) return false;
+
+            // The tutorials are teaching the power-up, not selling it: the press is free there,
+            // and the player's stock is left untouched rather than charged or sent to the shop.
+            if (IsTutorialScene) return true;
 
             if (_gameSetting != null && _gameSetting.TrySpendPowerup(slot))
             {

@@ -3464,7 +3464,6 @@ GameObject:
   - component: {fileID: 1983986122}
   - component: {fileID: 1983986124}
   - component: {fileID: 1983986123}
-  - component: {fileID: 1983986125}
   m_Layer: 5
   m_Name: UseItem1
   m_TagString: Untagged
@@ -3531,21 +3530,6 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1983986121}
   m_CullTransparentMesh: 1
---- !u!114 &1983986125
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1983986121}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: b45ba0cf954e3334f9865cfe94cd8ef9, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UI.TutorialPowerUpPointer
-  arrow: {fileID: 1087691287}
-  row: {fileID: 1473397046}
-  gameSetting: {fileID: 11400000, guid: be79d8679457ee844ac36cfbbc57d435, type: 2}
 --- !u!1 &2009504288
 GameObject:
   m_ObjectHideFlags: 0

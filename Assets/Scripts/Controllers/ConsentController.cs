@@ -38,6 +38,13 @@ namespace Controllers
         private const float FirstRetrySeconds = 10f;
         private const float MaxRetrySeconds = 60f;
 
+        // Longest the whole lookup may take before it is treated as never answering. UMP has no
+        // timeout of its own, and neither of its callbacks is guaranteed to arrive: observed on a
+        // real device, the native update finished and wrote its consent state, and the C# callback
+        // simply never came. Nothing downstream had a timeout either, so the ads SDK was never
+        // initialized and not one ad was ever requested - for the whole session, on every device.
+        private const float ResolveTimeoutSeconds = 5f;
+
         /// <summary>True once the consent flow has finished, whether or not a form was shown.</summary>
         public bool IsResolved { get; private set; }
 
@@ -58,6 +65,7 @@ namespace Controllers
 
         private float _retryDelay = FirstRetrySeconds;
         private Coroutine _retry;
+        private Coroutine _resolveWatchdog;
 
         private void Awake()
         {
@@ -99,6 +107,7 @@ namespace Controllers
         private void RequestConsent()
         {
             CancelRetry();
+            StartResolveWatchdog();
 
             // Both callbacks are marshalled: the plugin does not promise which thread UMP calls
             // back on, and Resolve reaches into coroutines and the ad SDK.
@@ -130,6 +139,50 @@ namespace Controllers
                     Resolve();
                 }));
             }));
+        }
+
+        private void StartResolveWatchdog()
+        {
+            CancelResolveWatchdog();
+            _resolveWatchdog = StartCoroutine(ResolveWatchdog());
+        }
+
+        private void CancelResolveWatchdog()
+        {
+            if (_resolveWatchdog == null) return;
+            StopCoroutine(_resolveWatchdog);
+            _resolveWatchdog = null;
+        }
+
+        /// <summary>
+        /// Resolves the flow anyway when UMP does not call back.
+        ///
+        /// This is the difference between "ads are not allowed" and "nobody ever said". Without
+        /// it a silent callback leaves <see cref="WhenAdsAllowed"/> holding the ads SDK's
+        /// initializer forever, and no ad is requested for the rest of the session - with nothing
+        /// in the log to explain it, because the failure is the absence of an event.
+        ///
+        /// Resolving is safe: it does not assume consent. <see cref="CanRequestAds"/> still gates
+        /// whether anything actually loads, and it reads UMP's stored state, which the native side
+        /// has usually written by this point even when the callback is lost.
+        /// </summary>
+        private IEnumerator ResolveWatchdog()
+        {
+            yield return new WaitForSecondsRealtime(ResolveTimeoutSeconds);
+            _resolveWatchdog = null;
+
+            if (IsResolved) yield break;
+
+            Debug.LogWarning($"[Consent] UMP did not call back within {ResolveTimeoutSeconds}s; " +
+                             $"resolving anyway. Status={SafeStatus()}, canRequestAds={CanRequestAds()}.");
+            Resolve();
+        }
+
+        /// <summary>Reads the status without throwing where the UMP bridge is unavailable.</summary>
+        private static string SafeStatus()
+        {
+            try { return ConsentInformation.ConsentStatus.ToString(); }
+            catch (Exception) { return "unavailable"; }
         }
 
         private void ScheduleRetry()
@@ -167,6 +220,8 @@ namespace Controllers
         /// </summary>
         private void Resolve()
         {
+            CancelResolveWatchdog();
+
             if (!IsResolved)
             {
                 IsResolved = true;
@@ -175,6 +230,17 @@ namespace Controllers
 
             OnConsentUpdated?.Invoke();
             ReleaseAdWaitersIfAllowed();
+        }
+
+        /// <summary>
+        /// Drops state that outlives the controller, so a boot retry starts clean. The waiting
+        /// initializers belong to ad controllers the retry is about to destroy, and running them
+        /// afterwards would drive dead objects.
+        /// </summary>
+        internal static void ResetForRestart()
+        {
+            AdWaiters.Clear();
+            OnConsentUpdated = null;
         }
 
         private static void ReleaseAdWaitersIfAllowed()

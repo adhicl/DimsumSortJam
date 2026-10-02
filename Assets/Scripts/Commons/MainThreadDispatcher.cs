@@ -72,6 +72,16 @@ namespace Commons
             lock (Pending) { Pending.Enqueue(action); }
         }
 
+        /// <summary>
+        /// Drops queued work for a boot retry. Anything still pending was raised by services the
+        /// retry destroys, so running it afterwards would touch dead objects. The dispatcher
+        /// itself is left alone - Ensure recreates it when the old object goes.
+        /// </summary>
+        public static void ResetForRestart()
+        {
+            lock (Pending) { Pending.Clear(); }
+        }
+
         private void Update()
         {
             while (true)

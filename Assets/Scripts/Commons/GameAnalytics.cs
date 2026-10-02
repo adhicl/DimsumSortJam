@@ -32,6 +32,7 @@ namespace Commons
         /// <summary>Reason strings shared by the fail / revive / offer events so they group in the dashboard.</summary>
         public const string ReasonOutOfTime = "outOfTime";
         public const string ReasonOutOfMoves = "outOfMoves";
+        public const string ReasonQuit = "quit";
 
         /// <summary>Where a rewarded ad was offered. One string per button in the game.</summary>
         public const string PlacementContinueGame = "continueGame";
