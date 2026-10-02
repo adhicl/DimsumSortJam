@@ -11,12 +11,20 @@ namespace DefaultNamespace.UI
         public float duration = 1.0f;
         public Color color = Color.black;
         
+        // The popup lingers while it animates closed; a second tap must not charge or load twice.
+        private bool _quitting;
+
+        /// <summary>
+        /// Wired to QUIT / RETRY. Leaving the level costs the life the popup warns about -
+        /// charged before the scene unloads.
+        /// </summary>
         public void QuitPopup()
         {
-            //added function later
-            
-            //reduce one health
-            
+            if (_quitting) return;
+            _quitting = true;
+
+            if (GameController.Instance != null) GameController.Instance.QuitLevel();
+
             Transition.LoadLevel(scene, duration, color);
         }
 

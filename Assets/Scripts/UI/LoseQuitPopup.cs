@@ -9,7 +9,7 @@ namespace UI
     /// up and actually giving up.
     ///
     /// Reached from either revive popup (out of time, out of moves) and from declining the
-    /// unlock-basket offer on a stuck board. The life is spent here and nowhere else, so backing
+    /// unlock-basket offer on a stuck board. On this route the life is spent here, so backing
     /// out costs the player nothing.
     /// </summary>
     public class LoseQuitPopup : MonoBehaviour

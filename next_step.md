@@ -624,9 +624,21 @@ arrives with no reason recorded. There used to be one — declining the offer to
 straight to the confirmation — which is exactly what made recording the reason at the popup
 unreliable.
 
-**The life is spent in `CommitLose` and nowhere else**, so backing out is always free. Neither
+**On this route the life is spent in `CommitLose`**, so backing out is always free. Neither
 revive popup's Leave button nor its corner X charges anything; both call `LeaveGiveUp()`, which
 closes and hands over to `ShowLoseConfirm()`.
+
+**Walking out costs a life too** (2026-10-02). The three "you will lose 1 heart" popups —
+`Alert Lose Heart QUIT` (in-level Settings → BACK TO HOME), `Alert Lose Heart Retry` (Settings →
+RESTART) and `Alert Request Fail QUIT` (a customer ran out of patience) — all call
+`AlertQuitPopup.QuitPopup()`, which now calls `GameController.QuitLevel()` before the scene
+changes. Tutorials are charged the same as any level. `QuitLevel` logs `levelFailed` with reason
+`"quit"`; `GameController._lifeCharged` makes sure one level can never cost two lives, whichever
+route it leaves by. Before this, `QuitPopup` only had a `//reduce one health` placeholder, so
+quitting and restarting were free.
+
+The Home Settings popup also has a BACK TO HOME button that opens the same "lose 1 heart" popup.
+There is no level to charge there, so nothing is spent, but the warning is wrong — hide that button.
 
 Both revive popups route their Leave through the controller rather than through a `PopupOpener` on
 the button. A `PopupOpener` holds a prefab, not a reason, and it also skips `LeaveGiveUp`'s
@@ -678,6 +690,46 @@ warning and lets the player through rather than locking them out of the game.
 Winning is never gated: `WinPopup` chains straight into the next level, and lives are only spent
 on a loss, so a player on their last life can keep going as long as they keep winning.
 
+### Possible change: charge at level start, refund on a win
+
+**Not implemented — parked 2026-10-02.** Lives are currently charged on the way *out* of a level
+(lose confirm, quit, restart). That leaves one hole: **force-closing the app mid-level costs
+nothing**, because no popup ever runs. The usual fix is to take the life when the level starts
+and hand it back when the level is won. Things to get right if this is ever picked up:
+
+1. **Remove the exit charges.** `CommitLose` and `QuitLevel` must stop calling `TrySpendLife`, or
+   a lost level costs two lives. Restart is the worst case: charged on the way out *and* on the
+   reload.
+2. **Charge inside the level, not on the Play button.** Several entry points skip
+   `PlayButton`'s `CanStartLevel` gate: Settings → RESTART loads `Game` directly, `LoadingScene`
+   boots early-level players straight into a tutorial scene, and `WinPopup` chains early levels
+   into the next tutorial. Charging in `GameController` startup covers all of them. **Needs a
+   decision:** what a level started with 0 lives does — send the player Home with
+   `Out-Of-Lives-Popup`, or let that one through free.
+3. **Refund only what was actually charged.** A level started during an unlimited window was
+   free, so a win must not hand back a life (that would mint lives). Record whether the start
+   charged; that record decides the refund. A window that expires mid-level does not make the
+   level cost anything after the fact; one bought mid-level (IAP bundles) just means the win
+   refunds as normal.
+4. **Regen clock and cap.** Spending from 5 starts `nextLifeAt`; a refund back to 5 must stop it
+   (`RefreshLives` already clears the clock at full). If a life regenerates mid-level, the refund
+   is capped at `MaxLife` and that regenerated life is wasted — rare, since levels are short
+   next to the regen period.
+5. **Refund at the moment of winning, not on Claim.** Refunding in `WinPopup`'s claim would lose
+   the life if the app is killed on the win screen. Refund once (latched) when the level is
+   won, and `SaveData()` right away.
+6. **Player-visible cost (the trade-off itself).** Any mid-level kill now costs a life —
+   including Android killing the game in the background during a rewarded ad (common on low-end
+   phones) and crashes. That is the price of closing the force-close hole; most lives-based
+   games accept it.
+7. **Cloud Save.** `ApplySnapshot` takes `totalLife` wholesale, so a snapshot uploaded mid-level
+   carries the charged count. That is correct (the level was abandoned) and needs no new merge
+   rule, but test it once across two devices.
+8. **Analytics.** Abandoned levels then show up as a start with no complete/fail event, which you
+   could track as their own metric.
+
+Touches `GameController`, `GameSetting`, `AlertQuitPopup` and `LoseQuitPopup`.
+
 ### Still to do
 
 - **No rewarded-ad route out.** `RewardedAdController` already exists for the win-screen double
@@ -685,6 +737,8 @@ on a loss, so a player on their last life can keep going as long as they keep wi
   addition and softens the 30-minute wait.
 - **The top bar shows the life count, not the regeneration timer.** There is one label on the
   heart and the ∞ countdown already owns it. If you want "3 · 12:41", the label needs splitting.
+- **Force-closing mid-level costs no life.** See "Possible change: charge at level start, refund
+  on a win" above.
 - **`lifeTimer` is now dead weight.** It predates all of this, is saved and synced, and only
   `WinPopup` reads it. Removing it means a save-format change, so it was left alone.
 
