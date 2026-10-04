@@ -44,7 +44,7 @@ any of it functions on a real device.
       rewarded ad on live units.
 - [x] ~~**Publish the two legal pages**~~ — **both live, fetched 2026-08-17** (§5). `app-ads.txt`
       is up too, carrying the correct publisher line for `pub-8590881680208951`.
-- [ ] **Register the nine Analytics event schemas** (§3a). Version code 5 reported nothing
+- [x] ~~**Register the nine Analytics event schemas** (§3a)~~ — **done, reported 2026-10-04.** Version code 5 reported nothing
       because the client never started data collection; that is fixed for version code 6, which
       also sends nine custom events. The standard events will flow on the fix alone, but the
       custom ones stay invisible until their schemas exist in Event Manager.
@@ -224,7 +224,8 @@ services answer. What that run proved, and what it could not:
       **Not verifiable from the Editor**: `[IAP] 15 products ready` there is the built-in fake
       store answering, not Google Play. This one only proves itself on a real device.
 - Economy is still unused; balances live in the Cloud Save snapshot instead.
-- [ ] **Analytics** — enable the service, then register the nine custom event schemas. Full
+- [x] ~~**Analytics** — enable the service, then register the nine custom event schemas.~~
+      **Done, reported 2026-10-04** — service on, schemas registered (§3a). Full
       procedure in §3a below. **This is the remaining blocker on analytics data**: the client
       sends all nine as of version code 6, but an event with no matching schema is rejected by
       validation and never reaches a report, which looks identical to the SDK being broken.
@@ -232,6 +233,9 @@ services answer. What that run proved, and what it could not:
 ---
 
 ## 3a. Unity Cloud Dashboard — Analytics Event Manager
+
+> **Done — reported 2026-10-04.** Steps 1–4 below are complete. They stay here as the reference
+> for adding a tenth event, or for checking a schema when an event goes missing.
 
 **Why this exists:** version code 5 sent nothing at all, because
 `AnalyticsService.Instance.StartDataCollection()` was never called — since Analytics SDK 5.0 the
@@ -336,7 +340,8 @@ touching any code.
 - [x] ~~Banner overlapping the Home tab bar~~ — the Home safe-area panel now reserves the banner's
       height at the bottom (`SafeAreaPanel.padBannerAd`, fed by `BannerAdController`), so the tab
       strip sits above the ad instead of under it.
-- [ ] **Confirm in the AdMob console** that this app's status is *Ready* and not
+- [x] ~~**Confirm in the AdMob console** that this app's status is *Ready*~~ — **done, reported
+      2026-10-04.** Kept for reference: the status must not read
       "Requires attention" — a newly created app can sit in review, and units return no fill
       until it clears. **This is the first thing to check when the banner "rarely shows".**
       The client now self-heals from every failure it can see (below), but it cannot conjure
@@ -346,7 +351,8 @@ touching any code.
       the store listing once it is live. Until then, judge the code by logcat, not by whether an
       ad is on screen: `[BannerAd] Failed to load: … No fill` means the pipeline reached Google
       and Google said no — that is AdMob-side, not a bug.
-- [ ] **Privacy & messaging ▸ GDPR** — create and **publish** a consent message (§4a below).
+- [x] ~~**Privacy & messaging ▸ GDPR** — create and **publish** a consent message (§4a below).~~
+      **Done, reported 2026-10-04.**
       *Without a published message the UMP form never appears, `CanRequestAds()` stays false in
       the EEA, and ads silently stop serving there — with no error to explain why.*
 - [x] ~~**app-ads.txt**~~ — live at `https://yourfavoritegamestudio.com/app-ads.txt`, fetched
@@ -355,6 +361,9 @@ touching any code.
       that domain, or the file is never looked for.
 
 ### 4a. GDPR consent message
+
+> **Done — reported 2026-10-04.** The message is published; the steps below are kept for
+> reference (adding the US-states message, or re-publishing after a partner-list change).
 
 > **This is not something to build in the game.** The form's UI is authored in the AdMob console,
 > downloaded at runtime, and drawn by Google's SDK. A hand-built Unity popup would not be a
@@ -426,7 +435,7 @@ review checks that the policy actually covers what the app does.
 - [ ] **Policy ▸ App content ▸ Privacy policy** → the privacy-policy URL above.
 - [ ] **Data safety** form — declare data collected by ads and IAP. This is a review blocker if
       it disagrees with your privacy policy.
-- [ ] **Ads** declaration → *Yes, this app contains ads*.
+- [x] ~~**Ads** declaration → *Yes, this app contains ads*.~~ **Done, reported 2026-10-04.**
 - [ ] **App content ▸ Target audience** → declare a **general audience** (not children).
       Decided 2026-08-17. That matches the build: `tagForUnderAgeOfConsent` is `false` on the
       `Consent` object in `Splash.unity`, so the standard GDPR consent flow applies and
@@ -492,9 +501,11 @@ Small tasks that pair with the console work above, listed so nothing is missed:
 - [ ] **Setup ▸ License testing** → add tester Google accounts. They see real purchase dialogs
       marked *test* and are never charged.
 - [ ] Testers must be on **both** the internal-testing list and the Play Games testers list.
-- [ ] To see the consent form outside the EEA: on the `Consent` object in Splash set
+- [x] ~~To see the consent form outside the EEA: on the `Consent` object in Splash set
       **Debug Geography** to `EEA` and add your device's hashed id to **Test Device Hashed Ids**
-      (the Ads SDK prints it in logcat on first run). Set it back to `Disabled` for release.
+      (the Ads SDK prints it in logcat on first run). Set it back to `Disabled` for release.~~
+      **Done, reported 2026-10-04.** Checked in `Splash.unity` the same day: `debugGeography: 0`
+      (Disabled) and `testDeviceHashedIds: []`, so the release setting is in place.
 
 **What a good first device run looks like in logcat:**
 
@@ -802,8 +813,9 @@ many of each that level carries — counts for the whole level, not per basket �
 There is deliberately **no minimum-level rule in code**. A rule there would quietly override what a
 level asset asked for; leaving the counts at zero already says "not in this level" perfectly well.
 Levels 1–14 are all at zero, and the assets from level 15 up are seeded on a ramp — 4 frozen / 8
-hidden at level 15, reaching 12 / 20 by level 35. Tune them on the `LevelData` asset; nothing in
-code needs touching.
+hidden at level 15, reaching 12 / 20 by level 35 and holding there to 50, then 18 / 30 by level
+100 (see "Levels 51–100 and the level builder"). Tune them on the `LevelData` asset, or set them
+in the level builder; nothing in code needs touching.
 
 | | What it does | Where it is seen | How it ends |
 |---|---|---|---|
@@ -915,19 +927,34 @@ counts every time, never a row iced solid, never a hidden row 0, and twelve diff
 dish whether drawn as food or as ice. Shuffling the two separately would hand a piece a frozen face
 belonging to another dish, and it would silently change identity when it thawed.
 
-**Three of the 36 dishes have no frozen art** and therefore never freeze — `GetFrozenSprite`
+**Five of the 79 dishes have no frozen art** and therefore never freeze — `GetFrozenSprite`
 returns null, `CanFreeze` says no, and the dealer skips them. This is a designed gap, not a bug:
 
 | Dish | Note |
 |---|---|
 | `JAJANAN - PUTRI MANDI 1` | no frozen version drawn (`PUTRI KANDIS` is a different dish) |
 | `JAJANAN - ONDE ONDE 1 - new` | no frozen version drawn |
-| `JAJANAN - KUE KUKUS PANDAN 1` | no frozen version drawn (`KUKUS KOTAK` / `BOLU KUKUS` are other dishes) |
+| `JAJANAN - KUE CUCUR 1 - new` | no frozen version drawn |
+| `JAJANAN - KUE LUMPANG 1 - coklat` / `- hijau` | no frozen version drawn |
 
 Drop a `JAJANAN FROZEN - <dish>.png` into `Assets/Sprites/JAJANAN FROZEN/` and slot it into that
-index of `dimsumFrozenSprite` to switch one on. One mapping was a judgement call worth knowing
-about: **`TALAM 1 - kotak` is paired with `JAJANAN FROZEN - TALAM 2`** to keep it visually distinct
-from plain `TALAM 1`; swap it if that is the wrong square.
+index of `dimsumFrozenSprite` to switch one on.
+
+Since 2026-10-04 every colour and plate variant is its own dish, so many dishes **share** one
+frozen picture — all six Bolu Kukus sprites freeze as `BOLU KUKUS 1`, all four Lapis Tapioka as
+`LAPIS TAPIOKA 1`, and so on. That is safe: a frozen piece cannot be dragged, and it shows its own
+colour again the moment it thaws. The mappings worth knowing, all checked by eye:
+
+| Dish | Frozen art | Why |
+|---|---|---|
+| `TALAM 1` (dome) | `TALAM 2` | the dome-shaped ice |
+| `TALAM 1 - kotak` (square) | `TALAM 3` | the square ice |
+| `TALAM 1 - ungu` (bowl) | `TALAM 1` | the bowl-shaped ice |
+| `KUE KUKUS COKLAT 1` / `PANDAN 1` | `KUKUS KOTAK 1` | the only kue-kukus ice; until 2026-10-04 pandan had none |
+| `PISANG MOLEN MINI` | `Molen 1` | |
+| `KUE DELAPAN JAM` | `KUE 8 Jam 1` | |
+
+The Talam rows were wrong until 2026-10-04: the dome froze as the bowl and the square as the dome.
 
 > Imported art defaults to **100 PPU / Multiple**, but every sprite in this project is **250 PPU /
 > Single**. New dish art dropped into the project will render 2.5x too large until that is fixed on
@@ -2349,6 +2376,197 @@ same 9 packages, `play-services-ads`, `play-services-games-v2`, `play:review` an
   and `new Color(0f, 219f, 59f, 1f)` are 0-255 values in a constructor that wants 0-1, so they
   saturate: the paused clock draws white and the running one cyan, not grey and green. Left exactly
   as authored — dividing by 255 changes how the game looks, which is an art call.
+
+## Dish pool and the mission tab
+
+`GameSetting.dimsumSprite` holds **every sprite in `Assets/Sprites/Jajanan` exactly once — 79
+dishes** (2026-10-04). Every colour and every plate/single version is a separate dish in play:
+Bolu Kukus pink and Bolu Kukus hijau must be sorted apart, and so must `RISOL 1` and
+`RISOL 3 - plate`.
+
+How a level picks its dishes (`GameController.BuildLevelSprites`):
+
+- **Levels 1–25** use only the **first `TotalVariation` entries**, shuffled. The first 16 entries are
+  therefore load-bearing: they are the dishes those levels were tuned with. Do not reorder or
+  replace entries 0–15.
+- **Level 26 on** (`GameSetting.randomDishPoolFromLevel`, a level number as the player sees it)
+  draws `TotalVariation` dishes **at random from the whole list**. Order past entry 15 no longer
+  matters, and a new dish is reachable the moment it is appended.
+
+The list used to repeat four dishes (Putri Mandi, Onde Onde, Maksuba, Bolu Kukus coklat). The
+first repeat sat at index 27, inside level 49–50's range, so those levels could deal two different
+types wearing the same picture. The repeats are gone.
+
+**`SpriteCompleteBasket` reads `currentDimsumSprites`, not `dimsumSprite`.** A piece's type is an
+index into the level's shuffled picks, so the master list was the wrong array; the
+basket-complete flourish drew a different dish from the one just matched. Anything new that
+turns a `dimsumType` into a picture must use `currentDimsumSprites` too.
+
+**The mission tab** (`MissionsListController` on `Home.unity ▸ Page 3`) lists **58 missions — one
+per dish name**, not per sprite. Colour and plate variants count toward the same mission, and the
+row's icon cycles through them every 1.2s (`MissionItemView.variantCycleSeconds`). Talam and Talam
+Kotak are separate missions — different dishes, not colours of one.
+
+### Mission progress
+
+- **Counting.** Every match adds **3** to that dish's count (`GameController.RecordMissionMatch`,
+  called from `CheckClearDimsum`, so the suck-package power-up's match counts too). Counts are
+  kept **per sprite name** in `GameSetting.missionProgress`. A mission's bar is the **sum over its
+  icon and every variant icon**, which is how pink, coklat and plate Bolu Kukus all fill one
+  mission. The grouping lives only in the mission list in `Home.unity`. Regroup there, and the
+  save needs no change.
+- **Only a won level counts.** A level's matches wait in `_pendingMissionProgress` and are
+  banked by `CommitMissionProgress` **at the moment of the win**. That runs in the same place the
+  `levelCompleted` analytics event fires, and it saves right away, so killing the app on the win
+  screen loses nothing. A level that is lost, quit or restarted drops its matches. Tutorial
+  levels count.
+- **Saving.** Progress goes into PlayerPrefs as JSON (`missionProgress`) and into the Cloud Save
+  snapshot (`SaveSnapshot.missionProgress`). A cloud download takes it **wholesale**, like gold —
+  a claim moves both together, so merging the higher count per dish would hand back progress
+  already paid for. Snapshots from before missions existed carry null, and leave local progress
+  alone.
+- **Claiming.** At `targetCount` (120 on every mission) the reward button lights up. Claim adds
+  `rewardCoins` (200) to gold, empties that mission's bar back to 0, and saves once, so the
+  payout and the reset cannot be split by a crash. The mission can then be farmed again. Counts
+  can run past 120 before a claim, and the overflow is discarded with the reset.
+- **The field is serialized into `Setting.asset`**, like `totalGold`, so it survives the Editor's
+  domain reload when Play starts from a scene other than Splash. Testing in the Editor therefore
+  leaves counts in the asset — clear `missionProgress` on `Setting.asset` before committing, the
+  same housekeeping as gold.
+
+### The tab badge
+
+A red bubble on the Missions tab counts the missions that are full and waiting to be claimed
+(`UI/MissionTabBadge.cs`, on `HorizontalPagination - ScrollRect` in `Home.unity`). It is the kit's
+own `Alert-Bubble`, already present on every tab button. Three things about it are not obvious:
+
+- **It cannot be set up on the tab button in the scene.** `PagedRect.UpdatePagination` returns
+  every tab button to a pool and hands them out again on each page change. The object that is
+  "page 3" now was "page 1" a moment ago, so a badge edited onto `Button - Page 3` would wander to
+  the wrong tab. The badge finds the Missions button each frame by the name PagedRect gives it
+  (`"Button - Page 3 "`, page number in `missionsPageNumber`) and switches off the bubble on every
+  other button.
+- **The kit ships the bubble at 1% scale** and ignores it in the button's row layout. The badge pins
+  it to the corner (`cornerOffset`), takes it out of the layout so it does not push the icon aside,
+  and pops it in to `bubbleScale` (1.3).
+- **It hides while the Missions tab is open.** The current-page button comes from a different
+  template, with no bubble. That is fine, because the player is already looking at the list.
+
+It recounts when Home loads and after every claim (`MissionsListController.ProgressChanged`).
+Progress only grows on a won level, and that always returns through a fresh Home, so nothing else
+needs to raise the event.
+
+Verified in Play mode on 2026-10-04:
+- With two full missions and one at 60/120, the badge read **2**, on the book tab's top-right
+  corner. It vanished on the Missions page. After a claim and a move to the Shop page, it came
+  back on the reshuffled button reading **1**.
+- Two Kue Cubit matches and one Kue Lumpur match counted nothing before the win, and 6 and 3
+  after it, saved to PlayerPrefs.
+- The numbers survived a reload and showed on the tab (6/120, 3/120).
+- A mission below 120 refused its claim. At 120/120 the claim paid 5,000 → 5,200 and reset the
+  bar to 0 (saved). A second tap paid nothing.
+- Pink and coklat-plate Bolu Kukus summed into the one Bolu Kukus mission.
+
+## Levels 51–100 and the level builder
+
+`GameSetting.maximumLevel` is **100**, and `allLevelData` holds `Level_001`–`Level_100`. Winning
+level 100 replays level 100 — see "Not implemented yet" below.
+
+### The builder
+
+Open `Assets/Scenes/LevelCreator.unity`, select the `LevelCreator` object, and drag a `LevelData`
+asset into **Level Data**. Then:
+
+- **Load From Level** copies that level's current settings into the recipe — the easy way to make
+  a level "like level 40, but harder".
+- **Create Level** rewrites the **whole** asset from the recipe: rows, which baskets start Open /
+  Locked / Closed, how many rows each basket holds, the customers, and the **frozen / hidden
+  counts**. It is undoable (Ctrl+Z) and saves the asset.
+- **Seed** `0` builds a new layout every press. Any other number always builds the same level, so
+  a level you like can be rebuilt exactly.
+
+Frozen and hidden are **counts**, not positions, because the game picks which pieces carry them
+every time the level loads (`GameController.ApplyBoardModifiers`). The builder has nothing to place.
+
+The rules come from the hand-made levels 21–50, and `Commons/LevelGenerator.cs` enforces them:
+
+- every dish appears in whole triples, and every dish at least once;
+- no row is ever three of one dish, which would clear itself on landing;
+- the free space on the board is the **single** and **double** rows — the recipe's
+  `singleRows` / `doubleRows`. Six and six (18 empty slots) is what levels 35–50 use. More makes a
+  level easier;
+- rows are split evenly over the baskets that start Open. Locked and Closed baskets start empty;
+- customers arrive at even fractions of the pieces cleared. Orders run 2, 1, 2 items, and every
+  fourth one asks for something already on top.
+
+The builder used to write only the rows. Baskets, rows per basket, customers and frozen / hidden had
+to be typed into the asset by hand. It also had two off-by-one bugs: the empty slot could never be
+the third, and the last piece in the pool was never picked.
+
+`Assets/Editor/LevelConfigEditor.cs` (*Game Config ▸ LevelConfigEditor*) is an **older,
+separate builder**. It writes only rows, to a fixed `NewLevelData.asset`, and knows nothing about
+baskets, customers or frozen / hidden. Use the scene builder; delete the old window when convenient.
+
+### The 51–100 curve
+
+Built on 2026-10-04 by the generator, with seed `1000 + level number`, so any one can be rebuilt
+identically. The timer is a fixed 5 minutes on every level, so the piece count is deliberately
+**capped**, and difficulty comes from pressure instead:
+
+| | Level 50 | Level 51 | Level 100 (regular, i.e. 99) |
+|---|---|---|---|
+| Pieces | 183 | 186 | 213 (+3 every 5 levels) |
+| Dish types | 28 | 28 | 45 |
+| Frozen / hidden | 12 / 20 | 12 / 20 | 18 / 30 |
+| Locked / Closed baskets | 2 / 1 | 2 / 1 | 3 / 2 (3 locked from 71, 2 closed from 90) |
+| Customers | 8 | 8 | 9 |
+
+**Every 5th level (55, 60 … 100) is a breather:** 30 fewer pieces, 3 fewer types, half the frozen
+and hidden, one Locked and one Closed basket, and 9 single rows instead of 6. Without it, 50 levels
+of uninterrupted ramp would be a wall.
+
+**Not yet play-tested beyond a smoke test.** Level 99 was loaded in play mode on 2026-10-04: it
+dealt cleanly with no errors, and drew its 45 dishes from the whole pool. Whether 91–99 are *fair*
+is unknown. They have only 7 open baskets for 76 rows, so the closed basket is likely to be needed.
+Play a few and adjust `lockedBaskets` / `closedBaskets` / `singleRows` with the builder if they
+feel unwinnable.
+
+## Not implemented yet — audit 2026-10-04
+
+A pass over the code, the build scenes and the Home screen for things that look finished but are
+not, or that are missing outright. In rough order of how much a player would notice:
+
+- ~~**Mission progress is not counted.**~~ **Done 2026-10-04** — see "Mission progress" under
+  "Dish pool and the mission tab". Still open there: no analytics event for a claim.
+- **Nothing happens after level 100.** `WinPopup` clamps `currentLevel` to `maximumLevel - 1`, so a
+  player who beats 100 replays it forever with no message. Add a "more levels coming" screen, or
+  loop them back through randomised late levels.
+- **Frozen and hidden pieces are never explained.** Both arrive at level 15 with no tutorial. The
+  last tutorial is `Tutorial6` at level 14 (`Settings.GetNextLevelScene`). An ice cube that refuses
+  the finger is likely to read as a bug. Wanted: a one-time popup or a `Tutorial8` at level 15.
+- **Android back button does nothing.** Nothing reads `KeyCode.Escape`. Players expect back to
+  close the open popup, and on Home to ask before quitting.
+- **Home features from the UI kit that are switched off and have no logic behind them:** spin
+  wheel (`Button-Wheel`), daily reward (`Button-Daily`), 30-day reward (`Button-30-reward`), chests
+  (`Chests`, `Button-Chest-Locked`), messages, character, and the Hot Deal / Starter Pack
+  shortcuts. They are inactive in `Home.unity ▸ Page 2 ▸ Content-Home ▸ Sidebar / Sidebar Left /
+  Content-Center`. A daily reward is the usual retention hook for this genre, and the cheapest of
+  these to build.
+- **No reminder notifications.** Nothing tells a player their lives are full again or the free
+  unlimited window is ready. Would need the Mobile Notifications package.
+- **No Play Games leaderboard or achievements.** Sign-in is wired, but nothing is posted. Highest
+  level reached is the obvious leaderboard.
+- **No localisation.** There is no localisation system. The UI strings checked (SHOP, HOME,
+  Lives Shop, AD PRIVACY) are English, and dish names are Indonesian. Worth deciding whether the
+  first market wants an Indonesian UI.
+- **A Locked basket never asks for the level's last dish.** `MDropArea.SetOpen` picks the unlock
+  dish with `Random.Range(0, TotalVariation - 1)`. The int overload excludes the upper bound, so
+  the last type is never chosen. One character (`- 1` removed) fixes it, but on-screen level 4
+  (`currentLevel == 3`, `Tutorial3`) has a scripted locked basket next to that line — replay it
+  after.
+- **The in-game Settings popup lacks Restore / Ad Privacy / legal links** — already under Known
+  gaps, repeated here so this list is complete.
+- **Boosters, receipt validation, server-side balances** — see Known gaps.
 
 ## Known gaps
 

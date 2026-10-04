@@ -1,0 +1,343 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 033bb20ac4b645eaa17fe13f4a28bd39, type: 3}
+  m_Name: Level_055
+  m_EditorClassIdentifier: Assembly-CSharp::Commons.LevelData
+  TotalGoal: 156
+  TotalVariation: 27
+  TotalFrozen: 6
+  TotalHidden: 10
+  currentLevel:
+  - dimsum1: 7
+    dimsum2: 24
+    dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 7
+    dimsum2: 3
+    dimsum3: 14
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 11
+    dimsum2: 26
+    dimsum3: 7
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 11
+    dimsum2: -1
+    dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 17
+    dimsum2: 5
+    dimsum3: 8
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 22
+    dimsum2: 9
+    dimsum3: 13
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: -1
+    dimsum2: -1
+    dimsum3: 3
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 12
+    dimsum2: 19
+    dimsum3: 25
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 12
+    dimsum2: 4
+    dimsum3: 19
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 22
+    dimsum2: 20
+    dimsum3: 21
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 6
+    dimsum2: 14
+    dimsum3: 18
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 13
+    dimsum2: 2
+    dimsum3: 20
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: -1
+    dimsum2: 25
+    dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 1
+    dimsum2: 26
+    dimsum3: 19
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 2
+    dimsum2: 8
+    dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 1
+    dimsum2: 14
+    dimsum3: 2
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 13
+    dimsum2: 15
+    dimsum3: 22
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 8
+    dimsum2: 11
+    dimsum3: 13
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 12
+    dimsum2: 15
+    dimsum3: 26
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: -1
+    dimsum2: -1
+    dimsum3: 17
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 2
+    dimsum2: 26
+    dimsum3: 19
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 21
+    dimsum2: 6
+    dimsum3: 24
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 4
+    dimsum2: 11
+    dimsum3: 4
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 4
+    dimsum2: 19
+    dimsum3: 1
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 8
+    dimsum2: 10
+    dimsum3: 20
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 10
+    dimsum2: 18
+    dimsum3: 5
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 19
+    dimsum2: 11
+    dimsum3: 22
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 16
+    dimsum2: 17
+    dimsum3: 4
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 7
+    dimsum2: 20
+    dimsum3: 24
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 9
+    dimsum2: 16
+    dimsum3: 23
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 18
+    dimsum2: 5
+    dimsum3: 2
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 17
+    dimsum2: 13
+    dimsum3: 18
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 7
+    dimsum2: 17
+    dimsum3: 26
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 5
+    dimsum2: -1
+    dimsum3: 10
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 26
+    dimsum2: -1
+    dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: -1
+    dimsum2: 13
+    dimsum3: 11
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 16
+    dimsum2: 21
+    dimsum3: 21
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: -1
+    dimsum2: -1
+    dimsum3: 16
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 7
+    dimsum2: 2
+    dimsum3: 9
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 9
+    dimsum2: 24
+    dimsum3: 3
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 1
+    dimsum2: 5
+    dimsum3: 8
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 14
+    dimsum2: 10
+    dimsum3: 25
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 20
+    dimsum2: 22
+    dimsum3: 0
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 25
+    dimsum2: 6
+    dimsum3: 12
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 22
+    dimsum2: 6
+    dimsum3: 12
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: -1
+    dimsum2: -1
+    dimsum3: 12
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 1
+    dimsum2: 16
+    dimsum3: 18
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 0
+    dimsum2: 16
+    dimsum3: 24
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 6
+    dimsum2: 24
+    dimsum3: 10
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 15
+    dimsum2: 1
+    dimsum3: 18
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: -1
+    dimsum2: 14
+    dimsum3: 14
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: -1
+    dimsum2: 23
+    dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 17
+    dimsum2: 8
+    dimsum3: 3
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: -1
+    dimsum2: 15
+    dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 15
+    dimsum2: 4
+    dimsum3: 25
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 21
+    dimsum2: 6
+    dimsum3: 9
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: -1
+    dimsum2: 0
+    dimsum3: 15
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 3
+    dimsum2: 25
+    dimsum3: 23
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 5
+    dimsum2: 21
+    dimsum3: 20
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 3
+    dimsum2: 10
+    dimsum3: 9
+    frozenMask: 0
+    hiddenMask: 0
+  firstDisplayed: 020000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000
+  currentDropArea: 000000000600000006000000060000000000000006000000060000000600000006000000060000000600000006000000
+  requestMissions:
+  - totalRequestItems: 2
+    requestTimeShow: 20
+    getOnTopOnly: 0
+  - totalRequestItems: 2
+    requestTimeShow: 39
+    getOnTopOnly: 0
+  - totalRequestItems: 1
+    requestTimeShow: 58
+    getOnTopOnly: 0
+  - totalRequestItems: 2
+    requestTimeShow: 78
+    getOnTopOnly: 1
+  - totalRequestItems: 2
+    requestTimeShow: 98
+    getOnTopOnly: 0
+  - totalRequestItems: 1
+    requestTimeShow: 117
+    getOnTopOnly: 0
+  - totalRequestItems: 2
+    requestTimeShow: 136
+    getOnTopOnly: 0

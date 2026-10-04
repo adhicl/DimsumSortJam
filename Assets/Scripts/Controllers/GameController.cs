@@ -593,6 +593,8 @@ namespace Controllers
         /// </summary>
         public void CheckClearDimsum(int dimsumType)
         {
+            RecordMissionMatch(dimsumType);
+
             foreach (var basket in _gameBaskets)
             {
                 basket.CheckUnlockDimsum(dimsumType);
@@ -646,6 +648,35 @@ namespace Controllers
                  "and the remaining pieces go together.")]
         [SerializeField] private float thawStaggerMaxDelay = 0.4f;
 
+        /// <summary>
+        /// Pieces matched this level, per dish sprite, waiting to count toward the mission tab.
+        /// Held here rather than written straight to the save so that only a won level counts:
+        /// a level that is lost, quit or restarted takes its matches with it.
+        /// </summary>
+        private readonly Dictionary<string, int> _pendingMissionProgress = new();
+
+        private void RecordMissionMatch(int dimsumType)
+        {
+            Sprite[] faces = _gameSetting.currentDimsumSprites;
+            if (faces == null || dimsumType < 0 || dimsumType >= faces.Length || faces[dimsumType] == null) return;
+
+            string id = faces[dimsumType].name;
+            _pendingMissionProgress.TryGetValue(id, out int count);
+            // One match is one triple cleared, so the mission moves by three pieces.
+            _pendingMissionProgress[id] = count + 3;
+        }
+
+        /// <summary>Banks this level's matches into the mission tab and saves. Runs once, on the win.</summary>
+        private void CommitMissionProgress()
+        {
+            foreach (var pair in _pendingMissionProgress)
+            {
+                _gameSetting.AddMissionProgress(pair.Key, pair.Value);
+            }
+            _pendingMissionProgress.Clear();
+            _gameSetting.SaveData();
+        }
+
         public void DoAddProgress(int progress)
         {
             _awardedTotal += progress;
@@ -663,6 +694,10 @@ namespace Controllers
                 // Recorded here rather than in ShowWin: the win is decided at this line, and
                 // ShowWin yields for two tenths of a second before it does anything visible.
                 GameAnalytics.LevelCompleted(_gameSetting.currentLevel, LevelDurationSeconds, _reviveCount);
+
+                // Saved now, not when the win popup is dismissed: a player who kills the app on
+                // the win screen still keeps what they collected.
+                CommitMissionProgress();
 
                 StartCoroutine(ShowWin());
             }

@@ -13,10 +13,17 @@ public class LevelCreatorEditor : Editor
         // Reference to the target script
         LevelCreator builder = (LevelCreator)target;
 
-        // Add a button
+        if (GUILayout.Button("Load From Level"))
+        {
+            Undo.RecordObject(builder, "Load level recipe");
+            builder.OnLoadFromLevel();
+        }
+
         if (GUILayout.Button("Create Level"))
         {
+            if (builder._LevelData != null) Undo.RecordObject(builder._LevelData, "Create level");
             builder.OnTryCreate();
+            AssetDatabase.SaveAssets();
         }
     }
 }

@@ -516,6 +516,66 @@ namespace Commons
         /// </summary>
         public static event Action<GameSetting> OnDataSaved;
 
+        /// <summary>One dish's collected count for the mission tab.</summary>
+        [Serializable]
+        public class MissionProgress
+        {
+            /// <summary>The dish's sprite name. Stable across builds, unlike its index.</summary>
+            public string id;
+            public int count;
+        }
+
+        [Serializable]
+        private class MissionProgressList
+        {
+            public List<MissionProgress> items = new List<MissionProgress>();
+        }
+
+        /// <summary>
+        /// Pieces collected per dish, kept per sprite rather than per mission. Colour and plate
+        /// variants are separate dishes in play but share a mission, and keying by sprite keeps
+        /// the grouping in one place (the mission list) instead of baked into the save.
+        /// Serialized like the other saved fields (totalGold and the rest), so it survives the
+        /// Editor's domain reload when Play is started from a scene other than Splash.
+        /// </summary>
+        [SerializeField] private List<MissionProgress> missionProgress = new List<MissionProgress>();
+
+        public int GetMissionProgress(string id)
+        {
+            if (string.IsNullOrEmpty(id)) return 0;
+            foreach (var p in missionProgress) if (p.id == id) return p.count;
+            return 0;
+        }
+
+        public void AddMissionProgress(string id, int amount)
+        {
+            if (string.IsNullOrEmpty(id) || amount <= 0) return;
+            foreach (var p in missionProgress)
+            {
+                if (p.id != id) continue;
+                p.count += amount;
+                return;
+            }
+            missionProgress.Add(new MissionProgress { id = id, count = amount });
+        }
+
+        public void ResetMissionProgress(string id)
+        {
+            missionProgress.RemoveAll(p => p.id == id);
+        }
+
+        private static List<MissionProgress> CopyMissionProgress(List<MissionProgress> source)
+        {
+            var copy = new List<MissionProgress>();
+            if (source == null) return copy;
+            foreach (var p in source)
+            {
+                if (p != null && !string.IsNullOrEmpty(p.id) && p.count > 0)
+                    copy.Add(new MissionProgress { id = p.id, count = p.count });
+            }
+            return copy;
+        }
+
         /// <summary>Unix ms of the last local save; 0 on a fresh install. Used to order cloud saves.</summary>
         public long SavedAt { get; private set; }
 
@@ -546,6 +606,8 @@ namespace Commons
             PlayerPrefs.SetInt("soundMute", soundMute?1:0);
             PlayerPrefs.SetInt("musicMute", musicMute?1:0);
             PlayerPrefs.SetInt("removeAds", removeAds?1:0);
+            PlayerPrefs.SetString("missionProgress",
+                JsonUtility.ToJson(new MissionProgressList { items = CopyMissionProgress(missionProgress) }));
             PlayerPrefs.Save();
 
             OnDataSaved?.Invoke(this);
@@ -581,6 +643,11 @@ namespace Commons
             soundMute = PlayerPrefs.GetInt("soundMute", 0) == 1;
             musicMute = PlayerPrefs.GetInt("musicMute", 0) == 1;
             removeAds = PlayerPrefs.GetInt("removeAds", 0) == 1;
+
+            var savedMissions = PlayerPrefs.GetString("missionProgress", string.Empty);
+            missionProgress = string.IsNullOrEmpty(savedMissions)
+                ? new List<MissionProgress>()
+                : CopyMissionProgress(JsonUtility.FromJson<MissionProgressList>(savedMissions)?.items);
         }
 
         /// <summary>Copies the persisted fields out for upload to Cloud Save.</summary>
@@ -609,7 +676,8 @@ namespace Commons
                 totalBooster3 = totalBooster3,
                 soundMute = soundMute,
                 musicMute = musicMute,
-                removeAds = removeAds
+                removeAds = removeAds,
+                missionProgress = CopyMissionProgress(missionProgress)
             };
         }
 
@@ -634,6 +702,11 @@ namespace Commons
             totalBooster3 = snapshot.totalBooster3;
             soundMute = snapshot.soundMute;
             musicMute = snapshot.musicMute;
+
+            // Taken wholesale with the gold, since a claim moves both together - merging the
+            // larger count per dish would hand back progress already cashed in. Snapshots from
+            // before missions existed carry null, and must not wipe what this device collected.
+            if (snapshot.missionProgress != null) missionProgress = CopyMissionProgress(snapshot.missionProgress);
 
             // Only take a profile the cloud actually has. Snapshots written before profiles
             // existed carry nulls, and applying those would wipe a name the player just chose.
@@ -706,6 +779,7 @@ namespace Commons
             public bool soundMute;
             public bool musicMute;
             public bool removeAds;
+            public List<MissionProgress> missionProgress;
         }
     }
 
