@@ -28,9 +28,14 @@ namespace GameObjects
         public void SetDimsumSprites(int dimsumType, Vector3 position)
         {
             this.transform.position = position;
+            // dimsumType indexes this level's shuffled dishes, not the master list.
+            Sprite[] faces = gameSetting.currentDimsumSprites;
+            Sprite face = faces != null && dimsumType >= 0 && dimsumType < faces.Length
+                ? faces[dimsumType]
+                : null;
             for (int i = 0; i < spriteRenderers.Length; i++)
             {
-                spriteRenderers[i].sprite = gameSetting.dimsumSprite[dimsumType];
+                spriteRenderers[i].sprite = face;
             }
 
             animator.SetTrigger(Finish);

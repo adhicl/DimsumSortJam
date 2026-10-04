@@ -14,6 +14,11 @@ namespace UI
         public class MissionEntry
         {
             public Sprite icon;
+
+            [Tooltip("Other colours of the same jajanan. They count as this one mission; the row " +
+                     "cycles through the icon and these.")]
+            public Sprite[] variantIcons;
+
             public string title;
             public int targetCount = 120;
             public int rewardCoins = 200;
@@ -43,7 +48,7 @@ namespace UI
             foreach (var entry in missions)
             {
                 var view = Instantiate(itemPrefab, content);
-                view.Bind(entry.icon, entry.title, entry.currentCount, entry.targetCount,
+                view.Bind(entry.icon, entry.variantIcons, entry.title, entry.currentCount, entry.targetCount,
                     entry.rewardCoins, () => OnClaimClicked(entry));
             }
         }

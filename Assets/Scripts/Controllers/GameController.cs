@@ -250,7 +250,12 @@ namespace Controllers
                 return;
             }
 
-            int[] order = Enumerable.Range(0, variation).OrderBy(x => Random.value).ToArray();
+            // Early levels draw from the first `variation` dishes only, so they keep the dishes
+            // they were tuned with. Later levels draw from every dish in the list.
+            bool wholePool = _gameSetting.currentLevel + 1 >= _gameSetting.randomDishPoolFromLevel;
+            int poolSize = wholePool ? _gameSetting.dimsumSprite.Length : variation;
+
+            int[] order = Enumerable.Range(0, poolSize).OrderBy(x => Random.value).Take(variation).ToArray();
 
             Sprite[] faces = new Sprite[variation];
             Sprite[] frozenFaces = new Sprite[variation];

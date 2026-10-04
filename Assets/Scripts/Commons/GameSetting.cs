@@ -22,6 +22,11 @@ namespace Commons
                  "the row is dealt for real.")]
         public Sprite hiddenDimsumSprite;
 
+        [Tooltip("Level number (as shown to the player) from which a level's dishes are drawn at " +
+                 "random from the whole dimsumSprite list. Below it a level only ever uses the " +
+                 "first TotalVariation entries, so those levels keep their hand-picked dishes.")]
+        public int randomDishPoolFromLevel = 26;
+
         public int currentLevel = 0;
         public int maximumLevel = 2;
         
