@@ -14,6 +14,10 @@ namespace Commons
     /// never reaches a report, which looks identical to "analytics is broken" from the dashboard.
     /// next_step.md 3a is the console procedure; "Analytics events" there is the code-side map.
     ///
+    /// The events Google Ads cares about are also forwarded to <see cref="FirebaseTracker"/>,
+    /// which has its own readiness and consent gate — a call here reaches Firebase even while UGS
+    /// is still initializing. Gameplay-only detail (reshuffles, offers, ad no-fill) stays UGS-only.
+    ///
     /// Nothing here throws. <c>AnalyticsService.Instance</c> throws
     /// <see cref="Unity.Services.Core.ServicesInitializationException"/> until UGS finishes
     /// initializing, and gameplay can reach a level before that lands on a cold start, so every
@@ -44,6 +48,7 @@ namespace Commons
         /// <summary>A level was dealt and handed to the player.</summary>
         public static void LevelStarted(int levelIndex)
         {
+            FirebaseTracker.LevelStarted(levelIndex);
             Record("levelStarted", e =>
             {
                 e["levelIndex"] = levelIndex;
@@ -53,6 +58,7 @@ namespace Commons
         /// <summary>The goal was met. <paramref name="durationSeconds"/> is wall-clock time on the level, revives included.</summary>
         public static void LevelCompleted(int levelIndex, int durationSeconds, int reviveCount)
         {
+            FirebaseTracker.LevelCompleted(levelIndex, durationSeconds, reviveCount);
             Record("levelCompleted", e =>
             {
                 e["levelIndex"] = levelIndex;
@@ -68,6 +74,7 @@ namespace Commons
         /// </summary>
         public static void LevelFailed(int levelIndex, string failReason, int durationSeconds, int reviveCount)
         {
+            FirebaseTracker.LevelFailed(levelIndex, failReason, durationSeconds, reviveCount);
             Record("levelFailed", e =>
             {
                 e["levelIndex"] = levelIndex;
@@ -80,6 +87,7 @@ namespace Commons
         /// <summary>The revive was paid for and granted — the counterpart to <see cref="ReviveOfferShown"/>.</summary>
         public static void LevelRevived(int levelIndex, string reviveReason)
         {
+            FirebaseTracker.LevelRevived(levelIndex, reviveReason);
             Record("levelRevived", e =>
             {
                 e["levelIndex"] = levelIndex;
@@ -115,6 +123,7 @@ namespace Commons
         /// <summary>The player watched a rewarded ad through to the reward.</summary>
         public static void RewardedAdCompleted(string placement)
         {
+            FirebaseTracker.RewardedAdCompleted(placement);
             Record("rewardedAdCompleted", e =>
             {
                 e["placement"] = placement ?? "unknown";
@@ -136,6 +145,7 @@ namespace Commons
         /// <summary>An IAP was granted. Fires on the grant, not the order, so re-delivered orders do not count twice.</summary>
         public static void IapPurchased(string productId)
         {
+            FirebaseTracker.IapGranted(productId);
             Record("iapPurchased", e =>
             {
                 // "productID", not "productId" — the capital D is deliberate and must match the

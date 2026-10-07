@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "302566838021",
+    "project_id": "jajanan-snack-sort-puzzle",
+    "storage_bucket": "jajanan-snack-sort-puzzle.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:302566838021:android:98fdeb65b2e1a2e53bb16c",
+        "android_client_info": {
+          "package_name": "com.yourfavoritegamestudio.Jajanan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBw6fkJ4OYbq1ainQreypUP0HnKNu2KDyw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

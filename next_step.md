@@ -48,6 +48,9 @@ any of it functions on a real device.
       because the client never started data collection; that is fixed for version code 6, which
       also sends nine custom events. The standard events will flow on the fix alone, but the
       custom ones stay invisible until their schemas exist in Event Manager.
+- [ ] **Firebase: link AdMob / Play / Google Ads and mark key events** (§9b–9e). `google-services.json`
+      is in (2026-10-07) and Firebase starts; without the links, ad/IAP revenue and conversions
+      still do not reach Google Ads.
 - [ ] **Extend the privacy policy** (§5). The published page covers Google AdMob / advertising ID
       and Google Play Games, but **does not mention Unity Gaming Services (pseudonymous player id,
       Cloud Save), Unity Analytics (gameplay events), or Google Play Billing (purchase records)** —
@@ -420,7 +423,8 @@ All three fetched and confirmed live on **2026-08-17**:
 
 The privacy policy must disclose that the game uses **Google AdMob** (advertising ID, ad
 personalization), **Google Play Games** (account identifier), **Unity Gaming Services**
-(pseudonymous player id), and **Google Play Billing** (purchase records). Play's Data safety
+(pseudonymous player id), **Google Play Billing** (purchase records), and **Google Analytics
+for Firebase** (app-instance id, advertising ID, app interactions; see §9g). Play's Data safety
 review checks that the policy actually covers what the app does.
 
 - [ ] **Two of those four are missing from the published page.** It covers AdMob and Play Games;
@@ -530,6 +534,179 @@ and approving credits the reward for real, so the shop can be exercised without 
 setup. Play Games and UMP have no Editor implementation, so sign-in is always anonymous and the
 consent form never appears there. **Play from `Splash`** — starting in Home skips the controllers
 and leaves buy buttons disabled.
+
+---
+
+## 9. Firebase Analytics — Google Ads attribution & conversions
+
+Added 2026-10-07. **The code is done; nothing reaches Firebase until the console steps below are
+done.** Right now the app logs `[Firebase] App creation failed` at boot and carries on: no
+`google-services.json` exists anywhere in the project, so `FirebaseTracker.IsReady` stays false and
+every Firebase call is a silent no-op. Verified in Play mode on 2026-10-07: no exceptions, game
+unaffected.
+
+**Why Firebase as well as UGS Analytics:** Google Ads app campaigns attribute installs and bid only
+on events that come from a **Firebase-linked GA4 property**. UGS Analytics stays the gameplay
+dashboard (§3a). The two run side by side, both behind the same consent answer.
+
+### 9a. Firebase project + config file — blocker
+
+1. [ ] **console.firebase.google.com ▸ Add project.** If the Play Games / OAuth Google Cloud
+       project `820043441288` (§0) is yours, pick it under "Add Firebase to a Google Cloud project"
+       so everything lives in one place. **Enable Google Analytics** when asked and create a new
+       GA4 property (or pick an existing one).
+2. [ ] **Add app ▸ Android.** Package name **`com.yourfavoritegamestudio.Jajanan`**, exactly. The
+       SHA-1 is optional for Analytics; skip it.
+3. [x] **Download `google-services.json`** — **done 2026-10-07**: `Assets/google-services.json`, Firebase project `jajanan-snack-sort-puzzle` (app `1:302566838021:android:98fdeb65b2e1a2e53bb16c`), replacing the first file (`jajanan-ec91f`) the same day; package verified to match. Generated files present. and drop it anywhere under `Assets/`. `Assets/` itself
+       is fine. On the next reload Firebase's editor tooling generates
+       `Assets/Plugins/Android/FirebaseApp.androidlib/…/google-services.xml` and
+       `Assets/StreamingAssets/google-services-desktop.json` from it. Commit all three. The JSON
+       holds no secrets, just public project identifiers.
+4. [x] **Done 2026-10-07**, no unexpected changes. In Unity: **Assets ▸ External Dependency Manager ▸ Android Resolver ▸ Force Resolve.**
+       `mainTemplate.gradle` should still list `firebase-analytics:23.2.0`,
+       `firebase-app-unity:13.17.0` and `firebase-analytics-unity:13.17.0` (already there).
+5. [x] **Verified in the Editor 2026-10-07: `FirebaseTracker.IsReady` = true.** Enter Play mode. You should see `[Firebase] Analytics ready.` followed by
+       `[Firebase] Consent applied: analytics=True, …`. If you still get `App creation failed`, the
+       JSON's package name does not match the bundle id.
+
+### 9b. Link the money sources to Firebase
+
+Revenue is **not** logged by the game's code, on purpose. Both revenue events are collected
+automatically once these links exist, and logging them by hand as well would double the revenue
+Google Ads optimises against.
+
+- [ ] **AdMob ▸ Apps ▸ (Jajanan) ▸ App settings ▸ Link to Firebase.** Pick the project from 9a.
+      Then turn on **Impression-level ad revenue** in AdMob ▸ Settings. This makes AdMob log
+      `ad_impression` with `value` and `currency` for every banner and rewarded impression. That
+      is the event for a tROAS (return on ad spend) campaign.
+- [ ] **Firebase ▸ Project settings ▸ Integrations ▸ Google Play ▸ Link.** This lets
+      `in_app_purchase` (logged automatically by the SDK for every Play Billing purchase, with real
+      price and currency) carry revenue. It also brings in Play's subscription and refund data.
+
+### 9c. Link Google Ads
+
+- [ ] **Firebase ▸ Project settings ▸ Integrations ▸ Google Ads ▸ Link.** You need admin on both
+      the Firebase project and the Google Ads account. Leave **Enable personalized advertising**
+      on. Turning it off stops remarketing audiences.
+- [ ] In **Google Ads ▸ Admin ▸ Account settings**, make sure **auto-tagging** is on.
+
+### 9d. Mark key events (GA4's name for conversions)
+
+Events show up in **Firebase ▸ Analytics ▸ Events** within about 24 h of first firing, and only
+then can you toggle **Mark as key event**. To skip the wait, pre-create them by name in
+**GA4 ▸ Admin ▸ Key events ▸ New key event**.
+
+| Event | Mark? | What it measures |
+|---|---|---|
+| `first_open` | already a key event | The install. Automatic, used for install campaigns. |
+| `in_app_purchase` | **yes** | Play purchase with revenue (automatic, needs 9b). |
+| `ad_impression` | **yes**, for tROAS | AdMob ad revenue (automatic, needs 9b). |
+| `level_complete_5` | **yes** | Early-engagement conversion. Fires once per install. |
+| `level_complete_10` | **yes** | The main "quality player" conversion for tCPA campaigns. |
+| `level_complete_1/3/20/30/50/75/100` | optional | Available if you want a deeper or shallower target. |
+
+Google Ads wants a conversion that fires **at least ~10 times a day** across all your traffic, so
+it has enough to learn from. Start with `level_complete_5` or `level_complete_10`. Move deeper
+once volume allows.
+
+### 9e. Import into Google Ads
+
+- [ ] **Google Ads ▸ Goals ▸ Conversions ▸ New conversion action ▸ App ▸ Google Analytics 4
+      properties (Firebase)** ▸ select the events marked in 9d ▸ Import.
+- [ ] For an App campaign: **installs** volume optimises on `first_open`. **In-app actions**
+      optimises on `level_complete_10` (or 5). **Value / tROAS** optimises on `in_app_purchase` +
+      `ad_impression` together. Set the conversions you are not bidding on to **Secondary**, so
+      they are reported without steering bids.
+
+### 9f. Consent — what the code does, and one decision for you
+
+`FirebaseTracker.ApplyConsent` drives Consent Mode v2 from the answers the game already collects
+(*Analytics consent*, §4a):
+
+| Player's state | Firebase collection | `analytics_storage` | `ad_storage` / `ad_user_data` / `ad_personalization` |
+|---|---|---|---|
+| Not asked yet (first launch, before UMP resolves) | on | denied | denied (identifier-free pings only) |
+| Analytics granted, non-GDPR region (incl. regulated US states) | on | granted | granted |
+| Analytics granted, GDPR region | on | granted | read from the player's TCF choices in the UMP form: purpose 1 → storage, 1+7 → user data, 3+4 → personalization |
+| Analytics denied | **off**, and `ResetAnalyticsData()` on withdrawal | — | — |
+
+- [ ] **The GDPR consent message in AdMob (§4a) must list Google as a vendor.** It does by default.
+      Do not remove it, or EEA ad signals read as denied.
+- [ ] **Decision, strict EEA compliance vs. attribution:** the native Firebase SDK starts *before*
+      any Unity code, so on a brand-new install `first_open` is logged with default (granted)
+      consent before the code above can deny it. The current build accepts that, because the
+      alternative costs attribution everywhere. If your lawyer wants it closed, add this to
+      `Assets/Plugins/Android/AppPermissions.androidlib/AndroidManifest.xml` inside
+      `<application>`:
+      ```xml
+      <meta-data android:name="google_analytics_default_allow_analytics_storage" android:value="false" />
+      <meta-data android:name="google_analytics_default_allow_ad_storage" android:value="false" />
+      <meta-data android:name="google_analytics_default_allow_ad_user_data" android:value="false" />
+      <meta-data android:name="google_analytics_default_allow_ad_personalization_signals" android:value="false" />
+      ```
+      The cost: every new install, worldwide, sends its `first_open` as a consent-denied ping (it is
+      modelled rather than directly attributed) until the game grants consent a second or two
+      later.
+
+### 9g. Privacy policy & Data safety — update both
+
+- [ ] **Privacy policy (§5):** add **Google Analytics for Firebase**. It collects app-instance id,
+      advertising ID, device and app-interaction data, and coarse location from IP. It is shared
+      with Google for analytics and ad measurement/attribution.
+- [ ] **Data safety (§6):** under **App activity ▸ App interactions** and **Device or other IDs**,
+      add the **Analytics** and **Advertising or marketing** purposes, data *shared* with Google.
+      No new Android permission is requested. Firebase relies on the existing `AD_ID`.
+
+### 9h. Verify on a device
+
+```
+adb shell setprop debug.firebase.analytics.app com.yourfavoritegamestudio.Jajanan
+adb logcat -s FA FA-SVC Unity
+```
+Open **Firebase ▸ Analytics ▸ DebugView**. Expect `first_open`, `session_start`, `level_start`,
+`level_end` and, after winning level 1, `level_complete_1`. Logcat should show
+`[Firebase] Analytics ready.` and a `Consent applied` line. Turn debug mode off afterwards with
+`adb shell setprop debug.firebase.analytics.app .none.`. A device in debug mode sends events
+immediately; normally they are batched for up to an hour.
+
+`ad_impression` and `in_app_purchase` only appear after 9b, and `in_app_purchase` only from a
+Play-signed install (§8).
+
+### Code map
+
+| Firebase event | Params | Source |
+|---|---|---|
+| `level_start` | `level_name` "level_N", `level_number` (1-based) | `GameAnalytics.LevelStarted` |
+| `level_end` | + `success` 1, `duration_seconds`, `revive_count` | `GameAnalytics.LevelCompleted` |
+| `level_end` | + `success` 0, `fail_reason`, `duration_seconds`, `revive_count` | `GameAnalytics.LevelFailed` |
+| `level_complete_N` | — (once per install, PlayerPrefs `fb_milestone_N`) | `LevelCompleted`, N ∈ 1,3,5,10,20,30,50,75,100 |
+| `level_revived` | `level_number`, `revive_reason` | `GameAnalytics.LevelRevived` |
+| `rewarded_ad_completed` | `ad_placement` | `GameAnalytics.RewardedAdCompleted` |
+| `iap_granted` | `item_id` (no price; revenue is `in_app_purchase`) | `GameAnalytics.IapPurchased` |
+
+Everything goes through `Commons/GameAnalytics.cs`, which now also calls `Commons/FirebaseTracker.cs`.
+No call site changed. To add a Firebase event, add it to `FirebaseTracker` and call it from the
+matching `GameAnalytics` method. Event names: snake_case, at most 40 characters. A milestone level is
+counted only once Firebase is ready and consent is not denied. A level won before init is counted
+the next time it is won, not lost.
+
+### EDM4U again — Firebase re-added the duplicate
+
+The Firebase `.unitypackage` brings its own **EDM4U 1.2.189** and dropped it into
+`Assets/ExternalDependencyManager/`. That is exactly the duplicate install removed earlier (see
+*External Dependency Manager — installed once, via UPM*). Fixed the same way: the UPM pin in
+`Packages/manifest.json` is bumped **1.2.188 → 1.2.189** to match Firebase, and the `Assets/` copy
+is removed. Unity showed a one-time "untrusted package" dialog for the new OpenUPM version, which
+blocked compilation until it was accepted. Verified afterwards: EDM4U loads once, from
+`Library/PackageCache`, `GoogleMobileAds.Editor` loads, `PlayServicesResolver` resolves, 0 console
+errors.
+
+- [ ] **When you upgrade Firebase in future, untick `ExternalDependencyManager` in the import
+      dialog.** If it sneaks in anyway, delete `Assets/ExternalDependencyManager/`, bump the UPM pin
+      to the version it carried, and force-reimport `Packages/com.google.external-dependency-manager`.
+- [ ] Firebase also imported `Assets/Plugins/iOS/Firebase/`, `Assets/Plugins/tvOS/` and
+      `Assets/Editor Default Resources/`. They are harmless on Android (iOS Build Support is not
+      installed). Commit them, so a future Firebase upgrade diffs cleanly.
 
 ---
 
@@ -2024,6 +2201,7 @@ prefab if that trade stops mattering.
 | `Assets/Scripts/Controllers/CloudSaveController.cs` | Cloud Save sync: pull on boot, conflict resolution, coalesced upload after every save. |
 | `Assets/Scripts/Controllers/BannerAdController.cs` | Bottom banner, and publishes its height so UI can inset around it. |
 | `Assets/Plugins/Android/AppPermissions.androidlib/` | The app's Android permissions, declared explicitly in one file. |
+| `Assets/Scripts/Commons/FirebaseTracker.cs` | Firebase init, Consent Mode v2, and the Google Ads conversion events (§9). |
 | `Assets/Scripts/Controllers/ConsentController.cs` | UMP privacy flow; `WhenAdsAllowed()` gates ad SDK startup. |
 | `Assets/Scripts/UI/IAPBuyButton.cs` | Buy button: localized price, availability, purchase. |
 | `Assets/Scripts/UI/ShopCard.cs` | Hides a one-time product's card once it is owned. |

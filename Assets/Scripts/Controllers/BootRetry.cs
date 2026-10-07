@@ -131,6 +131,10 @@ namespace Controllers
             RewardedAdController.ResetForRestart();
             MainThreadDispatcher.ResetForRestart();
             GameAnalytics.IsReady = false;
+
+            // ConsentController.ResetForRestart dropped every OnConsentUpdated listener,
+            // Firebase's included. Firebase itself is process-wide and stays initialized.
+            FirebaseTracker.RebindAfterRestart();
         }
     }
 }
