@@ -22,8 +22,10 @@ missing:
 
 - if no video ad available, window is not shown and just unlock, this should be show window but button is disabled *
 
-- fix library hidden text below
-- does not reduce life
+- fix library hidden text below *
+- does not reduce life *
+
+- add firebase analytic
 
 
 * = is fixed
