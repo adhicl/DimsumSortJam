@@ -39,7 +39,7 @@ namespace UI.Pagination
 
             if (totalSize > 0) totalSize -= pagedRect.SpaceBetweenPages;
 
-            SetLayoutInputForAxis(totalSize, totalSize, 1, axis);
+            SetLayoutInputForAxis(totalSize, totalSize, 1, 1, axis);
         }
 
         protected void SetChildrenAlongAxis(int axis, bool isVertical)
