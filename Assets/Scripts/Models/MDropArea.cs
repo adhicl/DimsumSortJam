@@ -524,6 +524,9 @@ namespace Models
             return _isOpen;
         }
 
+        /// <summary>The dish whose match opens this basket while it is Locked; -1 otherwise.</summary>
+        public int LockedUnlockType => _isOpen == DisplayedBasket.Locked ? dimsumUnlock : -1;
+
         public void SetOpen(DisplayedBasket isOpen)
         {
             if (isOpen == DisplayedBasket.Displayed)

@@ -1140,6 +1140,25 @@ namespace Controllers
             || gameStatus == Settings.GAME_STATUS.lose
             || (_totalGoal > 0 && _awardedTotal >= _totalGoal);
 
+        /// <summary>Read-only view of <see cref="LevelDecided"/> for board observers such as the tutorial hand.</summary>
+        public bool IsLevelDecided => LevelDecided;
+
+        /// <summary>The baskets in play this level, for read-only observers such as the tutorial hand.</summary>
+        public IReadOnlyList<MDropArea> GameBaskets => _gameBaskets;
+
+        /// <summary>True while any basket is clearing or being rebuilt (e.g. by a reshuffle).</summary>
+        public bool IsBoardBusy => BoardIsBusy();
+
+        /// <summary>True when a waiting customer still wants <paramref name="dimsumType"/>.</summary>
+        public bool IsRequestedByCustomer(int dimsumType)
+        {
+            foreach (var character in _characterSpawns)
+            {
+                if (character != null && character.WantsDimsum(dimsumType)) return true;
+            }
+            return false;
+        }
+
         /// <summary>
         /// Nothing on the board and nothing left to deal. That is a finished level, not a stuck
         /// one: there is nothing for a rescue to rearrange, and reshuffling it hands every basket

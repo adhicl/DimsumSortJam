@@ -173,6 +173,31 @@ namespace UI
             SoundController.Instance.PlayButtonClickClip();
         }
 
+        /// <summary>
+        /// The power-up button the idle hint should tap when the board has no simple move: shuffle
+        /// first, then magnifier, then package (the timer never helps a stuck board). Buttons the
+        /// player already owns win over ones that would open the buy popup. Null when none is
+        /// currently pressable.
+        /// </summary>
+        public RectTransform GetHintPowerUpButton()
+        {
+            if (_powerUpButtons == null) return null;
+
+            int[] order = { 2, 1, 0 };
+            for (int pass = 0; pass < 2; pass++)
+            {
+                bool ownedOnly = pass == 0;
+                foreach (int i in order)
+                {
+                    Button button = _powerUpButtons[i];
+                    if (button == null || !button.interactable || !button.gameObject.activeInHierarchy) continue;
+                    if (ownedOnly && gameSetting.GetPowerup(i + 1) <= 0) continue;
+                    return button.transform as RectTransform;
+                }
+            }
+            return null;
+        }
+
         private void Awake()
         {
             _powerUpButtons = new[] { powerUpBtn1, powerUpBtn2, powerUpBtn3, powerUpBtn4 };

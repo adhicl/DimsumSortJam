@@ -73,6 +73,17 @@ namespace Models
             requestCanvas.SetActive(true);
         } 
 
+        /// <summary>True while this customer is waiting and still wants <paramref name="dimsumType"/>.</summary>
+        public bool WantsDimsum(int dimsumType)
+        {
+            if (!isShowing || _dimsumTypes == null || dimsumType < 0) return false;
+            foreach (int t in _dimsumTypes)
+            {
+                if (t == dimsumType) return true;
+            }
+            return false;
+        }
+
         public void CheckClearRequest(int dimsumType)
         {
             for (int i = 0; i < _dimsumTypes.Length; i++)
