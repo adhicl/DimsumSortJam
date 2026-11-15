@@ -184,9 +184,10 @@ namespace Controllers
             BuildLevelSprites();
             
             // The first two levels are dealt exactly as authored, so the tutorial can talk about
-            // specific pieces. Everything else is shuffled. That was the only difference between
-            // two otherwise identical copies of the loop below.
-            if (_gameSetting.currentLevel != 0 && _gameSetting.currentLevel != 1)
+            // specific pieces. Level 3 is too: it is the first level without a tutorial and where
+            // players were dropping off, so its opening board is hand-arranged in the asset to be
+            // gentle every run. Everything else is shuffled.
+            if (_gameSetting.currentLevel > 2)
             {
                 currentLevelData = ShuffleLevelData(currentLevelData);
             }
