@@ -41,10 +41,18 @@ namespace UI
         // stay live through the closing animation and a fast double tap pays twice.
         private bool _resolved;
 
+        private readonly RewardOffer _offer = new RewardOffer(GameAnalytics.PlacementReviveOutOfMove);
+
         private void OnEnable()
         {
             if (costText != null) costText.text = GameSetting.ReviveCost.ToString("N0");
             Refresh();
+            _offer.Shown();
+        }
+
+        private void OnDestroy()
+        {
+            _offer.Dismissed();
         }
 
         // No polling needed on the coin side: the balance can only change by buying this very
@@ -85,6 +93,7 @@ namespace UI
         {
             if (_resolved) return;
             SoundController.Instance.PlayButtonClickClip();
+            _offer.Accepted();
 
             if (RewardedAdController.Instance != null)
             {
@@ -113,6 +122,7 @@ namespace UI
                 return;
             }
 
+            _offer.Declined(RewardOffer.ChoiceCoins);
             GrantRevive();
         }
 
@@ -139,6 +149,7 @@ namespace UI
         {
             if (_resolved) return;
             _resolved = true;
+            _offer.Declined(RewardOffer.ChoiceLeave);
 
             SoundController.Instance.PlayButtonClickClip();
             GetComponent<Popup>().Close();

@@ -240,13 +240,116 @@ namespace Commons
                 new Parameter("revive_reason", reviveReason ?? "unknown"));
         }
 
-        /// <summary>
-        /// The rewarded-ad engagement signal. Revenue is not attached — AdMob's own automatic
-        /// <c>ad_impression</c> carries that once AdMob is linked to Firebase.
-        /// </summary>
-        public static void RewardedAdCompleted(string placement)
+        // ── Rewarded ads ───────────────────────────────────────────────────────────────────
+        // The full funnel for debugging fill and take rate: offer → choice → load → show →
+        // impression → reward / dismiss. Revenue is not attached anywhere here — AdMob's own
+        // automatic ad_impression carries it once AdMob is linked to Firebase, and a second
+        // revenue event would double what Google Ads optimises against.
+        //
+        // placement is one of RewardPlacement*; level_number is 1-based and left off when no level
+        // is running (0). Error text is trimmed to GA4's 100-character parameter limit.
+
+        public const string RewardPlacementDoubleCoins = "double_coins";
+        public const string RewardPlacementRevive = "revive";
+        public const string RewardPlacementFreePowerup = "free_powerup";
+        public const string RewardPlacementUnlockBasket = "unlock_basket";
+
+        /// <summary>A popup offering a rewarded ad appeared. <paramref name="adReady"/>: whether an ad was loaded at that moment.</summary>
+        public static void RewardOfferShown(string placement, int levelNumber, bool adReady)
         {
-            Log("rewarded_ad_completed", new Parameter("ad_placement", placement ?? "unknown"));
+            Log("reward_offer_shown", WithContext(placement, levelNumber,
+                new Parameter("ad_ready", adReady ? 1 : 0)));
+        }
+
+        /// <summary>The player tapped the watch-an-ad option.</summary>
+        public static void RewardOfferAccepted(string placement, int levelNumber)
+        {
+            Log("reward_offer_accepted", WithContext(placement, levelNumber));
+        }
+
+        /// <summary>The player took another route, or closed the popup. <paramref name="choice"/> says which.</summary>
+        public static void RewardOfferDeclined(string placement, int levelNumber, string choice)
+        {
+            Log("reward_offer_declined", WithContext(placement, levelNumber,
+                new Parameter("choice", choice ?? "unknown")));
+        }
+
+        /// <summary>An ad request was handed to AdMob. Not placement-specific: one ad is preloaded for every placement.</summary>
+        public static void RewardAdLoadRequested(bool testAd)
+        {
+            Log("reward_ad_load_requested", new Parameter("test_ad", testAd ? 1 : 0));
+        }
+
+        /// <summary>AdMob's load callback returned an ad.</summary>
+        public static void RewardAdLoaded(long loadMilliseconds, bool late)
+        {
+            Log("reward_ad_loaded",
+                new Parameter("load_time_ms", loadMilliseconds),
+                new Parameter("late", late ? 1 : 0));
+        }
+
+        /// <summary>AdMob's load callback returned an error, or the request timed out (code -1).</summary>
+        public static void RewardAdLoadFailed(int errorCode, string errorMessage, string errorDomain)
+        {
+            Log("reward_ad_load_failed",
+                new Parameter("error_code", errorCode),
+                new Parameter("error_message", Trim(errorMessage)),
+                new Parameter("error_domain", Trim(errorDomain)));
+        }
+
+        /// <summary>The game called Show on a loaded ad.</summary>
+        public static void RewardAdShowCalled(string placement, int levelNumber)
+        {
+            Log("reward_ad_show_called", WithContext(placement, levelNumber));
+        }
+
+        /// <summary>AdMob's impression callback fired.</summary>
+        public static void RewardAdImpression(string placement, int levelNumber)
+        {
+            Log("reward_ad_impression", WithContext(placement, levelNumber));
+        }
+
+        /// <summary>
+        /// The ad could not be presented: AdMob's full-screen failure callback, or no ad was loaded
+        /// when the player accepted (code -1, "no_ad_loaded").
+        /// </summary>
+        public static void RewardAdShowFailed(string placement, int levelNumber, int errorCode, string errorMessage)
+        {
+            Log("reward_ad_show_failed", WithContext(placement, levelNumber,
+                new Parameter("error_code", errorCode),
+                new Parameter("error_message", Trim(errorMessage))));
+        }
+
+        /// <summary>The ad closed. <paramref name="rewardEarned"/>: whether AdMob had confirmed the reward by then.</summary>
+        public static void RewardAdDismissed(string placement, int levelNumber, bool rewardEarned)
+        {
+            Log("reward_ad_dismissed", WithContext(placement, levelNumber,
+                new Parameter("reward_earned", rewardEarned ? 1 : 0)));
+        }
+
+        /// <summary>AdMob's reward callback confirmed the reward.</summary>
+        public static void RewardEarned(string placement, int levelNumber, string rewardType, double rewardAmount)
+        {
+            Log("reward_earned", WithContext(placement, levelNumber,
+                new Parameter("reward_type", Trim(rewardType)),
+                new Parameter("reward_amount", rewardAmount)));
+        }
+
+        private static Parameter[] WithContext(string placement, int levelNumber, params Parameter[] extra)
+        {
+            var list = new List<Parameter>(extra.Length + 2)
+            {
+                new Parameter("placement", placement ?? "unknown"),
+            };
+            if (levelNumber > 0) list.Add(new Parameter("level_number", levelNumber));
+            list.AddRange(extra);
+            return list.ToArray();
+        }
+
+        private static string Trim(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "none";
+            return value.Length <= 100 ? value : value.Substring(0, 100);
         }
 
         /// <summary>
@@ -281,6 +384,12 @@ namespace Commons
 
         private static void Log(string name, params Parameter[] parameters)
         {
+#if UNITY_EDITOR || DEVELOPMENT_BUILD
+            // Visible in the Console and in logcat on a development build, so an event can be
+            // checked without waiting for it to reach DebugView. Parameter values are not readable
+            // back from Firebase.Analytics.Parameter, so only the count is shown.
+            Debug.Log($"[Firebase] event {name} ({parameters.Length} params){(IsReady ? "" : " - dropped, not ready")}");
+#endif
             if (!IsReady) return;
             Try(name, () => FirebaseAnalytics.LogEvent(name, parameters));
         }

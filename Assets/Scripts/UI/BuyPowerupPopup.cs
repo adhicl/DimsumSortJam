@@ -103,11 +103,19 @@ namespace UI
             if (coinButton != null) coinButton.onClick.AddListener(BuyByCoin);
         }
 
+        private readonly RewardOffer _offer = new RewardOffer(GameAnalytics.PlacementBuyPowerUp);
+
         private void OnEnable()
         {
             if (costText != null) costText.text = GameSetting.PowerupCost.ToString("N0");
             Dress();
             Refresh();
+            if (watchAdButton != null && watchAdButton.gameObject.activeInHierarchy) _offer.Shown();
+        }
+
+        private void OnDestroy()
+        {
+            _offer.Dismissed();
         }
 
         /// <summary>Puts the current slot's icon, name and explanation on screen.</summary>
@@ -162,6 +170,7 @@ namespace UI
         {
             if (_resolved) return;
             SoundController.Instance.PlayButtonClickClip();
+            _offer.Accepted();
 
             if (RewardedAdController.Instance != null)
             {
@@ -190,6 +199,7 @@ namespace UI
                 return;
             }
 
+            _offer.Declined(RewardOffer.ChoiceCoins);
             Grant();
         }
 

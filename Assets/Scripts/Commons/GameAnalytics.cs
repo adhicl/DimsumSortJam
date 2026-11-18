@@ -120,10 +120,37 @@ namespace Commons
             });
         }
 
-        /// <summary>The player watched a rewarded ad through to the reward.</summary>
+        /// <summary>
+        /// Maps a button's placement to the Firebase reward placement: the two revive buttons both
+        /// report as revive, and the closed-basket unlock keeps a value of its own.
+        /// </summary>
+        public static string ToRewardPlacement(string placement)
+        {
+            switch (placement)
+            {
+                case PlacementDoubleReward: return FirebaseTracker.RewardPlacementDoubleCoins;
+                case PlacementReviveOutOfMove:
+                case PlacementContinueGame: return FirebaseTracker.RewardPlacementRevive;
+                case PlacementBuyPowerUp: return FirebaseTracker.RewardPlacementFreePowerup;
+                case PlacementUnlockBasket: return FirebaseTracker.RewardPlacementUnlockBasket;
+                default: return placement ?? "unknown";
+            }
+        }
+
+        /// <summary>1-based number of the level being played, or 0 outside a level.</summary>
+        public static int CurrentLevelNumber()
+        {
+            var game = Controllers.GameController.Instance;
+            return game != null && game.GameSetting != null ? game.GameSetting.currentLevel + 1 : 0;
+        }
+
+        /// <summary>
+        /// The player watched a rewarded ad through to the reward. UGS only: Firebase gets the
+        /// richer <c>reward_earned</c> from <c>RewardedAdController</c>, so forwarding this too
+        /// would count every reward twice there.
+        /// </summary>
         public static void RewardedAdCompleted(string placement)
         {
-            FirebaseTracker.RewardedAdCompleted(placement);
             Record("rewardedAdCompleted", e =>
             {
                 e["placement"] = placement ?? "unknown";

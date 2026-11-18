@@ -24,11 +24,19 @@ namespace UI
         public float spawnRadius = 2f;
         public float moveDuration = 0.8f;
 
+        private readonly RewardOffer _offer = new RewardOffer(GameAnalytics.PlacementDoubleReward);
+
         private void Start()
         {
             _gameSetting = GameController.Instance.GameSetting;
             coinText.text = $"{_gameSetting.totalGold:N0}";
             lifeText.text = $"{Settings.GetTimeFormat(_gameSetting.lifeTimer)}";
+            if (buttonDoubleClaim != null && buttonDoubleClaim.gameObject.activeInHierarchy) _offer.Shown();
+        }
+
+        private void OnDestroy()
+        {
+            _offer.Dismissed();
         }
 
         // Set once a claim starts paying out. Each claim spawns coins and loads the next scene,
@@ -39,6 +47,7 @@ namespace UI
         {
             if (_claimed) return;
             SoundController.Instance.PlayButtonClickClip();
+            _offer.Declined(RewardOffer.ChoiceClaimNormal);
             LockClaimButtons();
             SpawnCoins(buttonClaim, 40);
             StartCoroutine(GoToNextScene());
@@ -48,6 +57,7 @@ namespace UI
         {
             if (_claimed) return;
             SoundController.Instance.PlayButtonClickClip();
+            _offer.Accepted();
 
             // Double bonus is gated behind a rewarded ad. Only pay out x2 once the
             // reward is earned; if the player declines or no ad is ready, stay on the

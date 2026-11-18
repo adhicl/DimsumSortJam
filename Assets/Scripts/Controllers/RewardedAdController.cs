@@ -60,6 +60,16 @@ namespace Controllers
         private bool _rewardEarned;
         private Coroutine _resume;
 
+        // Analytics context for the ad currently on screen. AdMob's impression / close / failure /
+        // reward callbacks carry no idea of which button asked for the ad, so it is kept here from
+        // Show until the ad goes away. The flags stop any callback from logging twice for one show.
+        private string _showPlacement;
+        private int _showLevel;
+        private bool _impressionLogged;
+        private bool _earnedLogged;
+        private bool _endLogged;
+        private float _loadStartedAt;
+
         // The EventSystem switched off while an ad is up, so nothing behind it can be pressed.
         private EventSystem _blockedEventSystem;
         private float _staleCheckIn = StaleCheckSeconds;
@@ -136,6 +146,8 @@ namespace Controllers
             _isLoading = true;
             StartLoadWatchdog();
             Debug.Log($"[RewardedAd] Requesting {(UseTestAds ? "TEST" : "LIVE")} rewarded {AdUnitId}");
+            _loadStartedAt = Time.realtimeSinceStartup;
+            FirebaseTracker.RewardAdLoadRequested(UseTestAds);
 
             // Marshalled explicitly: the plugin does not promise a thread, and ScheduleRetry
             // starts a coroutine. Also guards against a late callback from a request the
@@ -151,6 +163,9 @@ namespace Controllers
                     {
                         _rewardedAd = ad;
                         RegisterReloadHandlers(ad);
+                        // A real fill, just after the watchdog's timeout was already logged as a
+                        // failure. A late *failure* is not logged: that request is already counted.
+                        FirebaseTracker.RewardAdLoaded(LoadMilliseconds(), late: true);
                     }
                     return;
                 }
@@ -161,6 +176,10 @@ namespace Controllers
                 if (error != null || ad == null)
                 {
                     Debug.LogWarning($"[RewardedAd] Failed to load: {error}");
+                    if (error != null)
+                        FirebaseTracker.RewardAdLoadFailed(error.GetCode(), error.GetMessage(), error.GetDomain());
+                    else
+                        FirebaseTracker.RewardAdLoadFailed(-1, "null_ad", "client");
                     ScheduleRetry();
                     return;
                 }
@@ -168,6 +187,7 @@ namespace Controllers
                 _retryDelay = FirstRetrySeconds;
                 _rewardedAd = ad;
                 RegisterReloadHandlers(ad);
+                FirebaseTracker.RewardAdLoaded(LoadMilliseconds(), late: false);
             }));
         }
 
@@ -193,7 +213,13 @@ namespace Controllers
 
             Debug.LogWarning("[RewardedAd] No response to load request; retrying.");
             _isLoading = false;
+            FirebaseTracker.RewardAdLoadFailed(-1, "timeout_" + LoadTimeoutSeconds + "s", "client");
             ScheduleRetry();
+        }
+
+        private long LoadMilliseconds()
+        {
+            return (long)((Time.realtimeSinceStartup - _loadStartedAt) * 1000f);
         }
 
         /// <summary>
@@ -236,14 +262,31 @@ namespace Controllers
         {
             // Rewarded ads are single-use: reload as soon as the current one goes away.
             // Marshalled — LoadAd starts coroutines, and IsShowingAd is read by the game timer.
+            ad.OnAdImpressionRecorded += () => MainThreadDispatcher.Run(() =>
+            {
+                if (_impressionLogged) return;
+                _impressionLogged = true;
+                FirebaseTracker.RewardAdImpression(_showPlacement, _showLevel);
+            });
             ad.OnAdFullScreenContentClosed += () => MainThreadDispatcher.Run(() =>
             {
+                if (!_endLogged)
+                {
+                    _endLogged = true;
+                    FirebaseTracker.RewardAdDismissed(_showPlacement, _showLevel, _earnedLogged);
+                }
                 IsShowingAd = false;
                 BeginResume();
                 LoadAd();
             });
             ad.OnAdFullScreenContentFailed += (AdError err) => MainThreadDispatcher.Run(() =>
             {
+                if (!_endLogged)
+                {
+                    _endLogged = true;
+                    FirebaseTracker.RewardAdShowFailed(_showPlacement, _showLevel,
+                        err != null ? err.GetCode() : -1, err != null ? err.GetMessage() : "unknown");
+                }
                 IsShowingAd = false;
                 Debug.LogWarning($"[RewardedAd] Failed to present: {err}");
                 BeginResume();
@@ -338,6 +381,9 @@ namespace Controllers
         /// </param>
         public void ShowAd(Action onReward, Action onUnavailable = null, string placement = null)
         {
+            string rewardPlacement = GameAnalytics.ToRewardPlacement(placement);
+            int level = GameAnalytics.CurrentLevelNumber();
+
             if (IsReady)
             {
                 // Cleared by the closed/failed handlers registered in RegisterReloadHandlers.
@@ -346,12 +392,25 @@ namespace Controllers
                 _rewardEarned = false;
                 BlockInput();
 
-                _rewardedAd.Show(_ => MainThreadDispatcher.Run(() =>
+                _showPlacement = rewardPlacement;
+                _showLevel = level;
+                _impressionLogged = false;
+                _earnedLogged = false;
+                _endLogged = false;
+                FirebaseTracker.RewardAdShowCalled(rewardPlacement, level);
+
+                _rewardedAd.Show(reward => MainThreadDispatcher.Run(() =>
                 {
                     // Inside the reward callback, not next to Show: this fires when the user has
                     // actually earned the reward, which is the number worth having. Show only
                     // means the ad was put on screen, and a user who backs out never rewards.
-                    GameAnalytics.RewardedAdCompleted(placement);
+                    if (!_earnedLogged)
+                    {
+                        _earnedLogged = true;
+                        GameAnalytics.RewardedAdCompleted(placement);
+                        FirebaseTracker.RewardEarned(rewardPlacement, level,
+                            reward != null ? reward.Type : null, reward != null ? reward.Amount : 0d);
+                    }
                     OnRewardEarned();
                 }));
                 return;
@@ -365,6 +424,8 @@ namespace Controllers
 #else
             Debug.LogWarning("[RewardedAd] No ad ready; invoking unavailable fallback.");
             GameAnalytics.RewardedAdUnavailable(placement);
+            // Show is never called here, so there is no reward_ad_show_called before this.
+            FirebaseTracker.RewardAdShowFailed(rewardPlacement, level, -1, "no_ad_loaded");
             onUnavailable?.Invoke();
             LoadAd();
 #endif

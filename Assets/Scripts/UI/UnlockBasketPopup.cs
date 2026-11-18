@@ -70,10 +70,18 @@ namespace UI
             if (coinButton != null) coinButton.onClick.AddListener(UnlockByCoin);
         }
 
+        private readonly RewardOffer _offer = new RewardOffer(GameAnalytics.PlacementUnlockBasket);
+
         private void OnEnable()
         {
             if (costText != null) costText.text = GameSetting.BasketUnlockCost.ToString("N0");
             Refresh();
+            if (watchAdButton != null && watchAdButton.gameObject.activeInHierarchy) _offer.Shown();
+        }
+
+        private void OnDestroy()
+        {
+            _offer.Dismissed();
         }
 
         // The coin side needs no polling: the balance can only change by buying this very
@@ -102,6 +110,7 @@ namespace UI
         {
             if (_resolved) return;
             SoundController.Instance.PlayButtonClickClip();
+            _offer.Accepted();
 
             if (RewardedAdController.Instance != null)
             {
@@ -130,6 +139,7 @@ namespace UI
                 return;
             }
 
+            _offer.Declined(RewardOffer.ChoiceCoins);
             Grant();
         }
 
