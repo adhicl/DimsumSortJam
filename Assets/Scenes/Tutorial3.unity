@@ -1015,6 +1015,10 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 0}
     m_Modifications:
+    - target: {fileID: 2626498187112977422, guid: 9d0fa05410999ad4994632ed7986eaec, type: 3}
+      propertyPath: focusLockedBasket
+      value: 1
+      objectReference: {fileID: 0}
     - target: {fileID: 2954359504538372152, guid: 9d0fa05410999ad4994632ed7986eaec, type: 3}
       propertyPath: m_LocalPosition.x
       value: 0
@@ -1057,7 +1061,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 7618248794814511279, guid: 9d0fa05410999ad4994632ed7986eaec, type: 3}
       propertyPath: m_Name
-      value: IdleHintHand
+      value: LockedBasketHintHand
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []

@@ -64,6 +64,12 @@ namespace GameObjects
         [SerializeField] private bool suggestPairs = true;
         [Tooltip("Tap a power-up button when no simple move exists. Used by the idle hint.")]
         [SerializeField] private bool suggestPowerUps = false;
+        [Tooltip("Locked-basket tutorial (Level 4): while a basket is locked, show quickly and " +
+                 "only suggest moves that gather three of its unlock dish into one basket. Once " +
+                 "it opens, the normal rules and idle delay apply again.")]
+        [SerializeField] private bool focusLockedBasket = false;
+        [Tooltip("Idle delay used while focusing on a locked basket.")]
+        [SerializeField] private float focusIdleDelay = 0.8f;
 
         [Header("Animation")]
         [SerializeField] private float pressDuration = 0.25f;
@@ -183,7 +189,7 @@ namespace GameObjects
             while (true)
             {
                 float still = 0f;
-                while (still < (hinting ? repeatGap : idleDelay))
+                while (still < (hinting ? repeatGap : CurrentIdleDelay()))
                 {
                     if (_gameController == null || _gameController.IsLevelDecided)
                     {
@@ -365,8 +371,31 @@ namespace GameObjects
 
         #region finding a hint
 
+        private float CurrentIdleDelay()
+        {
+            return focusLockedBasket && LockedDish() >= 0 ? focusIdleDelay : idleDelay;
+        }
+
+        /// <summary>The unlock dish of the first locked basket in play, or -1 if none is locked.</summary>
+        private int LockedDish()
+        {
+            var baskets = _gameController.GameBaskets;
+            if (baskets == null) return -1;
+            foreach (var b in baskets)
+            {
+                if (b != null && b.gameObject.activeInHierarchy && b.LockedUnlockType >= 0) return b.LockedUnlockType;
+            }
+            return -1;
+        }
+
         private bool TryFindHint(out Hint hint)
         {
+            if (focusLockedBasket)
+            {
+                int dish = LockedDish();
+                if (dish >= 0 && TryFindGatherMove(dish, out hint)) return true;
+            }
+
             if (TryFindMatchMove(out hint)) return true;
             if (suggestPairs && TryFindPairMove(out hint)) return true;
             if (TryFindDigMove(out hint)) return true;
@@ -477,6 +506,102 @@ namespace GameObjects
             if (target == null) return false;
 
             hint = DragHint(source, sourceSlot, target, targetSlot);
+            return true;
+        }
+
+        /// <summary>
+        /// The next step towards three of <paramref name="dish"/> in one basket (which opens the
+        /// locked basket showing it):
+        /// finish a basket that already holds two; otherwise pick the basket holding the most
+        /// copies as the host and bring one more in; if the host has no room, first move one of
+        /// its other pieces out.
+        /// </summary>
+        private bool TryFindGatherMove(int dish, out Hint hint)
+        {
+            hint = default;
+            var baskets = _gameController.GameBaskets;
+
+            // Copies the player can actually pick up, across the board.
+            int movableTotal = 0;
+            foreach (var b in baskets)
+            {
+                if (!IsPlayable(b)) continue;
+                foreach (var p in b.mDimSums)
+                    if (p != null && !p.IsFrozen && p.dimsumType == dish) movableTotal++;
+            }
+
+            MDropArea host = null;
+            int hostCount = 0, hostRoom = -1;
+            foreach (var b in baskets)
+            {
+                if (!IsPlayable(b)) continue;
+                int[] types = b.GetDimsumTypes();
+                int count = Count(types, dish);
+                if (count == 0) continue;
+
+                int movableHere = 0;
+                foreach (var p in b.mDimSums)
+                    if (p != null && !p.IsFrozen && p.dimsumType == dish) movableHere++;
+                // Enough copies elsewhere to bring this host up to three?
+                if (movableTotal - movableHere < 3 - count) continue;
+
+                int room = Count(types, -1);
+                if (count > hostCount || (count == hostCount && room > hostRoom))
+                {
+                    host = b; hostCount = count; hostRoom = room;
+                }
+            }
+            if (host == null) return false;
+
+            int[] hostTypes = host.GetDimsumTypes();
+            int emptySlot = System.Array.IndexOf(hostTypes, -1);
+
+            if (emptySlot >= 0)
+            {
+                // Bring a copy in, taking it from the basket that holds the fewest of them.
+                MDropArea source = null;
+                int sourceSlot = -1, sourceCount = int.MaxValue;
+                foreach (var b in baskets)
+                {
+                    if (b == host || !IsPlayable(b)) continue;
+                    int[] types = b.GetDimsumTypes();
+                    int count = Count(types, dish);
+                    if (count == 0 || count >= sourceCount) continue;
+                    for (int s = 0; s < b.mDimSums.Length; s++)
+                    {
+                        var p = b.mDimSums[s];
+                        if (p == null || p.IsFrozen || p.dimsumType != dish) continue;
+                        source = b; sourceSlot = s; sourceCount = count;
+                        break;
+                    }
+                }
+                if (source == null) return false;
+                hint = DragHint(source, sourceSlot, host, emptySlot);
+                return true;
+            }
+
+            // Host is full: move one of its other pieces somewhere with room.
+            int evictSlot = -1;
+            for (int s = 0; s < host.mDimSums.Length; s++)
+            {
+                var p = host.mDimSums[s];
+                if (p != null && !p.IsFrozen && p.dimsumType != dish) { evictSlot = s; break; }
+            }
+            if (evictSlot < 0) return false;
+
+            MDropArea target = null;
+            int targetSlot = -1, mostRoom = 0;
+            foreach (var b in baskets)
+            {
+                if (b == host || !IsPlayable(b)) continue;
+                int[] types = b.GetDimsumTypes();
+                int room = Count(types, -1);
+                if (room <= mostRoom) continue;
+                target = b; targetSlot = System.Array.IndexOf(types, -1); mostRoom = room;
+            }
+            if (target == null) return false;
+
+            hint = DragHint(host, evictSlot, target, targetSlot);
             return true;
         }
 
