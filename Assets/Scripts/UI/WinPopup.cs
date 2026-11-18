@@ -52,6 +52,10 @@ namespace UI
         [Tooltip("Seconds between the double-coins button appearing and Continue appearing.")]
         [SerializeField] private float continueDelay = 1.2f;
 
+        [Header("After the claim")]
+        [Tooltip("Shows how far this level moved each jajanan in the collection. Skipped when it moved none.")]
+        [SerializeField] private CollectionProgressPopup collectionPopup;
+
         private readonly RewardOffer _offer = new RewardOffer(GameAnalytics.PlacementDoubleReward);
 
         private Sequence _reveal;
@@ -290,7 +294,21 @@ namespace UI
         {
             yield return new WaitForSeconds(1.5f);
 
-            LoadNextLevel(_gameSetting);
+            // Hand over to the collection panel when the level moved any jajanan bar; it loads
+            // the next level itself when the player continues. With nothing to show, go on now.
+            var gains = GameController.Instance != null ? GameController.Instance.LevelMissionGains : null;
+            if (collectionPopup != null && collectionPopup.HasProgress(gains))
+            {
+                var panel = Instantiate(collectionPopup, transform.parent, false);
+                panel.gameObject.SetActive(true);
+                GameSetting setting = _gameSetting;
+                panel.Setup(gains, () => LoadNextLevel(setting));
+                panel.GetComponent<Popup>().Open();
+            }
+            else
+            {
+                LoadNextLevel(_gameSetting);
+            }
 
             GetComponent<Popup>().Close();
         }

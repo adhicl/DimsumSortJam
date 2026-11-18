@@ -667,12 +667,21 @@ namespace Controllers
             _pendingMissionProgress[id] = count + 3;
         }
 
+        /// <summary>
+        /// What the won level added to the mission tab, per dish sprite. Kept after the commit so
+        /// the collection panel after the win can show each bar moving up by this much.
+        /// </summary>
+        public IReadOnlyDictionary<string, int> LevelMissionGains => _levelMissionGains;
+        private readonly Dictionary<string, int> _levelMissionGains = new();
+
         /// <summary>Banks this level's matches into the mission tab and saves. Runs once, on the win.</summary>
         private void CommitMissionProgress()
         {
+            _levelMissionGains.Clear();
             foreach (var pair in _pendingMissionProgress)
             {
                 _gameSetting.AddMissionProgress(pair.Key, pair.Value);
+                _levelMissionGains[pair.Key] = pair.Value;
             }
             _pendingMissionProgress.Clear();
             _gameSetting.SaveData();

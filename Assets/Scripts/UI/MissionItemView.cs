@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using DG.Tweening;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
@@ -46,30 +47,60 @@ namespace UI
             }
             if (icon != null && _icons.Count > 0) icon.sprite = _icons[0];
             if (titleText != null) titleText.text = title;
+            if (rewardText != null) rewardText.text = $"{rewardCoins}";
 
-            int clamped = Mathf.Clamp(currentCount, 0, targetCount);
-            bool readyToClaim = clamped >= targetCount;
+            if (rewardButton != null)
+            {
+                rewardButton.onClick.RemoveAllListeners();
+                rewardButton.onClick.AddListener(() => _onClaimClicked?.Invoke());
+            }
+
+            ShowCount(currentCount, targetCount);
+        }
+
+        /// <summary>The claim button, so a caller can fly coins out of it.</summary>
+        public RectTransform RewardButton => rewardButton != null ? (RectTransform)rewardButton.transform : null;
+
+        /// <summary>Puts a count on the bar and lights the claim button once it is full.</summary>
+        public void ShowCount(float count, int targetCount)
+        {
+            float clamped = Mathf.Clamp(count, 0f, targetCount);
+            int shown = Mathf.FloorToInt(clamped);
+            bool readyToClaim = shown >= targetCount;
 
             if (progressSlider != null)
             {
                 progressSlider.maxValue = targetCount;
                 progressSlider.value = clamped;
             }
-            if (progressText != null) progressText.text = $"{clamped}/{targetCount}";
-
-            if (rewardText != null) rewardText.text = $"{rewardCoins}";
+            if (progressText != null) progressText.text = $"{shown}/{targetCount}";
 
             if (rewardIcon != null)
             {
                 rewardIcon.color = readyToClaim ? readyToClaimTint : inProgressTint;
             }
 
-            if (rewardButton != null)
-            {
-                rewardButton.interactable = readyToClaim;
-                rewardButton.onClick.RemoveAllListeners();
-                rewardButton.onClick.AddListener(() => _onClaimClicked?.Invoke());
-            }
+            if (rewardButton != null) rewardButton.interactable = readyToClaim;
+        }
+
+        /// <summary>Fills the bar from one count to another, for the collection panel after a win.</summary>
+        public Tween AnimateCount(int from, int to, int targetCount, float duration)
+        {
+            float value = from;
+            ShowCount(from, targetCount);
+            return DOTween.To(() => value, v =>
+                {
+                    value = v;
+                    ShowCount(v, targetCount);
+                }, to, duration)
+                .SetEase(Ease.OutCubic)
+                .SetLink(gameObject);
+        }
+
+        /// <summary>The claim button, held dead regardless of the count (while coins are flying).</summary>
+        public void LockClaim()
+        {
+            if (rewardButton != null) rewardButton.interactable = false;
         }
 
         // Derived from the clock rather than a per-row timer, so every row with variants flips

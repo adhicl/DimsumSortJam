@@ -2132,6 +2132,7 @@ MonoBehaviour:
   continueHolder: {fileID: 8369544027543536138}
   confetti: {fileID: 6746896870374061540}
   continueDelay: 1.2
+  collectionPopup: {fileID: 8785444735248030386, guid: a7cf4324f6af7d94cad6daf4366f3a65, type: 3}
 --- !u!1 &5665085081923982822 stripped
 GameObject:
   m_CorrespondingSourceObject: {fileID: 1363092823458765307, guid: c9ff86330aa144f8ab0d4630c142770e, type: 3}

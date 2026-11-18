@@ -463,7 +463,6 @@ GameObject:
   - component: {fileID: 4952908406265306750}
   - component: {fileID: 2076226588687441239}
   - component: {fileID: 2732239380159588688}
-  - component: {fileID: 7069326673604343574}
   m_Layer: 5
   m_Name: Button-Buy
   m_TagString: Untagged
@@ -578,22 +577,6 @@ CanvasGroup:
   m_Interactable: 1
   m_BlocksRaycasts: 1
   m_IgnoreParentGroups: 0
---- !u!114 &7069326673604343574
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 5293870250761463425}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: d83b56e52bdd4cf4fa1a1d7db1c62e9c, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::UI.IAPBuyButton
-  productId: starter_pack
-  priceText: {fileID: 0}
-  loadingIndicator: {fileID: 0}
-  pendingPriceLabel: "\u2026"
 --- !u!1 &5865354196065596680
 GameObject:
   m_ObjectHideFlags: 0
@@ -879,11 +862,9 @@ MonoBehaviour:
   rewardText: {fileID: 8985276410857197845}
   rewardIcon: {fileID: 3536420952930802244}
   rewardButton: {fileID: 4952908406265306750}
-  readyToClaimLabel: CLAIM
-  claimedLabel: CLAIMED
   inProgressTint: {r: 1, g: 1, b: 1, a: 0.6}
   readyToClaimTint: {r: 1, g: 1, b: 1, a: 1}
-  claimedTint: {r: 1, g: 1, b: 1, a: 0.35}
+  variantCycleSeconds: 1.2
 --- !u!1001 &4147183627393266130
 PrefabInstance:
   m_ObjectHideFlags: 0

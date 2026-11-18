@@ -9,10 +9,11 @@ namespace UI
     /// <summary>
     /// Populates the Missions tab's scrollable list.
     ///
-    /// Progress comes from <see cref="GameSetting.GetMissionProgress"/>, which counts pieces per
-    /// dish sprite. A mission's count is the sum over its icon and every variant icon, so colour
-    /// and plate versions of one jajanan all fill the same bar. Matches are banked when a level is
-    /// won (<c>GameController.CommitMissionProgress</c>), three pieces per match.
+    /// The missions themselves come from <see cref="MissionCatalog"/>, the same asset the
+    /// post-win collection panel reads. Progress comes from <see cref="GameSetting.GetMissionProgress"/>,
+    /// which counts pieces per dish sprite. A mission's count is the sum over its icon and every
+    /// variant icon, so colour and plate versions of one jajanan all fill the same bar. Matches are
+    /// banked when a level is won (<c>GameController.CommitMissionProgress</c>), three pieces per match.
     ///
     /// Claiming pays the reward and empties the bar, so a mission can be filled again and again.
     /// </summary>
@@ -38,7 +39,12 @@ namespace UI
         [SerializeField] private GameSetting gameSetting;
         [SerializeField] private MissionItemView itemPrefab;
         [SerializeField] private Transform content;
-        [SerializeField] private List<MissionEntry> missions = new List<MissionEntry>();
+
+        [Tooltip("The mission list, shared with the collection panel shown after a win.")]
+        [SerializeField] private MissionCatalog catalog;
+
+        private IEnumerable<MissionEntry> Missions =>
+            catalog != null ? catalog.missions : (IEnumerable<MissionEntry>)Array.Empty<MissionEntry>();
 
         private void OnEnable()
         {
@@ -54,7 +60,7 @@ namespace UI
                 Destroy(content.GetChild(i).gameObject);
             }
 
-            foreach (var entry in missions)
+            foreach (var entry in Missions)
             {
                 var view = Instantiate(itemPrefab, content);
                 view.Bind(entry.icon, entry.variantIcons, entry.title, CurrentCount(entry), entry.targetCount,
@@ -69,7 +75,7 @@ namespace UI
         public int ClaimableCount()
         {
             int ready = 0;
-            foreach (var entry in missions)
+            foreach (var entry in Missions)
             {
                 if (CurrentCount(entry) >= entry.targetCount) ready++;
             }
@@ -78,36 +84,22 @@ namespace UI
 
         private int CurrentCount(MissionEntry entry)
         {
-            if (gameSetting == null) return 0;
-
-            int total = 0;
-            foreach (var sprite in Sprites(entry)) total += gameSetting.GetMissionProgress(sprite.name);
-            return total;
-        }
-
-        private static IEnumerable<Sprite> Sprites(MissionEntry entry)
-        {
-            if (entry.icon != null) yield return entry.icon;
-            if (entry.variantIcons == null) yield break;
-            foreach (var variant in entry.variantIcons)
-            {
-                if (variant != null && variant != entry.icon) yield return variant;
-            }
+            return MissionCatalog.CurrentCount(entry, gameSetting);
         }
 
         private void OnClaimClicked(MissionEntry entry)
         {
-            if (gameSetting == null || CurrentCount(entry) < entry.targetCount) return;
+            if (!MissionCatalog.TryClaim(entry, gameSetting)) return;
 
             if (SoundController.Instance != null) SoundController.Instance.PlayButtonClickClip();
 
-            // Pay first, then empty the bar, then save once - the two have to land together, or a
-            // kill between them could pay twice or wipe the bar without paying.
-            gameSetting.totalGold += entry.rewardCoins;
-            foreach (var sprite in Sprites(entry)) gameSetting.ResetMissionProgress(sprite.name);
-            gameSetting.SaveData();
-
             Refresh();
+            RaiseProgressChanged();
+        }
+
+        /// <summary>Lets other claim sites (the post-win panel) tell the tab badge to recount.</summary>
+        public static void RaiseProgressChanged()
+        {
             ProgressChanged?.Invoke();
         }
     }
