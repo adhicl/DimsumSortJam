@@ -21,7 +21,7 @@ namespace UI
     /// so this panel only shows it - leaving early loses nothing. Rows come from the same
     /// <see cref="MissionCatalog"/> as the Missions tab on Home.
     /// </summary>
-    public class CollectionProgressPopup : MonoBehaviour
+    public class CollectionProgressPopup : MonoBehaviour, UI.Juice.IOwnsRevealAnimation
     {
         [SerializeField] private MissionCatalog catalog;
         [SerializeField] private MissionItemView rowPrefab;

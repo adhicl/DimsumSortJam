@@ -463,8 +463,15 @@ namespace UI
             int shown = Mathf.Max(0, gameSetting.GetPowerup(index + 1) - pending);
             if (_shownCounts[index] != shown)
             {
+                // -1 is "never drawn": the first write is the level starting, not a change.
+                bool changed = _shownCounts[index] >= 0;
                 _shownCounts[index] = shown;
-                if (_totalTexts[index] != null) _totalTexts[index].text = shown.ToString("N0");
+                if (_totalTexts[index] != null)
+                {
+                    _totalTexts[index].text = shown.ToString("N0");
+                    // Spending one and gaining one both show on the count itself.
+                    if (changed) Juice.ScaleJuice.For(_totalTexts[index]).Punch(0.35f, 0.35f);
+                }
             }
 
             // The counter reads zero for as long as the icon is still on its way, and a "+" badge

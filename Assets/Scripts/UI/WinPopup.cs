@@ -10,7 +10,7 @@ using Random = UnityEngine.Random;
 
 namespace UI
 {
-    public class WinPopup : MonoBehaviour
+    public class WinPopup : MonoBehaviour, UI.Juice.IOwnsRevealAnimation
     {
         private GameSetting _gameSetting;
 

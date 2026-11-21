@@ -48,6 +48,10 @@ namespace Ricimi
             }
 
             AddBackground();
+
+            // Pieces pop in one after another and ad offers pulse; popups with their own entrance
+            // (UI.Juice.IOwnsRevealAnimation) only get the button press squash.
+            UI.Juice.UIJuice.PlayPopupReveal(gameObject);
         }
 
         // Decremented here rather than in Close() so a popup torn down by a scene load, or

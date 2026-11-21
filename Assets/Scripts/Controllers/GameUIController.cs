@@ -41,16 +41,25 @@ namespace Controllers
         private string _shownProgress;
         private int _shownPauseState = -1;
 
+        [Tooltip("Seconds left at which the clock turns red and starts pulsing.")]
+        [SerializeField] private float lowTimeSeconds = 10f;
+        private static readonly Color TimerLowColor = new Color(1f, 0.3f, 0.3f, 1f);
+
         private void Update()
         {
-            int pauseState = gameController.isTimerPause ? 1 : 0;
+            float remaining = Mathf.Max(0f, gameController.Timer);
+            bool low = remaining > 0f && remaining <= lowTimeSeconds;
+
+            // 0 running, 1 paused, 2 running out. Low wins over paused only while running, so a
+            // frozen clock still reads as frozen.
+            int pauseState = gameController.isTimerPause ? 1 : (low ? 2 : 0);
             if (_shownPauseState != pauseState)
             {
                 _shownPauseState = pauseState;
-                textTimerDown.color = pauseState == 1 ? TimerPausedColor : TimerRunningColor;
+                textTimerDown.color = pauseState == 1 ? TimerPausedColor
+                    : pauseState == 2 ? TimerLowColor : TimerRunningColor;
             }
 
-            float remaining = Mathf.Max(0f, gameController.Timer);
             int minutes = Mathf.FloorToInt(remaining / 60f);
             // Floor, not round: rounding turned 59.6s left into "00:60" for a moment.
             int seconds = Mathf.FloorToInt(remaining % 60f);
@@ -59,13 +68,23 @@ namespace Controllers
                 _shownMinutes = minutes;
                 _shownSeconds = seconds;
                 textTimerDown.text = $"{minutes:D2}:{seconds:D2}";
+
+                // A heartbeat on every second of the last few, so running out is felt.
+                if (pauseState == 2) UI.Juice.ScaleJuice.For(textTimerDown).Punch(0.3f, 0.35f);
             }
 
             string progress = gameController.Progress;
             if (!string.Equals(progress, _shownProgress, StringComparison.Ordinal))
             {
+                // Not on the first write: that is the level starting, not progress being made.
+                bool moved = _shownProgress != null;
                 _shownProgress = progress;
                 textProgressLevel.text = progress;
+                if (moved)
+                {
+                    UI.Juice.ScaleJuice.For(textProgressLevel).Punch(0.3f, 0.35f);
+                    if (sliderProgress != null) UI.Juice.ScaleJuice.For(sliderProgress).Punch(0.06f, 0.35f);
+                }
             }
 
             sliderProgress.value = gameController.ProgressPercentage;

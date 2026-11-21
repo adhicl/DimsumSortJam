@@ -68,6 +68,17 @@ namespace UI
             RefreshProfile();
             Refresh();
             StartCoroutine(MaybeShowRatePrompt());
+            InstallJuice();
+        }
+
+        // Attached from code so the Home scene file is never re-saved for it.
+        private void InstallJuice()
+        {
+            // The coin pill pops whenever gold changes (a shop purchase, a claimed mission).
+            if (coinText != null)
+                Juice.UIJuice.PunchOnChange(coinText, coinText.transform.parent, 0.18f);
+
+            Juice.HomeJuice.Install(FindFirstObjectByType<Pagination.PagedRect>());
         }
 
         /// <summary>

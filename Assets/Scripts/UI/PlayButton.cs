@@ -20,6 +20,9 @@ namespace UI
         private void Start()
         {
             levelText.text = $"Level {_gameSetting.currentLevel + 1}";
+
+            // The one button that matters on Home keeps breathing, after the page's entrance.
+            Juice.ScaleJuice.For(this).Pulse(0.05f, 1.2f, 0.8f);
         }
 
         public void GoToNextScene()
