@@ -178,21 +178,21 @@ MonoBehaviour:
   maximumLevel: 100
   currentLevelData: {fileID: 11400000, guid: 87f5a7992d0ba5d4a97c2641f34cddfb, type: 2}
   currentDimsumSprites:
-  - {fileID: 21300000, guid: 01b89b10e13da6544bd71820bd402fac, type: 3}
+  - {fileID: 21300000, guid: 359d001e08e4d1648a880d47159bf6b1, type: 3}
   - {fileID: 21300000, guid: 1e81c59d44a3d8448933898d708b5c08, type: 3}
-  - {fileID: 21300000, guid: c908349af031e134faa562745c4e2350, type: 3}
   - {fileID: 21300000, guid: 3d49f2d049069f2479fe340b9adaeef3, type: 3}
   - {fileID: 21300000, guid: f15a121a1cf1e2041891a6be88c10266, type: 3}
   - {fileID: 21300000, guid: 4920a144dd65bf447bdaaf057df4b090, type: 3}
-  - {fileID: 21300000, guid: 359d001e08e4d1648a880d47159bf6b1, type: 3}
+  - {fileID: 21300000, guid: 01b89b10e13da6544bd71820bd402fac, type: 3}
+  - {fileID: 21300000, guid: c908349af031e134faa562745c4e2350, type: 3}
   currentFrozenDimsumSprites:
-  - {fileID: 21300000, guid: 2be04fe84ff26754ebb4f6d66918bd93, type: 3}
+  - {fileID: 21300000, guid: a2aa53a6ff9302747853d041a3562302, type: 3}
   - {fileID: 21300000, guid: 02fa33667c584f4449c5ee7e7f8eae0f, type: 3}
-  - {fileID: 21300000, guid: 6649c81c415558747bdb2fb0bb17f3e2, type: 3}
   - {fileID: 21300000, guid: 847d4366fb7ced348a907009640580a0, type: 3}
   - {fileID: 21300000, guid: fca017e78c45db444a747cd99aab910e, type: 3}
   - {fileID: 21300000, guid: 2a7250f7f43194c409eca7495b7612f3, type: 3}
-  - {fileID: 21300000, guid: a2aa53a6ff9302747853d041a3562302, type: 3}
+  - {fileID: 21300000, guid: 2be04fe84ff26754ebb4f6d66918bd93, type: 3}
+  - {fileID: 21300000, guid: 6649c81c415558747bdb2fb0bb17f3e2, type: 3}
   allLevelData:
   - {fileID: 11400000, guid: 652393e91ddf9ed47994f22e7824c512, type: 2}
   - {fileID: 11400000, guid: 87f5a7992d0ba5d4a97c2641f34cddfb, type: 2}
@@ -296,7 +296,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: e7c49ba907342884ab6cfd504e7b6ff3, type: 2}
   lifeTimer: 1
   totalLife: 5
-  totalGold: 5000
+  totalGold: 5040
   playerName: 
   avatarId: 
   unlimitedLivesUntil: 1787654007074
@@ -316,16 +316,16 @@ MonoBehaviour:
   removeAds: 0
   missionProgress:
   - id: JAJANAN - BAKWAN 1 new
-    count: 3
+    count: 6
   - id: JAJANAN - GANDUS JAMBI 1 - new
-    count: 3
+    count: 6
   - id: JAJANAN - APEM 1 - new
-    count: 3
+    count: 6
   - id: JAJANAN - TALAM 1
-    count: 3
+    count: 6
   - id: JAJANAN - KUE LUMPUR new 1
-    count: 3
+    count: 6
   - id: JAJANAN - KLEPON 1 - new
-    count: 3
+    count: 6
   - id: JAJANAN - BOLU KUKUS COKLAT 1
-    count: 3
+    count: 6

@@ -14,43 +14,69 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::Commons.LevelData
   TotalGoal: 21
   TotalVariation: 7
+  TotalFrozen: 0
+  TotalHidden: 0
   currentLevel:
   - dimsum1: 0
     dimsum2: 0
     dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
   - dimsum1: 4
     dimsum2: 4
     dimsum3: -1
-  - dimsum1: 4
-    dimsum2: -1
-    dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
   - dimsum1: 0
     dimsum2: 1
     dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
+  - dimsum1: 4
+    dimsum2: -1
+    dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
   - dimsum1: 1
     dimsum2: -1
     dimsum3: 1
+    frozenMask: 0
+    hiddenMask: 0
   - dimsum1: -1
     dimsum2: 5
     dimsum3: 5
+    frozenMask: 0
+    hiddenMask: 0
   - dimsum1: 2
     dimsum2: -1
     dimsum3: 3
+    frozenMask: 0
+    hiddenMask: 0
   - dimsum1: -1
     dimsum2: -1
     dimsum3: 5
+    frozenMask: 0
+    hiddenMask: 0
   - dimsum1: 3
     dimsum2: 3
     dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
   - dimsum1: 6
     dimsum2: 6
     dimsum3: -1
+    frozenMask: 0
+    hiddenMask: 0
   - dimsum1: 2
     dimsum2: -1
     dimsum3: 2
+    frozenMask: 0
+    hiddenMask: 0
   - dimsum1: 6
     dimsum2: -1
     dimsum3: -1
-  firstDisplayed: 000000000000000000000000000000000000000000000000
-  currentDropArea: 020000000200000002000000020000000200000002000000
+    frozenMask: 0
+    hiddenMask: 0
+  firstDisplayed: 000000000000000000000000000000000000000000000000i
+  currentDropArea: 020000000200000002000000020000000200000002000000i
   requestMissions: []

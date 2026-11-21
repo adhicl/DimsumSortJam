@@ -16,7 +16,7 @@ PlayerSettings:
   productName: Jajanan
   defaultCursor: {fileID: 0}
   cursorHotspot: {x: 0, y: 0}
-  m_SplashScreenBackgroundColor: {r: 0.12156863, g: 0.12156863, b: 0.1254902, a: 1}
+  m_SplashScreenBackgroundColor: {r: 0.5330188, g: 0.7263415, b: 1, a: 1}
   m_ShowUnitySplashScreen: 0
   m_ShowUnitySplashLogo: 1
   m_SplashScreenOverlayOpacity: 1
@@ -272,7 +272,7 @@ PlayerSettings:
   useCustomProguardFile: 0
   AndroidTargetArchitectures: 2
   AndroidSplashScreenScale: 0
-  androidSplashScreen: {fileID: 0}
+  androidSplashScreen: {fileID: 2800000, guid: e29c72db4e905ba49afc3f53456a6629, type: 3}
   AndroidKeystoreName: '{inproject}: publish.keystore'
   AndroidKeyaliasName: android publish
   AndroidEnableArmv9SecurityFeatures: 0

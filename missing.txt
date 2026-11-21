@@ -25,7 +25,19 @@ missing:
 - fix library hidden text below *
 - does not reduce life *
 
-- add firebase analytic
+- add firebase analytic *
+
+
+- add hand tutorial *
+- fix level 3 * and 2 *
+- fix level 4 *
+- fix first load to be faster
+- fix disable powerup hint and ???
+- show how to use coin
+- update better end screen per level *
+- update the rest UI / panel
+- add hand tutorial to level 4 *
+- add firebase rewarded ad events *
 
 
 * = is fixed
