@@ -64,8 +64,28 @@ namespace UI
 
         private void Start()
         {
+            BindSplashView();
             _gameSetting.LoadData();
             StartCoroutine(DoLoading());
+        }
+
+        /// <summary>
+        /// This component lives in the SplashBoot scene, loaded additively after Splash is already
+        /// on screen, so it cannot reference Splash's bar in the inspector. It picks the bar up
+        /// from <see cref="SplashBootstrap"/> instead, and continues from wherever the placeholder
+        /// left it so the bar never jumps backwards.
+        /// </summary>
+        private void BindSplashView()
+        {
+            var view = SplashBootstrap.View;
+            if (view == null) return;
+
+            if (loadingSlider == null) loadingSlider = view.LoadingSlider;
+            if (loadingProgressText == null) loadingProgressText = view.LoadingProgressText;
+            if (loadingText == null) loadingText = view.LoadingText;
+
+            view.HandOff();
+            if (loadingSlider != null) progress = loadingSlider.value;
         }
 
         private float progress = 0f;

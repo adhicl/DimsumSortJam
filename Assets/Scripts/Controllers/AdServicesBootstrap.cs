@@ -28,6 +28,11 @@ namespace Controllers
         [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
         private static void Bootstrap()
         {
+            // Splash brings the controllers in a moment later, from the SplashBoot scene it loads
+            // after its first frame. Spawning here would duplicate them, and would load the very
+            // assets that split exists to keep out of the first frame.
+            if (UnityEngine.SceneManagement.SceneManager.GetActiveScene().name == "Splash") return;
+
             // Splash (or anything else that already carries them) wins. Checked per controller
             // rather than on one of them, so a half-populated scene still gets nothing spawned on
             // top of what it has - the controllers' own duplicate guards would destroy the whole

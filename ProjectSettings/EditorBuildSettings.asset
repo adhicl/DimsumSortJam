@@ -9,6 +9,9 @@ EditorBuildSettings:
     path: Assets/Scenes/Splash.unity
     guid: 4f8a4c9e5d7104215bd30a501bb98774
   - enabled: 1
+    path: Assets/Scenes/SplashBoot.unity
+    guid: 8b4a33ce712e9604bb4a3321f7ea0205
+  - enabled: 1
     path: Assets/Scenes/Home.unity
     guid: 29b2703c7269a4c169d793ee58a95897
   - enabled: 0
@@ -70,4 +73,3 @@ EditorBuildSettings:
     guid: 3cb86f4b143929b498f906845a671031
   m_configObjects:
     com.unity.input.settings.actions: {fileID: -944628639613478452, guid: 2bcd2660ca9b64942af0de543d8d7100, type: 3}
-  m_UseUCBPForAssetBundles: 0
