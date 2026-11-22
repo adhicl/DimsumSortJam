@@ -1104,7 +1104,7 @@ counts every time, never a row iced solid, never a hidden row 0, and twelve diff
 dish whether drawn as food or as ice. Shuffling the two separately would hand a piece a frozen face
 belonging to another dish, and it would silently change identity when it thawed.
 
-**32 of the 79 dishes currently never freeze** (as of 2026-11-22). Their `dimsumFrozenSprite`
+**30 of the 79 dishes currently never freeze** (as of 2026-11-22). Their `dimsumFrozenSprite`
 entry is empty, so `GetFrozenSprite` returns null, `CanFreeze` says no, and the dealer skips them.
 Nothing errors; a level made mostly of these dishes just freezes fewer pieces than `TotalFrozen`
 asks for and logs the "asked for N frozen" warning. **The rule is that frozen art must show the
@@ -1149,11 +1149,9 @@ A frozen picture that shows a different number of pieces is not used.
 | `PUKIS 3 - plate` | `PUKIS 1` (1 piece) | 3 pieces |
 | `GETUK 3 - plate` | `GETUK 1` (4 square pieces) | the rolled pink-striped pieces |
 
-**Possible quick wins (no new art).** These were disabled along with the rest but look like a match
-on a second check. Re-enable by pointing the entry back at the existing art if they pass a look:
-
-- `BOLU KUKUS COKLAT 3 - plate` and `BOLU KUKUS WARNA 3 - plate`: 3 cups, the same as `BOLU KUKUS 1`.
-- `GETUK warna 4 - plate`: 4 coconut-topped squares, the same as `GETUK 1`.
+**Possible quick win (no new art).** `BOLU KUKUS COKLAT 3 - plate` shows 3 cups, the same as
+`BOLU KUKUS 1`, so it could reuse that frozen art (its plate renders at the same size as the
+Warna plate, so the PPU already fits). Re-enable by pointing its entry at `BOLU KUKUS 1`.
 
 #### Adding a frozen picture
 
@@ -1168,7 +1166,7 @@ on a second check. Re-enable by pointing the entry back at the existing art if t
    where `normalWorldW = normalVisibleW / normalPPU`. Every existing frozen sprite was resized this
    way on 2026-11-22 (values range from about 224 to 660).
 4. **Add it to `Assets/Sprites/JAJANAN FROZEN/Jajanan Frozen Atlas.spriteatlasv2`** (Packables).
-   The atlas lists only the frozen PNGs that `Setting.asset` uses (45 as of 2026-11-22), so unused
+   The atlas lists only the frozen PNGs that `Setting.asset` uses (47 as of 2026-11-22), so unused
    frozen art stays out of the build. A sprite left out of the atlas still works, but as its own
    texture and draw call. Remove a PNG from the atlas when no dish uses it any more.
 
@@ -1181,6 +1179,8 @@ texture has only one PPU. Current shared mappings worth knowing, all checked by 
 | `TALAM 1` (dome) | `TALAM 2` | the dome-shaped ice |
 | `TALAM 1 - kotak` (square) | `TALAM 3` | the square ice |
 | `TALAM 1 - ungu` (bowl) | `TALAM 1` | the bowl-shaped ice |
+| `BOLU KUKUS WARNA 3 - plate` | `BOLU KUKUS 1` | 3 cups; PPU 350 is sized for the plate |
+| `GETUK warna 4 - plate` | `GETUK 1` | 4 coconut-topped squares |
 | `PUTU AYU 1 a` / `ungu` | `PUTU AYU 1` | |
 | `LAPIS TAPIOKA 1` / `HIJAU` | `LAPIS TAPIOKA 1` | |
 | `PISANG MOLEN MINI` | `Molen 1` | |
