@@ -1104,54 +1104,19 @@ counts every time, never a row iced solid, never a hidden row 0, and twelve diff
 dish whether drawn as food or as ice. Shuffling the two separately would hand a piece a frozen face
 belonging to another dish, and it would silently change identity when it thawed.
 
-**30 of the 79 dishes currently never freeze** (as of 2026-11-22). Their `dimsumFrozenSprite`
-entry is empty, so `GetFrozenSprite` returns null, `CanFreeze` says no, and the dealer skips them.
-Nothing errors; a level made mostly of these dishes just freezes fewer pieces than `TotalFrozen`
-asks for and logs the "asked for N frozen" warning. **The rule is that frozen art must show the
-same pieces as the normal sprite** (same count and arrangement; only the plate may be left out).
-A frozen picture that shows a different number of pieces is not used.
+**All 79 dishes have frozen art** (as of 2026-11-26), so every dish can freeze. The 30 missing
+pictures (plate arrangements, single-cup Bolu Kukus and Mangkok, Kue Kukus, Lumpang, Putri Mandi,
+Onde Onde, Kue Cucur and the rest) were drawn and wired on 2026-11-26.
 
-#### Missing frozen pictures — art to draw
+**The rule is that frozen art must show the same pieces as the normal sprite** (same count and
+arrangement; only the plate may be left out). A dish whose frozen entry is empty simply never
+freezes: `GetFrozenSprite` returns null, `CanFreeze` says no, and the dealer skips it. Nothing
+errors, but a level made mostly of such dishes freezes fewer pieces than `TotalFrozen` asks for
+and logs the "asked for N frozen" warning.
 
-**A. Dishes with no frozen art at all**
-
-| Dish (`JAJANAN - …`) | Frozen picture needed |
-|---|---|
-| `PUTRI MANDI 1` | single piece (`PUTRI KANDIS` is a different dish) |
-| `ONDE ONDE 1 - new ` | single piece |
-| `KUE CUCUR 1 - new` | single piece |
-| `KUE LUMPANG 1 - coklat` / `- hijau` | single piece (one picture can serve both colours) |
-
-**B. Single-piece sprites whose only frozen art shows several pieces**
-
-| Dish (`JAJANAN - …`) | Existing frozen art | Frozen picture needed |
-|---|---|---|
-| `BOLU KUKUS COKLAT 1`, `BOLU KUKUS WARNA 1 - hijau` / `kuning` / `pink` | `BOLU KUKUS 1` (3 cups) | 1 cup |
-| `KUE MANGKOK 1 - hijau` / `kuning` / `pink` | `MANGKOK 1` (3 pieces) | 1 piece |
-| `KUE KUKUS COKLAT 1`, `KUE KUKUS PANDAN 1` | `KUKUS KOTAK 1` (3 slabs) | 1 slab |
-
-**C. Plate sprites (several pieces) whose only frozen art is one piece, or different**
-
-| Dish (`JAJANAN - …`) | Existing frozen art | Frozen picture needed |
-|---|---|---|
-| `BOLU KOJO 3 - plate - new` | `BOLU KOJO 1` (1 piece) | plate arrangement |
-| `LAPIS SURABAYA 2 - plate - new 2` | `LAPIS SURABAYA 1` (1 piece) | plate arrangement |
-| `LAPIS TAPIOKA 3 - plate`, `LAPIS TAPIOKA 3 HIJAU - plate` | `LAPIS TAPIOKA 1` (1 piece) | plate arrangement |
-| `LEMPER 3 - plate` | `LEMPER 1` (1 piece) | plate arrangement |
-| `RISOL 3 - plate - new` | `RISOL 1` (1 piece) | plate arrangement |
-| `SEMAR MENDEM 2 - plate` | `SEMAR MENDEM 1` (1 piece) | plate arrangement |
-| `WINGKO 3 - plate - new` | `WINGKO 1` (1 piece) | plate arrangement |
-| `DADAR GULUNG 3 - plate` | `DADAR GULUNG 1` (1 roll) | 3 rolls |
-| `GEMBLONG 3 - plate` | `GEMBLONG 1` (1 piece) | the pile |
-| `KUE DELAPAN JAM 3 - plate - new` | `KUE 8 Jam 1` (1 slab) | 3 slices |
-| `KUE LAPIS 3 - plate` | `KUE LAPIS 1` (1 piece) | 3 pieces |
-| `WAJIK 3 - plate` | `WAJIK 1` (1 piece) | 3 pieces |
-| `PUKIS 3 - plate` | `PUKIS 1` (1 piece) | 3 pieces |
-| `GETUK 3 - plate` | `GETUK 1` (4 square pieces) | the rolled pink-striped pieces |
-
-**Possible quick win (no new art).** `BOLU KUKUS COKLAT 3 - plate` shows 3 cups, the same as
-`BOLU KUKUS 1`, so it could reuse that frozen art (its plate renders at the same size as the
-Warna plate, so the PPU already fits). Re-enable by pointing its entry at `BOLU KUKUS 1`.
+Frozen PNGs in the folder that no dish uses, kept out of the atlas so they stay out of the build:
+`DADAR GULUNG 1`, `GABIN 2`, `GEMBLONG 1`, `GEMBLONG  1 - 1/2/3`, `KUE 8 Jam 1`, `KUE CUBIT 3`,
+`KUE LAPIS 1`, `KUKUS KOTAK 1`, `MANGKOK 1`, `PUKIS 1` and `WAJIK 1`.
 
 #### Adding a frozen picture
 
@@ -1166,7 +1131,7 @@ Warna plate, so the PPU already fits). Re-enable by pointing its entry at `BOLU 
    where `normalWorldW = normalVisibleW / normalPPU`. Every existing frozen sprite was resized this
    way on 2026-11-22 (values range from about 224 to 660).
 4. **Add it to `Assets/Sprites/JAJANAN FROZEN/Jajanan Frozen Atlas.spriteatlasv2`** (Packables).
-   The atlas lists only the frozen PNGs that `Setting.asset` uses (47 as of 2026-11-22), so unused
+   The atlas lists only the frozen PNGs that `Setting.asset` uses (77 as of 2026-11-26, one 2048 page), so unused
    frozen art stays out of the build. A sprite left out of the atlas still works, but as its own
    texture and draw call. Remove a PNG from the atlas when no dish uses it any more.
 
