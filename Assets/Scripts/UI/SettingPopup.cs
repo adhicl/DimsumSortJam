@@ -8,7 +8,8 @@ using Zenject;
 
 namespace UI
 {
-    public class SettingPopup : MonoBehaviour
+    // Opts out of the staggered popup build-up: settings should be there the moment they open.
+    public class SettingPopup : MonoBehaviour, Juice.IOwnsRevealAnimation
     {
         [Tooltip("Assets/Sounds/GameAudioMixer.mixer. The only thing that actually silences the " +
                  "game - soundMute/musicMute are saved, but nothing else reads them.")]

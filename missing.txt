@@ -35,9 +35,14 @@ missing:
 - fix disable powerup hint and ???
 - show how to use coin
 - update better end screen per level *
-- update the rest UI / panel
+- update the rest UI / panel *
 - add hand tutorial to level 4 *
 - add firebase rewarded ad events *
+- find and fix frozen size jajanan *
+- add missing frozen size jajanan *
+- purchase coin in in game *
+- setup unlock decoration at home
+
 
 
 * = is fixed

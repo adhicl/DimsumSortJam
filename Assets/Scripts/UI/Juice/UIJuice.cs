@@ -9,8 +9,9 @@ using UnityEngine.UI;
 namespace UI.Juice
 {
     /// <summary>
-    /// Marks a popup that plays its own entrance (the win screen, the collection panel), so the
-    /// generic <see cref="UIJuice.PlayPopupReveal"/> leaves it alone.
+    /// Marks a popup that the generic <see cref="UIJuice.PlayPopupReveal"/> leaves alone: either it
+    /// plays its own entrance (the win screen, the collection panel) or it should simply appear
+    /// at once (the settings popups).
     /// </summary>
     public interface IOwnsRevealAnimation { }
 

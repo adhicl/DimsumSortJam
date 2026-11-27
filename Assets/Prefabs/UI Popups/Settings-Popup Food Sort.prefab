@@ -565,27 +565,6 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::UI.SettingPopup
   mixer: {fileID: 24100000, guid: 2c3106f8b8ab4bb7a62278e767c46966, type: 2}
-  setting:
-    dimsumPrefab: {fileID: 0}
-    trayPrefab: {fileID: 0}
-    dimsumSprite: []
-    currentLevel: 0
-    maximumLevel: 2
-    currentLevelData: {fileID: 0}
-    currentDimsumSprites: []
-    allLevelData: []
-    lifeTimer: 0
-    totalLife: 0
-    totalGold: 0
-    totalPowerup1: 0
-    totalPowerup2: 0
-    totalPowerup3: 0
-    totalPowerup4: 0
-    totalBooster1: 0
-    totalBooster2: 0
-    totalBooster3: 0
-    soundMute: 0
-    musicMute: 0
   soundSlider: {fileID: 2754561067598187682}
   musicSlider: {fileID: 6748891014926007844}
 --- !u!1001 &1079234176515765023
@@ -2762,4 +2741,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: bdc9dc369ee2a427d82cbd5d7894c8c9, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  popupPrefab: {fileID: 9025506432857569364, guid: 3ec2649375fa7470196fe0f941223cc5, type: 3}
+  popupPrefab: {fileID: 88093307547919053, guid: eddb1e39815335742923686247420bd4, type: 3}
